@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Q-Log</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: #f8f8f8;
+}
+
+.screen { display: none; padding: 20px; text-align: center; }
+.active { display: block; }
+
+.title { font-size: 28px; font-weight: bold; margin-top: 30px; }
+.time { font-size: 40px; margin: 10px 0 30px; }
+
+.card {
+    background: white;
+    margin: 10px auto;
+    padding: 15px;
+    border-radius: 15px;
+    width: 90%;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    text-align: left;
+}
+
+textarea {
+    width: 90%;
+    height: 120px;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+}
+
+button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: none;
+    background: black;
+    color: white;
+    cursor: pointer;
+}
+
+/* 네비 */
+.nav {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    height: 70px;
+    background: white;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+}
+.nav button { background: none; color: black; font-size: 20px; }
+
+/* 중앙 버튼 */
+.nav-center {
+    position: absolute;
+    top: -25px;
+    width: 65px;
+    height: 65px;
+    background: black;
+    color: white;
+    font-size: 32px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+}
+
+/* 모달 */
+.modal {
+    position: fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background: rgba(30,30,30,0.6);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    opacity:0;
+    pointer-events:none;
+    transition:0.3s;
+}
+.modal.show { opacity:1; pointer-events:auto; }
+
+.modal-content {
+    background:white;
+    padding:25px;
+    border-radius:20px;
+    width:80%;
+    max-width:300px;
+    text-align:center;
+}
+
+.mood-grid {
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:15px;
+}
+.mood-grid button { font-size:28px; background:#f2f2f2; }
+
+/* 달력 */
+.calendar {
+    margin-top:20px;
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:5px;
+}
+.day {
+    padding:10px;
+    background:white;
+    border-radius:8px;
+    cursor:pointer;
+}
+.day:hover { background:#eaeaea; }
+
+.has-log { background:#d0ebff; }
+.today { border:2px solid red; }
+
+.weekday {
+    font-weight:bold;
+    background:#eee;
+}
+
+/* 추가 */
+.other-month { opacity:0.3; }
+
+/* 삭제 버튼 */
+.delete-btn {
+    float:right;
+    background:none;
+    color:#aaa;
+    font-size:14px;
+}
+.delete-btn:hover { color:red; }
+
+#dayLogs { margin-top:20px; }
+
+.suggestion {
+    font-size:14px;
+    margin-top:5px;
+    color:#555;
+}
+</style>
+</head>
+
+<body>
+
+<div id="home" class="screen active">
+    <div class="title">Q-Log</div>
+    <div class="time" id="time"></div>
+    <div id="logList"></div>
+</div>
+
+<div id="write" class="screen">
+    <h2>기록하기</h2>
+    <textarea id="text"></textarea>
+    <div id="aiSuggestion" class="suggestion"></div>
+    <br>
+    <button onclick="saveLog()">저장</button>
+</div>
+
+<div id="stats" class="screen">
+    <h2>통계</h2>
+    <div id="statsBox"></div>
+</div>
+
+<div id="calendar" class="screen">
+    <h2 id="calendarTitle"></h2>
+    <button onclick="changeMonth(-1)">◀</button>
+    <button onclick="changeMonth(1)">▶</button>
+    <div class="calendar" id="calendarBox"></div>
+    <div id="dayLogs"></div>
+</div>
+
+<div id="profile" class="screen">
+    <h2>프로필</h2>
+</div>
+
+<div id="moodModal" class="modal">
+    <div class="modal-content">
+        <h3>오늘 기분은?</h3>
+        <div class="mood-grid">
+            <button onclick="selectMood('😀')">😀</button>
+            <button onclick="selectMood('🙂')">🙂</button>
+            <button onclick="selectMood('😐')">😐</button>
+            <button onclick="selectMood('😢')">😢</button>
+            <button onclick="selectMood('😡')">😡</button>
+            <button onclick="selectMood('😴')">😴</button>
+        </div>
+    </div>
+</div>
+
+<div class="nav">
+    <button onclick="go('home')">🏠</button>
+    <button onclick="go('stats')">📊</button>
+    <div class="nav-center" onclick="openMood()">+</div>
+    <button onclick="go('calendar')">📅</button>
+    <button onclick="go('profile')">👤</button>
+</div>
+
+<script>
+let logs = [];
+let selectedMood = "";
+let currentDate = new Date();
+
+let saved = localStorage.getItem('logs');
+if(saved) logs = JSON.parse(saved);
+
+function go(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if(id==='stats') renderStats();
+    if(id==='calendar') renderCalendar();
+}
+
+setInterval(()=>{
+    document.getElementById('time').innerText =
+        new Date().toLocaleTimeString();
+},1000);
+
+function openMood(){ document.getElementById('moodModal').classList.add('show'); }
+function closeMood(){ document.getElementById('moodModal').classList.remove('show'); }
+
+document.getElementById('moodModal').addEventListener('click',e=>{
+    if(e.target.id==='moodModal') closeMood();
+});
+
+function selectMood(m){
+    selectedMood = m;
+    closeMood();
+    go('write');
+}
+
+function analyzeEmotion(text){
+    if(text.includes('좋')||text.includes('행복')) return '😀';
+    if(text.includes('짜증')||text.includes('힘들')) return '😢';
+    return '😐';
+}
+
+function suggestTags(text){
+    let t=[];
+    if(text.includes('공부')) t.push('#공부');
+    if(text.includes('운동')) t.push('#운동');
+    if(text.includes('먹')) t.push('#음식');
+    return t;
+}
+
+document.getElementById('text').addEventListener('input',function(){
+    let e = analyzeEmotion(this.value);
+    let t = suggestTags(this.value);
+    document.getElementById('aiSuggestion').innerHTML =
+        `AI 감정: ${e} | 태그: ${t.join(' ')}`;
+});
+
+function saveLog(){
+    let text = document.getElementById('text').value;
+    if(!text) return alert("내용 입력하세요");
+
+    logs.push({
+        mood: selectedMood || analyzeEmotion(text),
+        text:text,
+        date:new Date()
+    });
+
+    localStorage.setItem('logs', JSON.stringify(logs));
+    document.getElementById('text').value="";
+    go('home');
+    renderLogs();
+}
+
+function renderLogs(){
+    let list = document.getElementById('logList');
+    list.innerHTML="";
+    logs.forEach((l,index)=>{
+        let div = document.createElement('div');
+        div.className='card';
+        div.innerHTML=`
+        ${l.mood} ${l.text}
+        <button class="delete-btn" onclick="deleteLog(${index})">🗑</button>
+        `;
+        list.appendChild(div);
+    });
+}
+
+function deleteLog(index){
+    if(!confirm("삭제하시겠습니까?")) return;
+    logs.splice(index,1);
+    localStorage.setItem('logs', JSON.stringify(logs));
+    renderLogs();
+}
+
+/* 달력 */
+function renderCalendar(){
+    let box = document.getElementById('calendarBox');
+    let title = document.getElementById('calendarTitle');
+    let dayLogs = document.getElementById('dayLogs');
+
+    box.innerHTML="";
+    dayLogs.innerHTML="";
+
+    let year = currentDate.getFullYear();
+    let month = currentDate.getMonth();
+
+    title.innerText = `${year}년 ${month+1}월`;
+
+    let week = ['일','월','화','수','목','금','토'];
+    week.forEach(w=>{
+        let d = document.createElement('div');
+        d.innerText = w;
+        d.className = 'weekday';
+        box.appendChild(d);
+    });
+
+    let firstDay = new Date(year, month, 1).getDay();
+    let lastDate = new Date(year, month+1, 0).getDate();
+    let prevLast = new Date(year, month, 0).getDate();
+
+    for(let i=firstDay-1;i>=0;i--){
+        let d=document.createElement('div');
+        d.className='day other-month';
+        d.innerText=prevLast-i;
+        box.appendChild(d);
+    }
+
+    for(let i=1;i<=lastDate;i++){
+        let d=document.createElement('div');
+        d.className='day';
+        d.innerText=i;
+
+        let today=new Date();
+        if(today.getFullYear()===year &&
+           today.getMonth()===month &&
+           today.getDate()===i){
+            d.classList.add('today');
+        }
+
+        let hasLog = logs.some(l=>{
+            let date=new Date(l.date);
+            return date.getFullYear()===year &&
+                   date.getMonth()===month &&
+                   date.getDate()===i;
+        });
+        if(hasLog) d.classList.add('has-log');
+
+        d.onclick=()=>showDayLogs(year,month,i);
+        box.appendChild(d);
+    }
+}
+
+/* ✅ 통계 (텍스트 기반으로 변경) */
+function renderStats(){
+    let counts = {};
+    let tagCounts = {};
+
+    logs.forEach(l=>{
+        counts[l.mood] = (counts[l.mood] || 0) + 1;
+
+        let tags = l.text.match(/#\w+/g);
+        if(tags){
+            tags.forEach(t=>{
+                tagCounts[t] = (tagCounts[t] || 0) + 1;
+            });
+        }
+    });
+
+    let moodSorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+    let tagSorted = Object.entries(tagCounts).sort((a,b)=>b[1]-a[1]);
+
+    let html = "<h3>📌 감정 통계</h3>";
+    moodSorted.forEach(([m,c],i)=>{
+        html += `${i+1}. ${m} : ${c}회<br>`;
+    });
+
+    html += "<br><h3>📌 태그 통계</h3>";
+    tagSorted.forEach(([t,c],i)=>{
+        html += `${i+1}. ${t} : ${c}회<br>`;
+    });
+
+    document.getElementById('statsBox').innerHTML = html || "데이터 없음";
+}
+
+renderLogs();
+</script>
+
+</body>
+</html>
