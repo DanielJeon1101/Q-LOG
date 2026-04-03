@@ -211,4 +211,58 @@ textarea::placeholder {
   color: var(--text-sub);
 }
 
+/* 홈 화면 레이아웃 */
+#home {
+    padding: 0;
+    min-height: 200vh; /* 스크롤 공간을 더 넉넉히 확보 */
+    position: relative;
+}
+
+/* 로고와 시간을 담는 헤더 컨테이너 */
+.home-header {
+    width: 100%; /* fixed 사용 시 너비 명시 필수 */
+    max-width: 480px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: fixed; /* sticky 대신 fixed로 변경하여 상단에 완전 고정 */
+    top: 0;
+    left: 0;
+    /* 스크롤 속도 체감을 위해 transition 시간을 0.5s에서 0.8s로 변경 */
+    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); 
+    background: #f8f8f8;
+    z-index: 1000; /* 어떤 요소보다도 위에 있도록 설정 */
+}
+
+/* 상단으로 고정되었을 때 (스크롤 시 적용) */
+.home-header.sticky {
+    height: 80px; /* 높이를 기록 리스트 여백(80px)과 일치시킴 */
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+/* 글자 크기 변화도 0.8s에 맞춰 천천히 변함 */
+.home-header.sticky .title { font-size: 20px; margin-top: 10px; }
+.home-header.sticky .time { font-size: 24px; margin: 5px 0; }
+.home-header.sticky .date-display { font-size: 14px; }
+
+/* 로그 리스트 영역 */
+#logList {
+    /* 초기 상태: 헤더가 100vh이므로 그 아래에서 시작 */
+    margin-top: 100vh; 
+    padding: 20px 0 100px;
+    /* 헤더가 작아지는 속도와 동일하게 0.8s 설정 */
+    transition: margin-top 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    z-index: 5;
+}
+
+/* 헤더가 sticky일 때 리스트 위치 고정 */
+.header-is-sticky #logList {
+    margin-top: 80px; /* 헤더 높이가 80px이므로 딱 붙도록 설정 */
+}
+
+.date-display { font-size: 18px; color: #666; }
+
 /*수정사항 추가*/
