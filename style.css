@@ -210,3 +210,5 @@ textarea:focus {
 textarea::placeholder {
   color: var(--text-sub);
 }
+
+/*수정사항 추가*/
