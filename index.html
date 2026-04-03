@@ -255,11 +255,12 @@ window.addEventListener('scroll', () => {
     const appContainer = document.querySelector('.app-container');
     const scrollValue = window.scrollY;
 
-    // 50px 이상 스크롤 시 '상단 고정 모드'로 전환
-    if (scrollValue > 50) {
+    // 스크롤이 조금이라도 내려가면(10px 기준) sticky 모드 활성화
+    if (scrollValue > 10) {
         header.classList.add('sticky');
         appContainer.classList.add('header-is-sticky');
     } else {
+        // 맨 위로 올라왔을 때만 다시 중앙으로 확장
         header.classList.remove('sticky');
         appContainer.classList.remove('header-is-sticky');
     }
