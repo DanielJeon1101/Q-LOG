@@ -211,58 +211,52 @@ textarea::placeholder {
   color: var(--text-sub);
 }
 
-/* 홈 화면 레이아웃 */
+/* 홈 화면 레이아웃 수정 */
 #home {
-    padding: 0;
-    min-height: 200vh; /* 스크롤 공간을 더 넉넉히 확보 */
-    position: relative;
+    padding: 0; /* 패딩 제거로 중앙 배치 계산 용이하게 함 */
+    min-height: 150vh; /* 스크롤 공간 확보 */
 }
+
 
 /* 로고와 시간을 담는 헤더 컨테이너 */
 .home-header {
-    width: 100%; /* fixed 사용 시 너비 명시 필수 */
-    max-width: 480px;
-    min-height: 100vh;
+    height: 100vh; /* 처음엔 화면 꽉 차게 */
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: center; /* 중앙 정렬 */
     align-items: center;
-    position: fixed; /* sticky 대신 fixed로 변경하여 상단에 완전 고정 */
-    top: 0;
-    left: 0;
-    /* 스크롤 속도 체감을 위해 transition 시간을 0.5s에서 0.8s로 변경 */
-    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); 
+    position: sticky; /* 스크롤 시 상단 고정 */
+    top: 150;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); /* 부드러운 전환 효과 */
     background: #f8f8f8;
-    z-index: 1000; /* 어떤 요소보다도 위에 있도록 설정 */
+    z-index: 10;
 }
 
-/* 상단으로 고정되었을 때 (스크롤 시 적용) */
+/* 상단으로 고정되었을 때 적용될 클래스 */
 .home-header.sticky {
-    height: 80px; /* 높이를 기록 리스트 여백(80px)과 일치시킴 */
+    height: 150px; /* 높이 축소 */
     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
 
-/* 글자 크기 변화도 0.8s에 맞춰 천천히 변함 */
 .home-header.sticky .title { font-size: 20px; margin-top: 10px; }
 .home-header.sticky .time { font-size: 24px; margin: 5px 0; }
 .home-header.sticky .date-display { font-size: 14px; }
 
 /* 로그 리스트 영역 */
 #logList {
-    /* 초기 상태: 헤더가 100vh이므로 그 아래에서 시작 */
-    margin-top: 100vh; 
+    margin-top: 100vh; /* 처음엔 헤더가 100vh이므로 그만큼 띄움 */
     padding: 20px 0 100px;
-    /* 헤더가 작아지는 속도와 동일하게 0.8s 설정 */
-    transition: margin-top 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: margin-top 0.5s ease-in-out; /* 헤더 변화 속도와 맞춤 */
     position: relative;
     z-index: 5;
 }
 
-/* 헤더가 sticky일 때 리스트 위치 고정 */
+/* 스크롤 시 리스트가 상단 헤더 바로 아래 붙도록 수정 */
 .header-is-sticky #logList {
-    margin-top: 80px; /* 헤더 높이가 80px이므로 딱 붙도록 설정 */
+    margin-top: 80px; /* 고정된 헤더 높이(80px)만큼만 여백 */
 }
 
+/* 날짜 표시용 추가 스타일 */
 .date-display { font-size: 18px; color: #666; }
 
 /*수정사항 추가*/
