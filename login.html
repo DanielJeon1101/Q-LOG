@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Q-Log 로그인</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+  :root {
+    --primary-blue: #3182f6;
+    --primary-blue-hover: #1b64da;
+    --bg-color: #f2f4f6;
+    --app-bg: #ffffff;
+    --text-main: #191f28;
+    --text-sub: #8b95a1;
+    --border-color: #e5e8eb;
+    --error-color: #f03e3e;
+    --success-color: #20c997;
+    --border-radius-lg: 24px;
+    --border-radius-md: 16px;
+    --border-radius-sm: 8px;
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+    --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Pretendard', sans-serif;
+  }
+
+  body {
+    background-color: var(--bg-color);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    color: var(--text-main);
+  }
+
+  .app-container {
+    width: 100%;
+    max-width: 480px;
+    min-height: 100vh;
+    margin: 0 auto;
+    background: var(--app-bg);
+    position: relative;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── 상단 장식 배경 ── */
+  .hero-bg {
+    position: relative;
+    height: 240px;
+    background: linear-gradient(145deg, #e8f1ff 0%, #f0f7ff 60%, #fafcff 100%);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .hero-bg::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 260px; height: 260px;
+    background: radial-gradient(circle, rgba(49,130,246,0.15) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .hero-bg::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; left: -30px;
+    width: 180px; height: 180px;
+    background: radial-gradient(circle, rgba(49,130,246,0.08) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .hero-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 12px;
+    animation: heroIn 0.6s ease-out both;
+  }
+  @keyframes heroIn {
+    from { opacity: 0; transform: translateY(-16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .logo-icon {
+    width: 72px; height: 72px;
+    background: var(--primary-blue);
+    border-radius: 22px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 24px rgba(49, 130, 246, 0.35);
+    animation: logoFloat 3s ease-in-out infinite;
+  }
+  @keyframes logoFloat {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-5px); }
+  }
+  .logo-icon svg {
+    width: 36px; height: 36px; fill: white;
+  }
+  .logo-name {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    color: var(--text-main);
+  }
+  .logo-sub {
+    font-size: 14px;
+    color: var(--text-sub);
+    letter-spacing: 0.2px;
+  }
+
+  /* ── 폼 영역 ── */
+  .form-area {
+    flex: 1;
+    padding: 32px 24px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    animation: formIn 0.5s ease-out 0.15s both;
+  }
+  @keyframes formIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── 탭 (로그인 / 회원가입) ── */
+  .tab-bar {
+    display: flex;
+    background: var(--bg-color);
+    border-radius: var(--border-radius-sm);
+    padding: 4px;
+    margin-bottom: 28px;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-sub);
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  }
+  .tab-btn.active {
+    background: white;
+    color: var(--text-main);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* ── 입력 필드 그룹 ── */
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .field-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .field-icon {
+    position: absolute;
+    left: 16px;
+    color: var(--text-sub);
+    font-size: 16px;
+    pointer-events: none;
+    transition: color 0.2s;
+  }
+  .field-wrap input:focus + .field-icon,
+  .field-wrap:focus-within .field-icon {
+    color: var(--primary-blue);
+  }
+  input[type="text"],
+  input[type="email"],
+  input[type="password"] {
+    width: 100%;
+    height: 52px;
+    padding: 0 48px 0 44px;
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    font-size: 15px;
+    color: var(--text-main);
+    background: white;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+  input::placeholder { color: var(--text-sub); }
+  input:focus {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(49,130,246,0.12);
+  }
+  input.error-field {
+    border-color: var(--error-color);
+    box-shadow: 0 0 0 3px rgba(240,62,62,0.10);
+  }
+
+  .toggle-pw {
+    position: absolute;
+    right: 14px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-sub);
+    font-size: 16px;
+    padding: 4px;
+    transition: color 0.2s;
+  }
+  .toggle-pw:hover { color: var(--text-main); }
+
+  /* ── 유효성 메시지 ── */
+  .field-message {
+    font-size: 12px;
+    margin-top: -6px;
+    padding-left: 4px;
+    min-height: 16px;
+    transition: color 0.2s;
+  }
+  .field-message.error { color: var(--error-color); }
+  .field-message.ok    { color: var(--success-color); }
+
+  /* ── 기억하기 & 비번찾기 ── */
+  .options-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  .remember-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-sub);
+    cursor: pointer;
+    user-select: none;
+  }
+  .remember-label input[type="checkbox"] {
+    width: 16px; height: 16px;
+    padding: 0;
+    accent-color: var(--primary-blue);
+    border: none;
+    box-shadow: none;
+  }
+  .forgot-link {
+    font-size: 13px;
+    color: var(--primary-blue);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .forgot-link:hover { text-decoration: underline; }
+
+  /* ── 메인 버튼 ── */
+  .btn-primary {
+    width: 100%;
+    height: 52px;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    background: var(--primary-blue);
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: -0.3px;
+    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    box-shadow: 0 4px 12px rgba(49,130,246,0.28);
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-primary:hover {
+    background: var(--primary-blue-hover);
+    box-shadow: 0 6px 16px rgba(49,130,246,0.35);
+  }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary:disabled {
+    background: #b0c4e8;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+  /* 로딩 스피너 */
+  .spinner {
+    display: none;
+    width: 20px; height: 20px;
+    border: 2.5px solid rgba(255,255,255,0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── 구분선 ── */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 24px 0;
+    color: var(--text-sub);
+    font-size: 12px;
+  }
+  .divider::before,
+  .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-color);
+  }
+
+  /* ── 소셜 버튼 ── */
+  .social-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+  .btn-social {
+    flex: 1;
+    height: 48px;
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    background: white;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-main);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .btn-social:hover { background: var(--bg-color); }
+  .btn-social img { width: 18px; height: 18px; }
+
+  /* ── 전환 링크 ── */
+  .switch-text {
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-sub);
+  }
+  .switch-text button {
+    background: none;
+    border: none;
+    color: var(--primary-blue);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    margin-left: 4px;
+    font-family: inherit;
+  }
+  .switch-text button:hover { text-decoration: underline; }
+
+  /* ── 토스트 알림 ── */
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--text-main);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s, transform 0.3s;
+    white-space: nowrap;
+    z-index: 9999;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ── 회원가입 추가 필드 애니메이션 ── */
+  .extra-fields {
+    overflow: hidden;
+    transition: max-height 0.35s ease, opacity 0.3s ease;
+    max-height: 0;
+    opacity: 0;
+  }
+  .extra-fields.open {
+    max-height: 200px;
+    opacity: 1;
+  }
+
+  /* ── 비밀번호 강도 ── */
+  .pw-strength-bar {
+    height: 3px;
+    border-radius: 2px;
+    background: var(--border-color);
+    margin-top: -8px;
+    margin-bottom: 4px;
+    overflow: hidden;
+  }
+  .pw-strength-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s, background 0.3s;
+    width: 0%;
+  }
+</style>
+</head>
+
+<body>
+<div class="app-container">
+
+  <!-- 상단 히어로 -->
+  <div class="hero-bg">
+    <div class="hero-content">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
+        </svg>
+      </div>
+      <div class="logo-name">Q-Log</div>
+      <div class="logo-sub">나의 이야기를 기록하세요</div>
+    </div>
+  </div>
+
+  <!-- 폼 영역 -->
+  <div class="form-area">
+
+    <!-- 탭 -->
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tabLogin" onclick="switchTab('login')">로그인</button>
+      <button class="tab-btn"        id="tabSignup" onclick="switchTab('signup')">회원가입</button>
+    </div>
+
+    <!-- 공통: 이메일 -->
+    <div class="field-group">
+      <div class="extra-fields" id="extraName">
+        <div class="field-wrap" style="margin-bottom:12px;">
+          <input type="text" id="nameInput" placeholder="이름">
+          <i class="fa-solid fa-user field-icon"></i>
+        </div>
+        <div class="field-message" id="nameMsg"></div>
+      </div>
+
+      <div class="field-wrap">
+        <input type="email" id="emailInput" placeholder="이메일" oninput="validateEmail()">
+        <i class="fa-solid fa-envelope field-icon"></i>
+      </div>
+      <div class="field-message" id="emailMsg"></div>
+
+      <div class="field-wrap">
+        <input type="password" id="pwInput" placeholder="비밀번호" oninput="validatePw()">
+        <i class="fa-solid fa-lock field-icon"></i>
+        <button class="toggle-pw" onclick="togglePw('pwInput', this)" tabindex="-1">
+          <i class="fa-solid fa-eye-slash"></i>
+        </button>
+      </div>
+      <div class="pw-strength-bar" id="pwStrengthBar" style="display:none;">
+        <div class="pw-strength-fill" id="pwStrengthFill"></div>
+      </div>
+      <div class="field-message" id="pwMsg"></div>
+
+      <div class="extra-fields" id="extraPwConfirm">
+        <div class="field-wrap">
+          <input type="password" id="pwConfirmInput" placeholder="비밀번호 확인" oninput="validatePwConfirm()">
+          <i class="fa-solid fa-lock field-icon"></i>
+          <button class="toggle-pw" onclick="togglePw('pwConfirmInput', this)" tabindex="-1">
+            <i class="fa-solid fa-eye-slash"></i>
+          </button>
+        </div>
+        <div class="field-message" id="pwConfirmMsg"></div>
+      </div>
+    </div>
+
+    <!-- 로그인 옵션 -->
+    <div class="options-row" id="loginOptions">
+      <label class="remember-label">
+        <input type="checkbox" id="rememberMe"> 로그인 상태 유지
+      </label>
+      <a href="#" class="forgot-link" onclick="handleForgot(event)">비밀번호 찾기</a>
+    </div>
+
+    <!-- 메인 버튼 -->
+    <button class="btn-primary" id="mainBtn" onclick="handleSubmit()">
+      <span id="btnLabel">로그인</span>
+      <div class="spinner" id="btnSpinner"></div>
+    </button>
+
+    <!-- 구분선 -->
+    <div class="divider">또는</div>
+
+    <!-- 소셜 로그인 -->
+    <div class="social-row">
+      <button class="btn-social" onclick="socialLogin('카카오')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#3C1E1E">
+          <path d="M12 3C7.03 3 3 6.36 3 10.5c0 2.68 1.73 5.03 4.33 6.43L6.2 21l4.52-2.86c.42.06.85.09 1.28.09 4.97 0 9-3.36 9-7.5S16.97 3 12 3z"/>
+        </svg>
+        카카오
+      </button>
+      <button class="btn-social" onclick="socialLogin('구글')">
+        <svg width="18" height="18" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+        구글
+      </button>
+    </div>
+
+    <!-- 탭 전환 텍스트 -->
+    <div class="switch-text" id="switchText">
+      아직 계정이 없으신가요?
+      <button onclick="switchTab('signup')">회원가입</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- 토스트 -->
+<div class="toast" id="toast"></div>
+
+<script>
+  /* ── 상태 ── */
+  let mode = 'login';          // 'login' | 'signup'
+  let isLoading = false;
+
+  /* ── 탭 전환 ── */
+  function switchTab(m) {
+    mode = m;
+    const isSignup = m === 'signup';
+
+    document.getElementById('tabLogin').classList.toggle('active', !isSignup);
+    document.getElementById('tabSignup').classList.toggle('active', isSignup);
+
+    document.getElementById('extraName').classList.toggle('open', isSignup);
+    document.getElementById('extraPwConfirm').classList.toggle('open', isSignup);
+    document.getElementById('loginOptions').style.display = isSignup ? 'none' : 'flex';
+
+    document.getElementById('btnLabel').textContent = isSignup ? '회원가입' : '로그인';
+    document.getElementById('switchText').innerHTML = isSignup
+      ? '이미 계정이 있으신가요? <button onclick="switchTab(\'login\')">로그인</button>'
+      : '아직 계정이 없으신가요? <button onclick="switchTab(\'signup\')">회원가입</button>';
+
+    // 강도 바 토글
+    document.getElementById('pwStrengthBar').style.display = isSignup ? 'block' : 'none';
+
+    clearMessages();
+  }
+
+  /* ── 유효성 검사 ── */
+  function validateEmail() {
+    const val = document.getElementById('emailInput').value;
+    const msg = document.getElementById('emailMsg');
+    const input = document.getElementById('emailInput');
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!val) { msg.textContent = ''; input.classList.remove('error-field'); return false; }
+    if (!re.test(val)) {
+      msg.textContent = '올바른 이메일 형식을 입력하세요.';
+      msg.className = 'field-message error';
+      input.classList.add('error-field');
+      return false;
+    }
+    msg.textContent = '사용 가능한 이메일입니다.';
+    msg.className = 'field-message ok';
+    input.classList.remove('error-field');
+    return true;
+  }
+
+  function validatePw() {
+    const val = document.getElementById('pwInput').value;
+    const msg = document.getElementById('pwMsg');
+    const input = document.getElementById('pwInput');
+    const fill = document.getElementById('pwStrengthFill');
+
+    if (mode === 'signup') {
+      let score = 0;
+      if (val.length >= 8) score++;
+      if (/[A-Z]/.test(val)) score++;
+      if (/[0-9]/.test(val)) score++;
+      if (/[^A-Za-z0-9]/.test(val)) score++;
+
+      const colors = ['#f03e3e', '#f76707', '#f59f00', '#20c997'];
+      const labels = ['매우 약함', '약함', '보통', '강함'];
+      fill.style.width = (score * 25) + '%';
+      fill.style.background = colors[score - 1] || '#e5e8eb';
+
+      if (val && score < 4) {
+        msg.textContent = `비밀번호 강도: ${labels[score - 1] || ''}`;
+        msg.className = 'field-message error';
+        input.classList.add('error-field');
+        return false;
+      }
+    }
+
+    if (!val || val.length < 8) {
+      msg.textContent = val ? '8자 이상 입력하세요.' : '';
+      msg.className = 'field-message error';
+      input.classList.toggle('error-field', !!val);
+      return false;
+    }
+    msg.textContent = '';
+    input.classList.remove('error-field');
+    return true;
+  }
+
+  function validatePwConfirm() {
+    const pw  = document.getElementById('pwInput').value;
+    const pw2 = document.getElementById('pwConfirmInput').value;
+    const msg = document.getElementById('pwConfirmMsg');
+    const input = document.getElementById('pwConfirmInput');
+
+    if (!pw2) { msg.textContent = ''; input.classList.remove('error-field'); return false; }
+    if (pw !== pw2) {
+      msg.textContent = '비밀번호가 일치하지 않습니다.';
+      msg.className = 'field-message error';
+      input.classList.add('error-field');
+      return false;
+    }
+    msg.textContent = '비밀번호가 일치합니다.';
+    msg.className = 'field-message ok';
+    input.classList.remove('error-field');
+    return true;
+  }
+
+  function clearMessages() {
+    ['emailMsg','pwMsg','pwConfirmMsg','nameMsg'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = '';
+    });
+    ['emailInput','pwInput','pwConfirmInput','nameInput'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('error-field');
+    });
+    document.getElementById('pwStrengthFill').style.width = '0%';
+  }
+
+  /* ── 비밀번호 표시 토글 ── */
+  function togglePw(inputId, btn) {
+    const input = document.getElementById(inputId);
+    const icon  = btn.querySelector('i');
+    const isHidden = input.type === 'password';
+    input.type = isHidden ? 'text' : 'password';
+    icon.className = isHidden ? 'fa-solid fa-eye' : 'fa-solid fa-eye-slash';
+  }
+
+  /* ── 제출 처리 ── */
+  function handleSubmit() {
+    if (isLoading) return;
+
+    const email = document.getElementById('emailInput').value.trim();
+    const pw    = document.getElementById('pwInput').value;
+
+    // 기본 공란 체크
+    if (!email || !pw) {
+      showToast('이메일과 비밀번호를 입력하세요.');
+      return;
+    }
+
+    if (mode === 'login') {
+      doLogin(email, pw);
+    } else {
+      const name  = document.getElementById('nameInput').value.trim();
+      const pw2   = document.getElementById('pwConfirmInput').value;
+      if (!name)    { showToast('이름을 입력하세요.'); return; }
+      if (!validateEmail()) return;
+      if (!validatePw())    return;
+      if (!validatePwConfirm()) return;
+      doSignup(name, email, pw);
+    }
+  }
+
+  function doLogin(email, pw) {
+    setLoading(true);
+
+    setTimeout(() => {
+      setLoading(false);
+
+      // 로컬스토리지 유저 확인
+      const users = JSON.parse(localStorage.getItem('qlog_users') || '[]');
+      const found = users.find(u => u.email === email && u.pw === pw);
+
+      if (found) {
+        localStorage.setItem('qlog_current_user', JSON.stringify(found));
+        if (document.getElementById('rememberMe').checked) {
+          localStorage.setItem('qlog_remember', email);
+        }
+        showToast('로그인 성공! 환영합니다 ' + found.name + '님 🎉');
+        setTimeout(() => { window.location.href = 'index.html'; }, 1200);
+      } else {
+        showToast('이메일 또는 비밀번호가 올바르지 않습니다.');
+      }
+    }, 1200);
+  }
+
+  function doSignup(name, email, pw) {
+    setLoading(true);
+
+    setTimeout(() => {
+      setLoading(false);
+
+      const users = JSON.parse(localStorage.getItem('qlog_users') || '[]');
+      if (users.find(u => u.email === email)) {
+        showToast('이미 사용 중인 이메일입니다.');
+        return;
+      }
+      users.push({ name, email, pw });
+      localStorage.setItem('qlog_users', JSON.stringify(users));
+      showToast('회원가입 완료! 로그인 해주세요 ✅');
+      setTimeout(() => switchTab('login'), 1000);
+    }, 1200);
+  }
+
+  function socialLogin(provider) {
+    showToast(`${provider} 로그인은 준비 중입니다.`);
+  }
+
+  function handleForgot(e) {
+    e.preventDefault();
+    showToast('비밀번호 재설정 기능은 준비 중입니다.');
+  }
+
+  /* ── 로딩 UI ── */
+  function setLoading(on) {
+    isLoading = on;
+    const btn     = document.getElementById('mainBtn');
+    const label   = document.getElementById('btnLabel');
+    const spinner = document.getElementById('btnSpinner');
+    btn.disabled      = on;
+    label.style.display  = on ? 'none' : 'inline';
+    spinner.style.display = on ? 'block' : 'none';
+  }
+
+  /* ── 토스트 ── */
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2600);
+  }
+
+  /* ── 초기화: 기억된 이메일 ── */
+  window.onload = () => {
+    const rem = localStorage.getItem('qlog_remember');
+    if (rem) {
+      document.getElementById('emailInput').value = rem;
+      document.getElementById('rememberMe').checked = true;
+    }
+  };
+
+  /* ── 엔터키 제출 ── */
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleSubmit();
+  });
+</script>
+</body>
+</html>
