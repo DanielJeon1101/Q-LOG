@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">    
 <title>Q-Log</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <link rel="stylesheet" href="style.css">
@@ -14,10 +14,57 @@ body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f8f8f8; }
 .active { display: block; }
 .title { font-size: 28px; font-weight: bold; margin-top: 30px; }
 .time { font-size: 40px; margin: 10px 0 30px; }
+<<<<<<< HEAD
 .card { background: white; margin: 10px auto; padding: 15px; border-radius: 15px; width: 90%; box-shadow: 0 4px 10px rgba(0,0,0,0.05); text-align: left; }
 textarea { width: 90%; height: 120px; padding: 10px; border-radius: 10px; border: 1px solid #ddd; }
 button { margin-top: 10px; padding: 10px 20px; border-radius: 10px; border: none; background: black; color: white; cursor: pointer; }
 .nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: white; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
+=======
+
+.card {
+    background: white;
+    margin: 10px auto;
+    padding: 15px;
+    border-radius: 15px;
+    width: 90%;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    text-align: left;
+}
+
+textarea {
+    width: 90%;
+    height: 120px;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+}
+
+button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: none;
+    background: black;
+    color: white;
+    cursor: pointer;
+}
+
+/* 날짜 표시용 추가 스타일 */
+.date-display { font-size: 18px; color: #666; }
+
+/* 네비 */
+.nav {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    height: 70px;
+    background: white;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+}
+>>>>>>> 00fbfe4dd005f90301b6351899eea7aca7b6dabd
 .nav button { background: none; color: black; font-size: 20px; }
 .nav-center { position: absolute; top: -25px; width: 65px; height: 65px; background: black; color: white; font-size: 32px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; }
 </style>
@@ -126,6 +173,131 @@ function renderLogs(){
     });
 }
 
+<<<<<<< HEAD
+=======
+function deleteLog(index){
+    if(!confirm("삭제하시겠습니까?")) return;
+    logs.splice(index,1);
+    localStorage.setItem('logs', JSON.stringify(logs));
+    renderLogs();
+}
+
+/* 달력 */
+function renderCalendar(){
+    let box = document.getElementById('calendarBox');
+    let title = document.getElementById('calendarTitle');
+    let dayLogs = document.getElementById('dayLogs');
+
+    box.innerHTML="";
+    dayLogs.innerHTML="";
+
+    let year = currentDate.getFullYear();
+    let month = currentDate.getMonth();
+
+    title.innerText = `${year}년 ${month+1}월`;
+
+    let week = ['일','월','화','수','목','금','토'];
+    week.forEach(w=>{
+        let d = document.createElement('div');
+        d.innerText = w;
+        d.className = 'weekday';
+        box.appendChild(d);
+    });
+
+    let firstDay = new Date(year, month, 1).getDay();
+    let lastDate = new Date(year, month+1, 0).getDate();
+    let prevLast = new Date(year, month, 0).getDate();
+
+    for(let i=firstDay-1;i>=0;i--){
+        let d=document.createElement('div');
+        d.className='day other-month';
+        d.innerText=prevLast-i;
+        box.appendChild(d);
+    }
+
+    for(let i=1;i<=lastDate;i++){
+        let d=document.createElement('div');
+        d.className='day';
+        d.innerText=i;
+
+        let today=new Date();
+        if(today.getFullYear()===year &&
+           today.getMonth()===month &&
+           today.getDate()===i){
+            d.classList.add('today');
+        }
+
+        let hasLog = logs.some(l=>{
+            let date=new Date(l.date);
+            return date.getFullYear()===year &&
+                   date.getMonth()===month &&
+                   date.getDate()===i;
+        });
+        if(hasLog) d.classList.add('has-log');
+
+        d.onclick=()=>showDayLogs(year,month,i);
+        box.appendChild(d);
+    }
+}
+// 날짜 및 시간 업데이트 함수 수정
+function updateTime() {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+    document.getElementById('date').innerText = dateStr;
+    document.getElementById('time').innerText = now.toLocaleTimeString();
+}
+setInterval(updateTime, 1000);
+updateTime();
+
+// 스크롤 감지 이벤트
+window.addEventListener('scroll', () => {
+    const header = document.getElementById('homeHeader');
+    const appContainer = document.querySelector('.app-container');
+    const scrollValue = window.scrollY;
+
+    // 50px 이상 스크롤 시 '상단 고정 모드'로 전환
+    if (scrollValue > 50) {
+        header.classList.add('sticky');
+        appContainer.classList.add('header-is-sticky');
+    } else {
+        header.classList.remove('sticky');
+        appContainer.classList.remove('header-is-sticky');
+    }
+});
+
+/* ✅ 통계 (텍스트 기반으로 변경) */
+function renderStats(){
+    let counts = {};
+    let tagCounts = {};
+
+    logs.forEach(l=>{
+        counts[l.mood] = (counts[l.mood] || 0) + 1;
+
+        let tags = l.text.match(/#\w+/g);
+        if(tags){
+            tags.forEach(t=>{
+                tagCounts[t] = (tagCounts[t] || 0) + 1;
+            });
+        }
+    });
+
+    let moodSorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+    let tagSorted = Object.entries(tagCounts).sort((a,b)=>b[1]-a[1]);
+
+    let html = "<h3>📌 감정 통계</h3>";
+    moodSorted.forEach(([m,c],i)=>{
+        html += `${i+1}. ${m} : ${c}회<br>`;
+    });
+
+    html += "<br><h3>📌 태그 통계</h3>";
+    tagSorted.forEach(([t,c],i)=>{
+        html += `${i+1}. ${t} : ${c}회<br>`;
+    });
+
+    document.getElementById('statsBox').innerHTML = html || "데이터 없음";
+}
+
+>>>>>>> 00fbfe4dd005f90301b6351899eea7aca7b6dabd
 renderLogs();
 </script>
 
