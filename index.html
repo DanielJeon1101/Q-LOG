@@ -55,35 +55,44 @@ button {
     min-height: 150vh; /* 스크롤 공간 확보 */
 }
 
-/* 로고와 시간을 담는 헤더 컨테이너 */
+/* 홈 헤더 기본 설정 */
 .home-header {
-    height: 100vh; /* 처음엔 화면 꽉 차게 */
+    height: 100vh;
     display: flex;
     flex-direction: column;
-    justify-content: center; /* 중앙 정렬 */
+    justify-content: center;
     align-items: center;
-    position: sticky; /* 스크롤 시 상단 고정 */
+    position: fixed; /* sticky 대신 fixed로 변경하여 더 안정적인 고정 제공 */
     top: 0;
-    transition: all 0.5s ease; /* 부드러운 전환 효과 */
+    width: 100%;
+    transition: all 0.4s ease-in-out;
     background: #f8f8f8;
-    z-index: 10;
+    z-index: 100;
 }
 
-/* 상단으로 고정되었을 때 적용될 클래스 */
+/* 상단 고정 시 (스크롤 되었을 때) */
 .home-header.sticky {
-    height: 100px; /* 높이 축소 */
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    height: 80px; /* 고정될 헤더의 높이 */
+    border-bottom: 1px solid #eee;
 }
 
-.home-header.sticky .title { font-size: 20px; margin-top: 10px; }
-.home-header.sticky .time { font-size: 24px; margin: 5px 0; }
-.home-header.sticky .date-display { font-size: 14px; }
+.home-header.sticky .title { font-size: 18px; margin-top: 5px; }
+.home-header.sticky .time { font-size: 20px; margin: 2px 0; }
+.home-header.sticky .date-display { font-size: 12px; }
 
 /* 로그 리스트 영역 */
 #logList {
-    padding: 20px 0 100px; /* 상단 헤더 공간 및 하단 네비 공간 확보 */
-    position: relative;
-    z-index: 5;
+    margin-top: 100vh; /* 초기에는 헤더가 100vh이므로 그만큼 띄워줌 */
+    padding: 20px;
+    transition: margin-top 0.4s ease-in-out;
+    background: #f8f8f8;
+    min-height: 100vh;
+    padding-bottom: 100px; /* 네비게이션 바 공간 */
+}
+
+/* 헤더가 고정되었을 때 리스트의 위치 조정 */
+.header-is-sticky #logList {
+    margin-top: 80px; /* sticky 헤더 높이(80px)만큼만 여백 유지 */
 }
 
 /* 날짜 표시용 추가 스타일 */
@@ -420,13 +429,16 @@ updateTime();
 // 스크롤 감지 이벤트
 window.addEventListener('scroll', () => {
     const header = document.getElementById('homeHeader');
+    const appContainer = document.querySelector('.app-container');
     const scrollValue = window.scrollY;
 
-    // 스크롤이 50px 이상 내려가면 sticky 클래스 추가 (상단 고정 모드)
     if (scrollValue > 50) {
         header.classList.add('sticky');
+        // 리스트의 margin-top을 조절하기 위해 부모 요소에 클래스 추가
+        appContainer.classList.add('header-is-sticky');
     } else {
         header.classList.remove('sticky');
+        appContainer.classList.remove('header-is-sticky');
     }
 });
 
