@@ -20,6 +20,7 @@ body {
 .active { display: block; }
 
 .title { font-size: 28px; font-weight: bold; margin-top: 30px; }
+<<<<<<< HEAD
 .time { font-size: 40px; margin: 10px 0 30px; }
 
 .card {
@@ -102,6 +103,13 @@ button {
     align-items: center;
     box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
 }
+=======
+.time { font-size: 40px; margin: 10px 0 5px; }
+.card { background: white; margin: 10px auto; padding: 15px; border-radius: 15px; width: 90%; box-shadow: 0 4px 10px rgba(0,0,0,0.05); text-align: left; }
+textarea { width: 90%; height: 120px; padding: 10px; border-radius: 10px; border: 1px solid #ddd; }
+button { margin-top: 10px; padding: 10px 20px; border-radius: 10px; border: none; background: black; color: white; cursor: pointer; }
+.nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: white; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
+>>>>>>> 03bea9b62b066ade95046a0a3304e61837142c93
 .nav button { background: none; color: black; font-size: 20px; }
 
 /* 중앙 버튼 */
@@ -205,8 +213,15 @@ button {
 <div class="app-container">
 <div id="home" class="screen active">
     <div class="home-header" id="homeHeader">
+<<<<<<< HEAD
         <div class="title">Q-Log</div>
         <div id="date" class="date-display"></div> <div class="time" id="time"></div>
+=======
+    <div id="scrollSpacer" style="height: 10px;"></div>
+        <div class="title">Q-Log</div>
+        <div class="time" id="time"></div>
+        <div id="date" class="date"></div>
+>>>>>>> 03bea9b62b066ade95046a0a3304e61837142c93
     </div>
     <div id="logList"></div>
 </div>
@@ -329,6 +344,66 @@ function saveLog(){
     go('home');
     renderLogs();
 }
+
+let isAnimating = false;
+
+// 휠 또는 터치 이동 감지
+window.addEventListener('wheel', handleInitialScroll, { passive: false });
+window.addEventListener('touchmove', handleInitialScroll, { passive: false });
+
+function handleInitialScroll(e) {
+    const header = document.getElementById('homeHeader');
+    const appContainer = document.querySelector('.app-container');
+    const body = document.body;
+
+    // 1. 아직 헤더가 접히지 않은 상태에서 아래로 스크롤 시도할 때
+    if (!header.classList.contains('sticky') && !isAnimating) {
+        // 실제 스크롤은 막고 애니메이션만 실행
+        if (e.deltaY > 0 || e.touches) { 
+            e.preventDefault(); 
+            isAnimating = true;
+            
+            header.classList.add('sticky');
+            appContainer.classList.add('header-is-sticky');
+            
+            // 헤더 transition 시간(0.8초)이 지난 후 스크롤 허용
+            setTimeout(() => {
+                body.classList.add('can-scroll');
+                isAnimating = false;
+                // 이벤트 리스너 제거 (이제부터는 일반 스크롤 작동)
+                window.removeEventListener('wheel', handleInitialScroll);
+                window.removeEventListener('touchmove', handleInitialScroll);
+            }, 800); 
+        }
+    }
+}
+
+window.addEventListener('scroll', () => {
+const header = document.getElementById('homeHeader');
+    const appContainer = document.querySelector('.app-container');
+    const scrollValue = window.scrollY;
+
+    // 스크롤이 50px 이상 내려가면 접기
+    if (scrollValue > 50) {
+        header.classList.add('sticky');
+        appContainer.classList.add('header-is-sticky');
+    } 
+    // 스크롤이 다시 위로 올라와 10px 미만이 되면 원상복구
+    else if (scrollValue < 10) {
+        header.classList.remove('sticky');
+        appContainer.classList.remove('header-is-sticky');
+    }
+});
+
+// 날짜 및 시간 업데이트 함수 수정
+function updateTime() {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+    document.getElementById('date').innerText = dateStr;
+    document.getElementById('time').innerText = now.toLocaleTimeString();
+}
+setInterval(updateTime, 1000);
+updateTime();
 
 function renderLogs(){
     let list = document.getElementById('logList');
@@ -467,6 +542,10 @@ function renderStats(){
 }
 
 renderLogs();
+<<<<<<< HEAD
+=======
+
+>>>>>>> 03bea9b62b066ade95046a0a3304e61837142c93
 </script>
 </div>
 </body>

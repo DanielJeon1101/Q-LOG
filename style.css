@@ -211,49 +211,80 @@ textarea::placeholder {
   color: var(--text-sub);
 }
 
-/* 홈 화면 레이아웃 수정 */
-#home {
-    padding: 0; /* 패딩 제거로 중앙 배치 계산 용이하게 함 */
-    min-height: 150vh; /* 스크롤 공간 확보 */
+/* 홈 화면 레이아웃 */
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden; /* 처음엔 스크롤 차단 */
 }
 
+body.can-scroll {
+    overflow-y: auto; /* 리스트 스크롤 활성화 */
+}
+
+#home {
+    width: 100%;
+    min-height: 120vh; /* 초기엔 딱 화면만큼만 */
+    position: relative;
+}
+
+body.can-scroll #home {
+    min-height: 200vh; 
+}
 
 /* 로고와 시간을 담는 헤더 컨테이너 */
 .home-header {
-    height: 100vh; /* 처음엔 화면 꽉 차게 */
+    width: 100%; /* fixed 사용 시 너비 명시 필수 */
+    max-width: 480px;
+    height: 100vh;
     display: flex;
     flex-direction: column;
-    justify-content: center; /* 중앙 정렬 */
+    justify-content: center;
     align-items: center;
-    position: sticky; /* 스크롤 시 상단 고정 */
-    top: 150;
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); /* 부드러운 전환 효과 */
+    position: fixed; /* sticky 대신 fixed로 변경하여 상단에 완전 고정 */
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); 
     background: #f8f8f8;
-    z-index: 10;
+    z-index: 85;
 }
 
 /* 상단으로 고정되었을 때 적용될 클래스 */
 .home-header.sticky {
-    height: 150px; /* 높이 축소 */
+    height: 100px; /* 높이 축소 */
     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
 
-.home-header.sticky .title { font-size: 20px; margin-top: 10px; }
-.home-header.sticky .time { font-size: 24px; margin: 5px 0; }
-.home-header.sticky .date-display { font-size: 14px; }
+.home-header.sticky .title { font-size: 20px; margin-top: 5px; }
+.home-header.sticky .time { font-size: 20px; margin: 5px 0; }
+.home-header.sticky .date-display { font-size: 10px; }
 
-/* 로그 리스트 영역 */
 #logList {
-    margin-top: 100vh; /* 처음엔 헤더가 100vh이므로 그만큼 띄움 */
-    padding: 20px 0 100px;
-    transition: margin-top 0.5s ease-in-out; /* 헤더 변화 속도와 맞춤 */
+    width: 100%;
+    margin-top: calc(100vh - 70px); 
+    padding: 10px 20px 20px 20px;
+    
+    /* 서서히 나타나는 효과를 위한 설정 */
+    opacity: 0; 
+    transform: translateY(20px); /* 살짝 아래에서 위로 올라오는 느낌 */
+    
+    /* 헤더 변화 속도(0.8s)와 동기화 */
+    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
     position: relative;
-    z-index: 5;
+    z-index: 50;
 }
 
-/* 스크롤 시 리스트가 상단 헤더 바로 아래 붙도록 수정 */
+/* 2. 스크롤 시 리스트가 나타나는 상태 */
 .header-is-sticky #logList {
-    margin-top: 80px; /* 고정된 헤더 높이(80px)만큼만 여백 */
+    margin-top: 70px; /* sticky 헤더 높이만큼 여백 */
+    opacity: 1;        /* 투명도 회복 */
+    pointer-events: auto;
+    transform: translateY(0);
+    min-height: calc(100vh - 170px);
 }
 
 /* 날짜 표시용 추가 스타일 */
