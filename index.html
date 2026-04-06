@@ -42,6 +42,8 @@ body {
 
 .screen { display: none; padding: 20px; text-align: center; }
 .active { display: block; }
+/* 홈 화면은 padding 없이 헤더가 상단부터 시작 */
+#home.active { padding-top: 100vh; padding-left: 0; padding-right: 0; padding-bottom: 0; }
 
 .title { font-size: 28px; font-weight: bold; margin-top: 30px; }
 
@@ -228,8 +230,31 @@ button { margin-top: 10px; padding: 10px 20px; border-radius: 10px; border: none
 
 <div id="profile" class="screen">
     <h2>프로필</h2>
-    <button onclick="location.href='login.html'" style="width: 80%; background: #007bff;">로그인</button>
-    <button onclick="location.href='register.html'" style="width: 80%; background: #007bff;">회원가입</button>
+
+    <!-- 로그인 전 -->
+    <div id="beforeLogin">
+        <button onclick="location.href='login.html'" style="width: 80%; background: #007bff;">로그인</button>
+        <button onclick="location.href='register.html'" style="width: 80%; background: #007bff;">회원가입</button>
+    </div>
+
+    <!-- 로그인 후 -->
+    <div id="afterLogin" style="display:none;">
+
+        <div class="card">
+            <h3>나의 작성능력</h3>
+        </div>
+
+        <div class="card">
+            <h3>계정 및 로그인</h3>
+        </div>
+
+        <div class="card">
+            <h3>비밀번호 변경</h3>
+        </div>
+
+        <button onclick="logout()" style="width:80%; background:red;">로그아웃</button>
+
+    </div>
 </div>
 
 <div id="moodModal" class="modal">
@@ -262,12 +287,7 @@ let currentDate = new Date();
 let saved = localStorage.getItem('logs');
 if(saved) logs = JSON.parse(saved);
 
-function go(id){
-    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    if(id==='stats') renderStats();
-    if(id==='calendar') renderCalendar();
-}
+
 
 setInterval(()=>{
     document.getElementById('time').innerText =
@@ -330,15 +350,37 @@ window.onload = function() {
     renderLogs(); // 저장된 리스트 불러오기
 };
 
-window.addEventListener('scroll', () => {
-    const header = document.getElementById('homeHeader');
-    const scrollValue = window.scrollY;
+function syncHeaderAndList() {
+    // window.scroll 이벤트 핸들러로 통합
+}
 
-    // 스크롤이 시작되면 즉시 헤더를 축소 상태로 전환 준비
-    if (scrollValue > 50) {
-        header.classList.add('sticky');
+// ── 핵심 스크롤 로직: window를 컨테이너로 사용 ──
+const MIN_HEADER = 80;   // 축소 후 헤더 고정 높이 (px)
+
+window.addEventListener('scroll', () => {
+    // 홈 화면이 아닐 때는 동작 안 함
+    if (!document.getElementById('home').classList.contains('active')) return;
+
+    const header   = document.getElementById('homeHeader');
+    const scrollY  = window.scrollY;
+    const vh       = window.innerHeight;
+    const collapseAt = vh - MIN_HEADER; // 이 스크롤 지점에서 헤더가 최소 크기에 도달
+
+    if (scrollY >= collapseAt) {
+        // ① 헤더 완전 축소 고정
+        header.style.height = MIN_HEADER + 'px';
+        header.classList.add('minimized');
     } else {
-        header.classList.remove('sticky');
+        // ② 스크롤에 비례해 헤더 높이가 줄어듦 (리스트가 밀고 올라오는 느낌)
+        header.style.height = (vh - scrollY) + 'px';
+        header.classList.remove('minimized');
+
+        // 텍스트 크기도 스크롤 비율에 따라 자연스럽게 축소
+        const ratio = scrollY / collapseAt; // 0(초기) ~ 1(완전 축소)
+        const titleSize  = 28 - ratio * 10;  // 28px → 18px
+        const timeSize   = 40 - ratio * 20;  // 40px → 20px
+        header.querySelector('.title').style.fontSize = titleSize + 'px';
+        header.querySelector('.time').style.fontSize  = timeSize  + 'px';
     }
 });
 
@@ -552,6 +594,33 @@ function renderStats(){
 
 renderLogs();
 
+function checkLogin(){
+    const isLogin = localStorage.getItem('isLogin');
+
+    if(isLogin === 'true'){
+        document.getElementById('beforeLogin').style.display = 'none';
+        document.getElementById('afterLogin').style.display = 'block';
+    } else {
+        document.getElementById('beforeLogin').style.display = 'block';
+        document.getElementById('afterLogin').style.display = 'none';
+    }
+}
+
+function logout(){
+    localStorage.removeItem('isLogin');
+    localStorage.removeItem('userEmail');
+    alert("로그아웃 되었습니다");
+    checkLogin();
+}
+
+/* go 함수 수정도 여기 */
+function go(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+
+    if(id === 'profile') checkLogin(); // ⭐ 여기 중요
+}
+</script>
 </script>
 </div>
 </body>
