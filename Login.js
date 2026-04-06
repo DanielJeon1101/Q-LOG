@@ -1,10 +1,8 @@
-// Login.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-// [주의] Register.js에 있던 본인 프로젝트의 firebaseConfig를 그대로 복사해 넣으십시오.
 const firebaseConfig = {
-  apiKey: "AIzaSyCY...", // 실제 키로 변경
+  apiKey: "AIzaSyCYkG8uZUET5UnW80IHKGxhL7WpNCp7kfQ",
   authDomain: "q-log-f6aed.firebaseapp.com",
   projectId: "q-log-f6aed",
   storageBucket: "q-log-f6aed.firebasestorage.app",
@@ -15,30 +13,32 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// 로그인 버튼 클릭 이벤트
 document.getElementById('mainBtn').addEventListener('click', function(event) {
-  event.preventDefault(); // 기본 폼 제출 동작 방지
+  event.preventDefault();
 
   const email = document.getElementById('email').value;
   const password = document.getElementById('password').value;
 
-  // 빈 칸 검사
-  if(!email || !password) {
-      alert("이메일과 비밀번호를 모두 입력해주세요.");
-      return;
+  if (!email || !password) {
+    alert("이메일과 비밀번호를 모두 입력해주세요.");
+    return;
   }
 
-  // Firebase 로그인 요청
   signInWithEmailAndPassword(auth, email, password)
     .then((userCredential) => {
-      // 로그인 성공
-      const user = userCredential.user;
       alert(`환영합니다! 로그인 성공 🎉`);
-      location.href = 'index.html'; // 메인 화면으로 이동
+      location.href = 'index.html';
     })
     .catch((error) => {
-      // 로그인 실패 (비밀번호 틀림, 없는 계정 등)
       console.error(error);
-      alert('로그인 실패: 이메일 또는 비밀번호를 확인해주세요.');
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        alert('이메일 또는 비밀번호가 올바르지 않습니다.');
+      } else if (error.code === 'auth/invalid-email') {
+        alert('이메일 형식이 올바르지 않습니다.');
+      } else if (error.code === 'auth/too-many-requests') {
+        alert('로그인 시도가 너무 많습니다. 잠시 후 다시 시도해주세요.');
+      } else {
+        alert('로그인 실패: ' + error.message);
+      }
     });
 });
