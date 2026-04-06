@@ -29,6 +29,8 @@ body {
 
 .screen { display: none; padding: 20px; text-align: center; }
 .active { display: block; }
+/* 홈 화면은 padding 없이 헤더가 상단부터 시작 */
+#home.active { padding-top: 100vh; padding-left: 0; padding-right: 0; padding-bottom: 0; }
 
 .title { font-size: 28px; font-weight: bold; margin-top: 30px; }
 
@@ -335,15 +337,37 @@ window.onload = function() {
     renderLogs(); // 저장된 리스트 불러오기
 };
 
-window.addEventListener('scroll', () => {
-    const header = document.getElementById('homeHeader');
-    const scrollValue = window.scrollY;
+function syncHeaderAndList() {
+    // window.scroll 이벤트 핸들러로 통합
+}
 
-    // 스크롤이 시작되면 즉시 헤더를 축소 상태로 전환 준비
-    if (scrollValue > 50) {
-        header.classList.add('sticky');
+// ── 핵심 스크롤 로직: window를 컨테이너로 사용 ──
+const MIN_HEADER = 80;   // 축소 후 헤더 고정 높이 (px)
+
+window.addEventListener('scroll', () => {
+    // 홈 화면이 아닐 때는 동작 안 함
+    if (!document.getElementById('home').classList.contains('active')) return;
+
+    const header   = document.getElementById('homeHeader');
+    const scrollY  = window.scrollY;
+    const vh       = window.innerHeight;
+    const collapseAt = vh - MIN_HEADER; // 이 스크롤 지점에서 헤더가 최소 크기에 도달
+
+    if (scrollY >= collapseAt) {
+        // ① 헤더 완전 축소 고정
+        header.style.height = MIN_HEADER + 'px';
+        header.classList.add('minimized');
     } else {
-        header.classList.remove('sticky');
+        // ② 스크롤에 비례해 헤더 높이가 줄어듦 (리스트가 밀고 올라오는 느낌)
+        header.style.height = (vh - scrollY) + 'px';
+        header.classList.remove('minimized');
+
+        // 텍스트 크기도 스크롤 비율에 따라 자연스럽게 축소
+        const ratio = scrollY / collapseAt; // 0(초기) ~ 1(완전 축소)
+        const titleSize  = 28 - ratio * 10;  // 28px → 18px
+        const timeSize   = 40 - ratio * 20;  // 40px → 20px
+        header.querySelector('.title').style.fontSize = titleSize + 'px';
+        header.querySelector('.time').style.fontSize  = timeSize  + 'px';
     }
 });
 
