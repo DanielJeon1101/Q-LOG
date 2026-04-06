@@ -252,28 +252,27 @@ html, body {
     will-change: transform, font-size; /* 브라우저 최적화 */
 }
 
-/* 2. 스크롤 시 적용될 헤더 상태: 상단으로 압축 */
+/* 스크롤 시 헤더가 작아지는 모습 */
 .home-header.sticky {
     height: 80px;
-    flex-direction: row; /* 가로 배열 */
+    flex-direction: row;
     justify-content: space-around;
     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
 
+/* 리스트: 실제 스크롤에 따라 물리적으로 올라옴 */
+#logList {
+    position: relative;
+    z-index: 20; /* 헤더보다 위 */
+    margin-top: 100vh; /* 시작 지점을 화면 바로 아래로 설정 */
+    background: #f8f8f8; /* 올라올 때 헤더를 가리기 위해 배경색 필요 */
+    padding: 20px 20px 100px 20px;
+    min-height: 100vh;
+}
 /* 헤더 내 텍스트 크기 조절 */
 .home-header.sticky .title { font-size: 20px; }
 .home-header.sticky .date-display { font-size: 12px; }
 
-/* 3. 로그 리스트: 초기에는 헤더 뒤(아래)에 숨어있음 */
-#logList {
-    margin-top: 100vh;
-    opacity: 0;
-    transform: translateY(50px); /* 50px 아래에서 대기 */
-    transition: 
-        margin-top 0.7s cubic-bezier(0.19, 1, 0.22, 1),
-        opacity 0.7s ease,
-        transform 0.7s cubic-bezier(0.19, 1, 0.22, 1);
-}
 
 /* 헤더가 고정되면 리스트가 위로 올라오며 노출 */
 .header-is-sticky #logList {
