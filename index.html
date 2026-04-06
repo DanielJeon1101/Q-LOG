@@ -271,6 +271,29 @@ button { margin-top: 10px; padding: 10px 20px; border-radius: 10px; border: none
     </div>
 </div>
 
+
+<div id="write" class="screen">
+    <h2>기록하기 <span id="writeMoodDisplay"></span></h2>
+
+    <!-- 기분별 랜덤 질문 카드 -->
+    <div style="background:linear-gradient(135deg,#667eea,#764ba2);border-radius:16px;padding:18px;margin-bottom:14px;text-align:left;color:white;">
+        <div style="font-size:11px;font-weight:600;opacity:0.8;margin-bottom:6px;">오늘의 질문 ✨</div>
+        <div id="questionText" style="font-size:16px;font-weight:700;line-height:1.5;"></div>
+    </div>
+
+    <textarea id="text"></textarea>
+
+    <!-- 자동 태그 영역 -->
+    <div id="tagArea" style="display:none;margin-top:10px;background:white;border-radius:12px;padding:11px 14px;box-shadow:0 2px 8px rgba(0,0,0,0.05);text-align:left;">
+        <div style="font-size:11px;color:#999;font-weight:600;margin-bottom:7px;">자동 태그</div>
+        <div id="tagList" style="display:flex;flex-wrap:wrap;gap:7px;"></div>
+    </div>
+
+    <div id="aiSuggestion" class="suggestion"></div>
+    <br>
+    <button onclick="saveLog()">저장</button>
+</div>
+
 <div class="nav">
     <button onclick="go('home')">🏠</button>
     <button onclick="go('stats')">📊</button>
@@ -287,7 +310,74 @@ let currentDate = new Date();
 let saved = localStorage.getItem('logs');
 if(saved) logs = JSON.parse(saved);
 
+// 기분별 랜덤 질문 데이터
+const moodQuestions = {
+    '😀': ['오늘 가장 기분 좋았던 순간은 언제였나요?','오늘 나를 웃게 만든 것은 무엇인가요?','오늘의 행복을 누군가와 나눴나요?','오늘 잘한 일 하나를 적어볼까요?','오늘 감사했던 것 세 가지를 써볼게요!'],
+    '🙂': ['오늘 하루 어떻게 흘러갔나요?','오늘 소소하게 좋았던 일이 있었나요?','오늘 만난 사람 중 기억에 남는 사람이 있나요?','오늘 가장 집중했던 순간은 언제인가요?','오늘 나에게 작은 선물을 줬나요?'],
+    '😐': ['오늘 하루가 특별히 기억나는 게 있나요?','지금 마음이 어떤 상태인가요?','오늘 아쉬웠던 점이 있다면 무엇인가요?','오늘 내가 원하는 것은 무엇이었나요?','지금 이 순간 가장 필요한 게 뭔가요?'],
+    '😢': ['오늘 힘들었던 일을 털어놓아 볼까요?','지금 이 감정이 언제부터 시작됐나요?','오늘 나를 위로해 준 것이 있었나요?','지금 누군가에게 하고 싶은 말이 있나요?','내일의 나에게 한마디 남겨볼까요?'],
+    '😡': ['오늘 화가 났던 순간을 적어볼까요?','그 감정의 원인이 무엇이었나요?','화를 풀기 위해 무엇을 했나요?','지금 이 상황에서 내가 바라는 것은?','나 자신에게 어떤 말을 해주고 싶나요?'],
+    '😴': ['오늘 왜 이렇게 피곤했나요?','오늘 몸과 마음 중 더 피곤한 건 어느 쪽인가요?','오늘 가장 에너지를 많이 쓴 일은 무엇인가요?','내일을 위해 오늘 챙겨야 할 것이 있나요?','지금 가장 하고 싶은 것은 무엇인가요?']
+};
 
+// selectMood — 질문 세팅 + 초기화 추가
+function selectMood(m){
+    selectedMood = m;
+    closeMood();
+    go('write');
+    document.getElementById('writeMoodDisplay').innerText = m;
+    const qList = moodQuestions[m] || moodQuestions['😐'];
+    document.getElementById('questionText').innerText = qList[Math.floor(Math.random()*qList.length)];
+    document.getElementById('text').value = '';
+    document.getElementById('tagArea').style.display = 'none';
+    document.getElementById('tagList').innerHTML = '';
+    document.getElementById('aiSuggestion').innerHTML = '';
+    _lastTagKey = '';
+}
+
+// 태그 키워드 사전
+const tagKeywords = {
+    '#운동': ['헬스','운동','수영','달리기','조깅','자전거','등산','필라테스','요가','pt','트레이닝','축구','농구','배드민턴','테니스','클라이밍','스쿼트','푸시업','런닝','산책'],
+    '#공부': ['공부','수학','영어','독서','책','시험','과제','강의','학원','인강','논문','코딩','프로그래밍','개발','복습','예습','토익','수능','고시'],
+    '#요리': ['밥','파스타','라면','요리','음식','점심','저녁','아침','식사','카페','커피','치킨','피자','초밥','삼겹살','떡볶이','샐러드','빵','케이크','디저트','먹','식당','맛집'],
+    '#여행': ['여행','공항','비행기','호텔','숙소','드라이브','나들이','소풍','관광','투어'],
+    '#쇼핑': ['쇼핑','구매','옷','신발','가방','쇼핑몰','배송','주문'],
+    '#취미': ['게임','영화','드라마','넷플릭스','유튜브','음악','노래','그림','사진','웹툰'],
+    '#일/직장': ['회사','업무','미팅','회의','프로젝트','야근','출근','퇴근','상사','동료','발표'],
+};
+
+// 태그 감지 함수
+function detectTags(text) {
+    const found = new Set();
+    const lower = text.toLowerCase();
+    for (const [tag, kws] of Object.entries(tagKeywords)) {
+        for (const kw of kws) {
+            if (lower.includes(kw)) { found.add(tag); break; }
+        }
+    }
+    return [...found];
+}
+
+// input 이벤트 — 태그 변화 시에만 DOM 업데이트 (깜빡임 방지)
+let _lastTagKey = '';
+document.getElementById('text').addEventListener('input', function(){
+    const tags = detectTags(this.value);
+    const key = tags.join(',');
+    if (key !== _lastTagKey) {
+        _lastTagKey = key;
+        const tagArea = document.getElementById('tagArea');
+        const tagList = document.getElementById('tagList');
+        if (tags.length > 0) {
+            tagList.innerHTML = tags.map(t=>`<span class="tag-chip">${t}</span>`).join('');
+            tagArea.style.display = 'block';
+        } else {
+            tagArea.style.display = 'none';
+            tagList.innerHTML = '';
+        }
+    }
+    let e = analyzeEmotion(this.value);
+    document.getElementById('aiSuggestion').innerHTML = `AI 감정: ${e}`;
+});
 
 setInterval(()=>{
     document.getElementById('time').innerText =
