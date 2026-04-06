@@ -5,73 +5,265 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Q-Log</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
 <link rel="stylesheet" href="style.css">
 
+
 <style>
-/* (기존 스타일 그대로 유지) */
-body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f8f8f8; }
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: #f8f8f8;
+}
+
 .screen { display: none; padding: 20px; text-align: center; }
 .active { display: block; }
+
 .title { font-size: 28px; font-weight: bold; margin-top: 30px; }
 .time { font-size: 40px; margin: 10px 0 30px; }
-.card { background: white; margin: 10px auto; padding: 15px; border-radius: 15px; width: 90%; box-shadow: 0 4px 10px rgba(0,0,0,0.05); text-align: left; }
-textarea { width: 90%; height: 120px; padding: 10px; border-radius: 10px; border: 1px solid #ddd; }
-button { margin-top: 10px; padding: 10px 20px; border-radius: 10px; border: none; background: black; color: white; cursor: pointer; }
-.nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: white; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
+
+.card {
+    background: white;
+    margin: 10px auto;
+    padding: 15px;
+    border-radius: 15px;
+    width: 90%;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    text-align: left;
+}
+
+textarea {
+    width: 90%;
+    height: 120px;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+}
+
+button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: none;
+    background: black;
+    color: white;
+    cursor: pointer;
+}
+
+/* 홈 화면 레이아웃 수정 */
+#home {
+    padding: 0; /* 패딩 제거로 중앙 배치 계산 용이하게 함 */
+    min-height: 150vh; /* 스크롤 공간 확보 */
+}
+
+/* 로고와 시간을 담는 헤더 컨테이너 */
+.home-header {
+    height: 100vh; /* 처음엔 화면 꽉 차게 */
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* 중앙 정렬 */
+    align-items: center;
+    position: sticky; /* 스크롤 시 상단 고정 */
+    top: 0;
+    transition: all 0.5s ease; /* 부드러운 전환 효과 */
+    background: #f8f8f8;
+    z-index: 10;
+}
+
+/* 상단으로 고정되었을 때 적용될 클래스 */
+.home-header.sticky {
+    height: 100px; /* 높이 축소 */
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.home-header.sticky .title { font-size: 20px; margin-top: 10px; }
+.home-header.sticky .time { font-size: 24px; margin: 5px 0; }
+.home-header.sticky .date-display { font-size: 14px; }
+
+/* 로그 리스트 영역 */
+#logList {
+    padding: 20px 0 100px; /* 상단 헤더 공간 및 하단 네비 공간 확보 */
+    position: relative;
+    z-index: 5;
+}
+
+/* 날짜 표시용 추가 스타일 */
+.date-display { font-size: 18px; color: #666; }
+
+/* 네비 */
+.nav {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    height: 70px;
+    background: white;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+}
 .nav button { background: none; color: black; font-size: 20px; }
-.nav-center { position: absolute; top: -25px; width: 65px; height: 65px; background: black; color: white; font-size: 32px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+
+/* 중앙 버튼 */
+.nav-center {
+    position: absolute;
+    top: -25px;
+    width: 65px;
+    height: 65px;
+    background: black;
+    color: white;
+    font-size: 32px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+}
+
+/* 모달 */
+.modal {
+    position: fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background: rgba(30,30,30,0.6);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    opacity:0;
+    pointer-events:none;
+    transition:0.3s;
+}
+.modal.show { opacity:1; pointer-events:auto; }
+
+.modal-content {
+    background:white;
+    padding:25px;
+    border-radius:20px;
+    width:80%;
+    max-width:300px;
+    text-align:center;
+}
+
+.mood-grid {
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:15px;
+}
+.mood-grid button { font-size:28px; background:#f2f2f2; }
+
+/* 달력 */
+.calendar {
+    margin-top:20px;
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:5px;
+}
+.day {
+    padding:10px;
+    background:white;
+    border-radius:8px;
+    cursor:pointer;
+}
+.day:hover { background:#eaeaea; }
+
+.has-log { background:#d0ebff; }
+.today { border:2px solid red; }
+
+.weekday {
+    font-weight:bold;
+    background:#eee;
+}
+
+/* 추가 */
+.other-month { opacity:0.3; }
+
+/* 삭제 버튼 */
+.delete-btn {
+    float:right;
+    background:none;
+    color:#aaa;
+    font-size:14px;
+}
+.delete-btn:hover { color:red; }
+
+#dayLogs { margin-top:20px; }
+
+.suggestion {
+    font-size:14px;
+    margin-top:5px;
+    color:#555;
+}
 </style>
 
-<!-- ✅ Firebase 연결 -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+<script type="module" src="Register.js" defer>
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCYkG8uZUET5UnW80IHKGxhL7WpNCp7kfQ",
-  authDomain: "q-log-f6aed.firebaseapp.com",
-  databaseURL: "https://q-log-f6aed-default-rtdb.firebaseio.com",
-  projectId: "q-log-f6aed",
-  storageBucket: "q-log-f6aed.firebasestorage.app",
-  messagingSenderId: "373152234648",
-  appId: "1:373152234648:web:aa2d94664a5674aca9e4ed"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-// 👉 전역으로 쓰기 위해
-window.db = db;
-window.ref = ref;
-window.push = push;
-window.set = set;
 </script>
-
 </head>
 
 <body>
-
+<div class="app-container">
 <div id="home" class="screen active">
-    <div class="title">Q-Log</div>
-    <div id="time" class="time"></div>
+    <div class="home-header" id="homeHeader">
+        <div class="title">Q-Log</div>
+        <div id="date" class="date-display"></div> <div class="time" id="time"></div>
+    </div>
     <div id="logList"></div>
 </div>
 
 <div id="write" class="screen">
     <h2>기록하기</h2>
     <textarea id="text"></textarea>
+    <div id="aiSuggestion" class="suggestion"></div>
     <br>
     <button onclick="saveLog()">저장</button>
 </div>
 
+<div id="stats" class="screen">
+    <h2>통계</h2>
+    <div id="statsBox"></div>
+</div>
+
+<div id="calendar" class="screen">
+    <h2 id="calendarTitle"></h2>
+    <button onclick="changeMonth(-1)">◀</button>
+    <button onclick="changeMonth(1)">▶</button>
+    <div class="calendar" id="calendarBox"></div>
+    <div id="dayLogs"></div>
+</div>
+
+<div id="profile" class="screen">
+    <h2>프로필</h2>
+    <button onclick="location.href='login.html'" style="width: 80%; background: #007bff;">로그인</button>
+    <button onclick="location.href='register.html'" style="width: 80%; background: #007bff;">회원가입</button>
+</div>
+
+<div id="moodModal" class="modal">
+    <div class="modal-content">
+        <h3>오늘 기분은?</h3>
+        <div class="mood-grid">
+            <button onclick="selectMood('😀')">😀</button>
+            <button onclick="selectMood('🙂')">🙂</button>
+            <button onclick="selectMood('😐')">😐</button>
+            <button onclick="selectMood('😢')">😢</button>
+            <button onclick="selectMood('😡')">😡</button>
+            <button onclick="selectMood('😴')">😴</button>
+        </div>
+    </div>
+</div>
+
 <div class="nav">
     <button onclick="go('home')">🏠</button>
-    <button onclick="go('write')">✍️</button>
+    <button onclick="go('stats')">📊</button>
+    <div class="nav-center" onclick="openMood()">+</div>
+    <button onclick="go('calendar')">📅</button>
+    <button onclick="go('profile')">👤</button>
 </div>
 
 <script>
 let logs = [];
 let selectedMood = "";
+let currentDate = new Date();
 
 let saved = localStorage.getItem('logs');
 if(saved) logs = JSON.parse(saved);
@@ -79,6 +271,8 @@ if(saved) logs = JSON.parse(saved);
 function go(id){
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
+    if(id==='stats') renderStats();
+    if(id==='calendar') renderCalendar();
 }
 
 setInterval(()=>{
@@ -86,30 +280,51 @@ setInterval(()=>{
         new Date().toLocaleTimeString();
 },1000);
 
-// ✅ 🔥 핵심 (Firebase + localStorage 동시 저장)
+function openMood(){ document.getElementById('moodModal').classList.add('show'); }
+function closeMood(){ document.getElementById('moodModal').classList.remove('show'); }
+
+document.getElementById('moodModal').addEventListener('click',e=>{
+    if(e.target.id==='moodModal') closeMood();
+});
+
+function selectMood(m){
+    selectedMood = m;
+    closeMood();
+    go('write');
+}
+
+function analyzeEmotion(text){
+    if(text.includes('좋')||text.includes('행복')) return '😀';
+    if(text.includes('짜증')||text.includes('힘들')) return '😢';
+    return '😐';
+}
+
+function suggestTags(text){
+    let t=[];
+    if(text.includes('공부')) t.push('#공부');
+    if(text.includes('운동')) t.push('#운동');
+    if(text.includes('먹')) t.push('#음식');
+    return t;
+}
+
+document.getElementById('text').addEventListener('input',function(){
+    let e = analyzeEmotion(this.value);
+    let t = suggestTags(this.value);
+    document.getElementById('aiSuggestion').innerHTML =
+        `AI 감정: ${e} | 태그: ${t.join(' ')}`;
+});
+
 function saveLog(){
     let text = document.getElementById('text').value;
     if(!text) return alert("내용 입력하세요");
 
-    const logData = {
-        mood: "🙂",
-        text: text,
-        date: new Date().toISOString()
-    };
-
-    // 기존 저장
     logs.push({
-        ...logData,
-        date: new Date()
+        mood: selectedMood || analyzeEmotion(text),
+        text:text,
+        date:new Date()
     });
+
     localStorage.setItem('logs', JSON.stringify(logs));
-
-    // 🔥 Firebase 저장
-    const diaryRef = window.ref(window.db, "diaries");
-    const newRef = window.push(diaryRef);
-
-    window.set(newRef, logData);
-
     document.getElementById('text').value="";
     go('home');
     renderLogs();
@@ -118,16 +333,141 @@ function saveLog(){
 function renderLogs(){
     let list = document.getElementById('logList');
     list.innerHTML="";
-    logs.forEach(l=>{
+    logs.forEach((l,index)=>{
         let div = document.createElement('div');
         div.className='card';
-        div.innerText = `${l.mood} ${l.text}`;
+        div.innerHTML=`
+        ${l.mood} ${l.text}
+        <button class="delete-btn" onclick="deleteLog(${index})">🗑</button>
+        `;
         list.appendChild(div);
     });
 }
 
+function deleteLog(index){
+    if(!confirm("삭제하시겠습니까?")) return;
+    logs.splice(index,1);
+    localStorage.setItem('logs', JSON.stringify(logs));
+    renderLogs();
+}
+
+/* 달력 */
+function renderCalendar(){
+    let box = document.getElementById('calendarBox');
+    let title = document.getElementById('calendarTitle');
+    let dayLogs = document.getElementById('dayLogs');
+
+    box.innerHTML="";
+    dayLogs.innerHTML="";
+
+    let year = currentDate.getFullYear();
+    let month = currentDate.getMonth();
+
+    title.innerText = `${year}년 ${month+1}월`;
+
+    let week = ['일','월','화','수','목','금','토'];
+    week.forEach(w=>{
+        let d = document.createElement('div');
+        d.innerText = w;
+        d.className = 'weekday';
+        box.appendChild(d);
+    });
+
+    let firstDay = new Date(year, month, 1).getDay();
+    let lastDate = new Date(year, month+1, 0).getDate();
+    let prevLast = new Date(year, month, 0).getDate();
+
+    for(let i=firstDay-1;i>=0;i--){
+        let d=document.createElement('div');
+        d.className='day other-month';
+        d.innerText=prevLast-i;
+        box.appendChild(d);
+    }
+
+    for(let i=1;i<=lastDate;i++){
+        let d=document.createElement('div');
+        d.className='day';
+        d.innerText=i;
+
+        let today=new Date();
+        if(today.getFullYear()===year &&
+           today.getMonth()===month &&
+           today.getDate()===i){
+            d.classList.add('today');
+        }
+
+        let hasLog = logs.some(l=>{
+            let date=new Date(l.date);
+            return date.getFullYear()===year &&
+                   date.getMonth()===month &&
+                   date.getDate()===i;
+        });
+        if(hasLog) d.classList.add('has-log');
+
+        d.onclick=()=>showDayLogs(year,month,i);
+        box.appendChild(d);
+    }
+}
+// 날짜 및 시간 업데이트 함수 수정
+function updateTime() {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+    document.getElementById('date').innerText = dateStr;
+    document.getElementById('time').innerText = now.toLocaleTimeString();
+}
+setInterval(updateTime, 1000);
+updateTime();
+
+// 스크롤 감지 이벤트
+window.addEventListener('scroll', () => {
+    const header = document.getElementById('homeHeader');
+    const appContainer = document.querySelector('.app-container');
+    const scrollValue = window.scrollY;
+
+    if (scrollValue > 50) {
+        header.classList.add('sticky');
+        // 리스트의 margin-top을 조절하기 위해 부모 요소에 클래스 추가
+        appContainer.classList.add('header-is-sticky');
+    } else {
+        header.classList.remove('sticky');
+        appContainer.classList.remove('header-is-sticky');
+    }
+});
+
+/* ✅ 통계 (텍스트 기반으로 변경) */
+function renderStats(){
+    let counts = {};
+    let tagCounts = {};
+
+    logs.forEach(l=>{
+        counts[l.mood] = (counts[l.mood] || 0) + 1;
+
+        let tags = l.text.match(/#\w+/g);
+        if(tags){
+            tags.forEach(t=>{
+                tagCounts[t] = (tagCounts[t] || 0) + 1;
+            });
+        }
+    });
+
+    let moodSorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+    let tagSorted = Object.entries(tagCounts).sort((a,b)=>b[1]-a[1]);
+
+    let html = "<h3>📌 감정 통계</h3>";
+    moodSorted.forEach(([m,c],i)=>{
+        html += `${i+1}. ${m} : ${c}회<br>`;
+    });
+
+    html += "<br><h3>📌 태그 통계</h3>";
+    tagSorted.forEach(([t,c],i)=>{
+        html += `${i+1}. ${t} : ${c}회<br>`;
+    });
+
+    document.getElementById('statsBox').innerHTML = html || "데이터 없음";
+}
+
 renderLogs();
 </script>
-
+</div>
 </body>
 </html>
