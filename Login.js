@@ -25,10 +25,16 @@ document.getElementById('mainBtn').addEventListener('click', function(event) {
   }
 
   signInWithEmailAndPassword(auth, email, password)
-    .then((userCredential) => {
-      alert(`환영합니다! 로그인 성공 🎉`);
-      location.href = 'index.html';
-    })
+   .then((userCredential) => {
+    const user = userCredential.user;
+
+    // ✅ 로그인 상태 저장
+    localStorage.setItem('isLogin', 'true');
+    localStorage.setItem('userEmail', user.email);
+
+    alert(`환영합니다! 로그인 성공 🎉`);
+    location.href = 'index.html';
+  })
     .catch((error) => {
       console.error(error);
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {

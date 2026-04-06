@@ -215,8 +215,31 @@ button { margin-top: 10px; padding: 10px 20px; border-radius: 10px; border: none
 
 <div id="profile" class="screen">
     <h2>프로필</h2>
-    <button onclick="location.href='login.html'" style="width: 80%; background: #007bff;">로그인</button>
-    <button onclick="location.href='register.html'" style="width: 80%; background: #007bff;">회원가입</button>
+
+    <!-- 로그인 전 -->
+    <div id="beforeLogin">
+        <button onclick="location.href='login.html'" style="width: 80%; background: #007bff;">로그인</button>
+        <button onclick="location.href='register.html'" style="width: 80%; background: #007bff;">회원가입</button>
+    </div>
+
+    <!-- 로그인 후 -->
+    <div id="afterLogin" style="display:none;">
+
+        <div class="card">
+            <h3>나의 작성능력</h3>
+        </div>
+
+        <div class="card">
+            <h3>계정 및 로그인</h3>
+        </div>
+
+        <div class="card">
+            <h3>비밀번호 변경</h3>
+        </div>
+
+        <button onclick="logout()" style="width:80%; background:red;">로그아웃</button>
+
+    </div>
 </div>
 
 <div id="moodModal" class="modal">
@@ -249,12 +272,7 @@ let currentDate = new Date();
 let saved = localStorage.getItem('logs');
 if(saved) logs = JSON.parse(saved);
 
-function go(id){
-    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    if(id==='stats') renderStats();
-    if(id==='calendar') renderCalendar();
-}
+
 
 setInterval(()=>{
     document.getElementById('time').innerText =
@@ -539,6 +557,33 @@ function renderStats(){
 
 renderLogs();
 
+function checkLogin(){
+    const isLogin = localStorage.getItem('isLogin');
+
+    if(isLogin === 'true'){
+        document.getElementById('beforeLogin').style.display = 'none';
+        document.getElementById('afterLogin').style.display = 'block';
+    } else {
+        document.getElementById('beforeLogin').style.display = 'block';
+        document.getElementById('afterLogin').style.display = 'none';
+    }
+}
+
+function logout(){
+    localStorage.removeItem('isLogin');
+    localStorage.removeItem('userEmail');
+    alert("로그아웃 되었습니다");
+    checkLogin();
+}
+
+/* go 함수 수정도 여기 */
+function go(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+
+    if(id === 'profile') checkLogin(); // ⭐ 여기 중요
+}
+</script>
 </script>
 </div>
 </body>
