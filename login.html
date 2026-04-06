@@ -1,594 +1,92 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Q-Log 로그인</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
-<!-- ✅ Google Identity Services SDK -->
-<script src="https://accounts.google.com/gsi/client" async defer></script>
-
-<style>
-  :root {
-    --primary-blue: #3182f6;
-    --primary-blue-hover: #1b64da;
-    --bg-color: #f2f4f6;
-    --app-bg: #ffffff;
-    --text-main: #191f28;
-    --text-sub: #8b95a1;
-    --border-color: #e5e8eb;
-    --error-color: #f03e3e;
-    --success-color: #20c997;
-    --border-radius-lg: 24px;
-    --border-radius-md: 16px;
-    --border-radius-sm: 8px;
-    --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
-    --shadow-lg: 0 10px 20px rgba(0,0,0,0.08);
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; }
-  body {
-    background-color: var(--bg-color);
-    display: flex; justify-content: center; align-items: flex-start;
-    min-height: 100vh; color: var(--text-main);
-  }
-  .app-container {
-    width: 100%; max-width: 480px; min-height: 100vh; margin: 0 auto;
-    background: var(--app-bg); position: relative;
-    box-shadow: 0 0 20px rgba(0,0,0,0.1);
-    display: flex; flex-direction: column; overflow: hidden;
-  }
-
-  /* 히어로 */
-  .hero-bg {
-    position: relative; height: 220px;
-    background: linear-gradient(145deg, #e8f1ff 0%, #f0f7ff 60%, #fafcff 100%);
-    overflow: hidden; flex-shrink: 0;
-  }
-  .hero-bg::before {
-    content: ''; position: absolute; top: -60px; right: -60px;
-    width: 260px; height: 260px;
-    background: radial-gradient(circle, rgba(49,130,246,0.15) 0%, transparent 70%);
-    border-radius: 50%;
-  }
-  .hero-bg::after {
-    content: ''; position: absolute; bottom: -40px; left: -30px;
-    width: 180px; height: 180px;
-    background: radial-gradient(circle, rgba(49,130,246,0.08) 0%, transparent 70%);
-    border-radius: 50%;
-  }
-  .hero-content {
-    position: relative; z-index: 1;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    height: 100%; gap: 10px;
-    animation: heroIn 0.6s ease-out both;
-  }
-  @keyframes heroIn { from{opacity:0;transform:translateY(-16px)} to{opacity:1;transform:translateY(0)} }
-  .logo-icon {
-    width: 68px; height: 68px; background: var(--primary-blue);
-    border-radius: 22px; display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 8px 24px rgba(49,130,246,0.35);
-    animation: logoFloat 3s ease-in-out infinite;
-  }
-  @keyframes logoFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
-  .logo-icon svg { width: 34px; height: 34px; fill: white; }
-  .logo-name { font-size: 26px; font-weight: 800; letter-spacing: -1px; color: var(--text-main); }
-  .logo-sub  { font-size: 13px; color: var(--text-sub); }
-
-  /* 폼 */
-  .form-area {
-    flex: 1; padding: 28px 24px 40px;
-    display: flex; flex-direction: column;
-    animation: formIn 0.5s ease-out 0.15s both;
-  }
-  @keyframes formIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
-
-  /* 필드 */
-  .field-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
-  .field-wrap  { position: relative; display: flex; align-items: center; }
-  .field-icon  {
-    position: absolute; left: 16px; color: var(--text-sub);
-    font-size: 16px; pointer-events: none; transition: color 0.2s;
-  }
-  .field-wrap:focus-within .field-icon { color: var(--primary-blue); }
-  input[type="text"], input[type="email"], input[type="password"] {
-    width: 100%; height: 52px; padding: 0 48px 0 44px;
-    border: 1.5px solid var(--border-color);
-    border-radius: var(--border-radius-sm);
-    font-size: 15px; color: var(--text-main); background: white;
-    transition: border-color 0.2s, box-shadow 0.2s; outline: none;
-  }
-  input::placeholder { color: var(--text-sub); }
-  input:focus { border-color: var(--primary-blue); box-shadow: 0 0 0 3px rgba(49,130,246,0.12); }
-  input.error-field { border-color: var(--error-color); box-shadow: 0 0 0 3px rgba(240,62,62,0.10); }
-  .toggle-pw {
-    position: absolute; right: 14px; background: none; border: none;
-    cursor: pointer; color: var(--text-sub); font-size: 16px; padding: 4px;
-    transition: color 0.2s;
-  }
-  .toggle-pw:hover { color: var(--text-main); }
-  .field-message {
-    font-size: 12px; margin-top: -4px; padding-left: 4px;
-    min-height: 16px; transition: color 0.2s;
-  }
-  .field-message.error { color: var(--error-color); }
-  .field-message.ok    { color: var(--success-color); }
-
-  /* 옵션 행 */
-  .options-row {
-    display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
-  }
-  .remember-label {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 13px; color: var(--text-sub); cursor: pointer; user-select: none;
-  }
-  .remember-label input[type="checkbox"] {
-    width: 16px; height: 16px; padding: 0;
-    accent-color: var(--primary-blue); border: none; box-shadow: none;
-  }
-  .forgot-link {
-    font-size: 13px; color: var(--primary-blue); text-decoration: none; font-weight: 500;
-  }
-  .forgot-link:hover { text-decoration: underline; }
-
-  /* 메인 버튼 */
-  .btn-primary {
-    width: 100%; height: 52px; border: none;
-    border-radius: var(--border-radius-sm);
-    background: var(--primary-blue); color: white;
-    font-size: 16px; font-weight: 700; cursor: pointer; letter-spacing: -0.3px;
-    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
-    box-shadow: 0 4px 12px rgba(49,130,246,0.28);
-    display: flex; align-items: center; justify-content: center;
-  }
-  .btn-primary:hover { background: var(--primary-blue-hover); box-shadow: 0 6px 16px rgba(49,130,246,0.35); }
-  .btn-primary:active { transform: scale(0.98); }
-  .btn-primary:disabled { background: #b0c4e8; box-shadow: none; cursor: not-allowed; }
-  .spinner {
-    width: 20px; height: 20px;
-    border: 2.5px solid rgba(255,255,255,0.4); border-top-color: white;
-    border-radius: 50%; animation: spin 0.7s linear infinite; display: none;
-  }
-  @keyframes spin { to{transform:rotate(360deg)} }
-
-  /* 구분선 */
-  .divider {
-    display: flex; align-items: center; gap: 12px; margin: 20px 0;
-    color: var(--text-sub); font-size: 12px;
-  }
-  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border-color); }
-
-  /* 소셜 버튼 */
-  .social-col { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
-
-  /* ✅ Google 공식 버튼 (Brand Guidelines 준수) */
-  .btn-google {
-    width: 100%; height: 52px;
-    border: 1.5px solid var(--border-color);
-    border-radius: var(--border-radius-sm);
-    background: white; font-size: 15px; font-weight: 600;
-    color: var(--text-main); cursor: pointer;
-    display: flex; align-items: center; justify-content: center; gap: 12px;
-    transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
-    box-shadow: var(--shadow-sm); font-family: inherit;
-  }
-  .btn-google:hover { background: #f8f9fa; border-color: #c5c7ca; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-  .btn-google:active { transform: scale(0.99); }
-  .btn-google.loading { pointer-events: none; opacity: 0.7; }
-
-  .btn-kakao {
-    width: 100%; height: 52px; border: none;
-    border-radius: var(--border-radius-sm);
-    background: #FEE500; font-size: 15px; font-weight: 600; color: #3C1E1E;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center; gap: 12px;
-    transition: background 0.2s, box-shadow 0.2s;
-    box-shadow: var(--shadow-sm); font-family: inherit;
-  }
-  .btn-kakao:hover { background: #f5dc00; }
-
-  /* ✅ 구글 로그인 성공 상태 배지 */
-  .google-status {
-    display: none; align-items: center; gap: 10px;
-    background: #e8f5e9; border: 1px solid #a5d6a7;
-    border-radius: var(--border-radius-sm);
-    padding: 12px 16px; margin-bottom: 16px;
-    animation: fadeInUp 0.3s ease;
-  }
-  .google-status.show { display: flex; }
-  @keyframes fadeInUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-  .google-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
-  .google-info { flex: 1; }
-  .g-name  { font-size: 14px; font-weight: 700; color: var(--text-main); }
-  .g-email { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
-  .google-badge { font-size: 11px; color: var(--success-color); font-weight: 600; }
-  .google-disconnect {
-    background: none; border: none; color: var(--text-sub);
-    font-size: 12px; cursor: pointer; font-family: inherit; padding: 4px;
-  }
-  .google-disconnect:hover { color: var(--error-color); }
-
-  .switch-text { text-align: center; font-size: 13px; color: var(--text-sub); }
-  .switch-text a {
-    color: var(--primary-blue);
-    font-weight: 600; text-decoration: none; font-family: inherit;
-  }
-  .switch-text a:hover { text-decoration: underline; }
-
-  .toast {
-    position: fixed; bottom: 32px; left: 50%;
-    transform: translateX(-50%) translateY(20px);
-    background: var(--text-main); color: white;
-    padding: 12px 20px; border-radius: 12px;
-    font-size: 14px; font-weight: 500;
-    opacity: 0; pointer-events: none;
-    transition: opacity 0.3s, transform 0.3s;
-    white-space: nowrap; z-index: 9999;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
-  }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-  /* Google One Tap 숨기기 */
-  #g_id_onload { display: none; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Q-Log | 로그인</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: #f8f8f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .login-container {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            width: 85%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+        h2 { text-align: center; margin-bottom: 25px; }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; font-size: 14px; margin-bottom: 5px; color: #555; }
+        input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            box-sizing: border-box;
+            font-size: 15px;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            border-radius: 10px;
+            border: none;
+            background: black;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #888;
+            text-decoration: none;
+        }
+        .register-link {
+            display: block;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #555;
+            text-decoration: none;
+        }
+        .register-link span {
+            color: black;
+            font-weight: bold;
+        }
+    </style>
 </head>
-
 <body>
-<div class="app-container">
 
-  <div class="hero-bg">
-    <div class="hero-content">
-      <div class="logo-icon">
-        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
-      </div>
-      <div class="logo-name">Q-Log</div>
-      <div class="logo-sub">나의 이야기를 기록하세요</div>
+<div class="login-container">
+    <h2>로그인</h2>
+
+    <div class="input-group">
+        <label>이메일</label>
+        <input type="email" placeholder="example@mail.com" id="email">
     </div>
-  </div>
-
-  <div class="form-area">
-
-    <!-- ✅ 구글 계정 연결 상태 -->
-    <div class="google-status" id="googleStatus">
-      <img class="google-avatar" id="googleAvatar" src="" alt="프로필">
-      <div class="google-info">
-        <div class="g-name"  id="googleName"></div>
-        <div class="g-email" id="googleEmail"></div>
-        <div class="google-badge">✓ Google 계정 연결됨</div>
-      </div>
-      <button class="google-disconnect" onclick="disconnectGoogle()" title="연결 해제">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
+    <div class="input-group">
+        <label>비밀번호</label>
+        <input type="password" placeholder="비밀번호를 입력하세요" id="password">
     </div>
 
-    <div class="field-group">
-      <div class="field-wrap">
-        <input type="email" id="emailInput" placeholder="이메일" oninput="validateEmail()">
-        <i class="fa-solid fa-envelope field-icon"></i>
-      </div>
-      <div class="field-message" id="emailMsg"></div>
+    <button type="button" id="mainBtn">로그인</button>
 
-      <div class="field-wrap">
-        <input type="password" id="pwInput" placeholder="비밀번호" oninput="validatePw()">
-        <i class="fa-solid fa-lock field-icon"></i>
-        <button class="toggle-pw" onclick="togglePw('pwInput',this)" tabindex="-1">
-          <i class="fa-solid fa-eye-slash"></i>
-        </button>
-      </div>
-      <div class="field-message" id="pwMsg"></div>
-    </div>
-
-    <div class="options-row" id="loginOptions">
-      <label class="remember-label">
-        <input type="checkbox" id="rememberMe"> 로그인 상태 유지
-      </label>
-      <!-- ✅ 비밀번호 찾기 → forgot-password.html -->
-      <a href="forgot-password.html" class="forgot-link">비밀번호 찾기</a>
-    </div>
-
-    <button class="btn-primary" id="mainBtn" onclick="handleSubmit()">
-      <span id="btnLabel">로그인</span>
-      <div class="spinner" id="btnSpinner"></div>
-    </button>
-
-    <div class="divider">간편 로그인</div>
-
-    <div class="social-col">
-      <!-- ✅ Google 공식 로그인 버튼 -->
-      <button class="btn-google" id="googleBtn" onclick="startGoogleLogin()">
-        <svg width="20" height="20" viewBox="0 0 48 48">
-          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-        </svg>
-        Google로 계속하기
-      </button>
-
-      <button class="btn-kakao" onclick="kakaoLogin()">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="#3C1E1E">
-          <path d="M12 3C7.03 3 3 6.36 3 10.5c0 2.68 1.73 5.03 4.33 6.43L6.2 21l4.52-2.86c.42.06.85.09 1.28.09 4.97 0 9-3.36 9-7.5S16.97 3 12 3z"/>
-        </svg>
-        카카오로 계속하기
-      </button>
-    </div>
-
-    <!-- ✅ 회원가입 링크 (다른 개발자가 별도 구현 중인 signup.html로 연결) -->
-    <div class="switch-text">
-      아직 계정이 없으신가요?
-      <a href="signup.html">회원가입</a>
-    </div>
-
-  </div>
+    <a href="register.html" class="register-link">계정이 없으신가요? <span>회원가입</span></a>
+    <a href="index.html" class="back-link">돌아가기</a>
 </div>
 
-<!-- Google One Tap 숨김 트리거 -->
-<div id="g_id_onload"
-     data-client_id="YOUR_GOOGLE_CLIENT_ID"
-     data-callback="onGoogleCredential"
-     data-auto_prompt="false">
-</div>
-
-<div class="toast" id="toast"></div>
-
-<script>
-/* ══════════════════════════════════════════════════════════
-   ✅ Google OAuth 2.0 설정 가이드
-   ──────────────────────────────────────────────────────────
-   1. https://console.cloud.google.com 접속
-   2. 새 프로젝트 생성 (또는 기존 프로젝트 선택)
-   3. 좌측 메뉴 → API 및 서비스 → 사용자 인증 정보
-   4. [+ 사용자 인증 정보 만들기] → OAuth 2.0 클라이언트 ID
-   5. 애플리케이션 유형: 웹 애플리케이션
-   6. 승인된 JavaScript 출처 추가:
-      - 로컬 테스트: http://localhost:3000 또는 http://127.0.0.1:5500
-      - 배포 시: https://yourdomain.com
-   7. 생성된 클라이언트 ID를 아래에 붙여넣기
-   ══════════════════════════════════════════════════════════ */
-const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID';
-// ↑↑↑ 실제 Client ID로 교체 필요 ↑↑↑
-
-let isLoading = false;
-
-/* ── Google Identity Services 초기화 ── */
-function initGoogleClient() {
-  if (typeof google === 'undefined' || !google.accounts) {
-    setTimeout(initGoogleClient, 400);
-    return;
-  }
-  google.accounts.id.initialize({
-    client_id: GOOGLE_CLIENT_ID,
-    callback: onGoogleCredential,
-    auto_select: false,
-    cancel_on_tap_outside: true,
-    ux_mode: 'popup',
-  });
-}
-
-/* ── 구글 버튼 클릭 ── */
-function startGoogleLogin() {
-  if (GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID') {
-    showToast('⚙️ Google Client ID를 설정하면 실제 로그인이 가능합니다.');
-    setTimeout(() => demoGoogleLogin(), 800);
-    return;
-  }
-
-  document.getElementById('googleBtn').classList.add('loading');
-
-  if (typeof google === 'undefined') {
-    document.getElementById('googleBtn').classList.remove('loading');
-    showToast('Google SDK 로드 중입니다. 잠시 후 다시 시도하세요.');
-    return;
-  }
-
-  google.accounts.id.prompt((notification) => {
-    document.getElementById('googleBtn').classList.remove('loading');
-    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-      const tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: GOOGLE_CLIENT_ID,
-        scope: 'openid email profile',
-        callback: onGoogleToken,
-        error_callback: (err) => showToast('구글 로그인이 취소되었습니다.'),
-      });
-      tokenClient.requestAccessToken({ prompt: 'select_account' });
-    }
-  });
-}
-
-/* ── One Tap: ID Token 콜백 ── */
-function onGoogleCredential(response) {
-  try {
-    const payload = JSON.parse(atob(response.credential.split('.')[1]));
-    processGoogleUser({
-      name:    payload.name,
-      email:   payload.email,
-      picture: payload.picture,
-      sub:     payload.sub,
-    });
-  } catch(e) {
-    showToast('구글 로그인 처리 중 오류가 발생했습니다.');
-  }
-}
-
-/* ── OAuth Popup fallback ── */
-function onGoogleToken(tokenResponse) {
-  if (tokenResponse.error) {
-    showToast('구글 로그인에 실패했습니다: ' + tokenResponse.error);
-    return;
-  }
-  fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-    headers: { Authorization: 'Bearer ' + tokenResponse.access_token }
-  })
-  .then(r => { if (!r.ok) throw new Error('userinfo 실패'); return r.json(); })
-  .then(info => processGoogleUser({
-    name:    info.name,
-    email:   info.email,
-    picture: info.picture,
-    sub:     info.sub,
-  }))
-  .catch(() => showToast('구글 사용자 정보를 불러오지 못했습니다.'));
-}
-
-/* ── 구글 사용자 처리 ── */
-function processGoogleUser(info) {
-  document.getElementById('googleAvatar').src       = info.picture || 'https://lh3.googleusercontent.com/a/default-user=s96-c';
-  document.getElementById('googleName').textContent  = info.name;
-  document.getElementById('googleEmail').textContent = info.email;
-  document.getElementById('googleStatus').classList.add('show');
-
-  const users = JSON.parse(localStorage.getItem('qlog_users') || '[]');
-  let user = users.find(u => u.email === info.email);
-
-  if (!user) {
-    user = { name: info.name, email: info.email, pw: null, googleSub: info.sub, picture: info.picture, provider: 'google' };
-    users.push(user);
-    localStorage.setItem('qlog_users', JSON.stringify(users));
-    showToast('✅ ' + info.name + '님 계정이 생성되었습니다. 환영합니다!');
-  } else {
-    user.googleSub = info.sub;
-    user.picture   = info.picture;
-    user.provider  = 'google';
-    localStorage.setItem('qlog_users', JSON.stringify(users));
-    showToast('🎉 ' + info.name + '님, 반갑습니다!');
-  }
-
-  localStorage.setItem('qlog_current_user', JSON.stringify(user));
-  setTimeout(() => { window.location.href = 'index.html'; }, 1300);
-}
-
-/* ── 구글 연결 해제 ── */
-function disconnectGoogle() {
-  document.getElementById('googleStatus').classList.remove('show');
-  if (typeof google !== 'undefined') google.accounts.id.disableAutoSelect();
-  showToast('구글 계정 연결이 해제되었습니다.');
-}
-
-/* ── 개발 데모 ── */
-function demoGoogleLogin() {
-  processGoogleUser({
-    name:    '데모 사용자',
-    email:   'demo.google@qlog.app',
-    picture: '',
-    sub:     'demo_sub_000',
-  });
-}
-
-/* ── 카카오 ── */
-function kakaoLogin() {
-  showToast('카카오 로그인은 준비 중입니다.');
-}
-
-/* ══════════════════════════════════════════════════════════
-   로그인 전용 로직 (회원가입 기능 완전 제거)
-   ══════════════════════════════════════════════════════════ */
-function validateEmail() {
-  const val = document.getElementById('emailInput').value;
-  const msg = document.getElementById('emailMsg');
-  const el  = document.getElementById('emailInput');
-  const re  = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!val) { msg.textContent=''; el.classList.remove('error-field'); return false; }
-  if (!re.test(val)) {
-    msg.textContent='올바른 이메일 형식을 입력하세요.'; msg.className='field-message error';
-    el.classList.add('error-field'); return false;
-  }
-  msg.textContent=''; el.classList.remove('error-field'); return true;
-}
-
-function validatePw() {
-  const val = document.getElementById('pwInput').value;
-  const msg = document.getElementById('pwMsg');
-  const el  = document.getElementById('pwInput');
-  if (!val || val.length < 8) {
-    msg.textContent = val ? '8자 이상 입력하세요.' : '';
-    msg.className = 'field-message error';
-    el.classList.toggle('error-field', !!val);
-    return false;
-  }
-  msg.textContent = '';
-  el.classList.remove('error-field');
-  return true;
-}
-
-function clearMessages() {
-  ['emailMsg','pwMsg'].forEach(id => {
-    const e = document.getElementById(id);
-    if (e) e.textContent = '';
-  });
-  ['emailInput','pwInput'].forEach(id => {
-    const e = document.getElementById(id);
-    if (e) e.classList.remove('error-field');
-  });
-}
-
-function togglePw(id, btn) {
-  const input = document.getElementById(id);
-  const icon = btn.querySelector('i');
-  const isHidden = input.type === 'password';
-  input.type = isHidden ? 'text' : 'password';
-  icon.className = isHidden ? 'fa-solid fa-eye' : 'fa-solid fa-eye-slash';
-}
-
-function handleSubmit() {
-  if (isLoading) return;
-  const email = document.getElementById('emailInput').value.trim();
-  const pw = document.getElementById('pwInput').value;
-  if (!email || !pw) {
-    showToast('이메일과 비밀번호를 입력하세요.');
-    return;
-  }
-  doLogin(email, pw);
-}
-
-function doLogin(email, pw) {
-  setLoading(true);
-  setTimeout(() => {
-    setLoading(false);
-    const users = JSON.parse(localStorage.getItem('qlog_users') || '[]');
-    const found = users.find(u => u.email === email && u.pw === pw);
-    if (found) {
-      localStorage.setItem('qlog_current_user', JSON.stringify(found));
-      if (document.getElementById('rememberMe').checked) {
-        localStorage.setItem('qlog_remember', email);
-      }
-      showToast('로그인 성공! 환영합니다 ' + found.name + '님 🎉');
-      setTimeout(() => { window.location.href = 'index.html'; }, 1200);
-    } else {
-      showToast('이메일 또는 비밀번호가 올바르지 않습니다.');
-    }
-  }, 1000);
-}
-
-function setLoading(on) {
-  isLoading = on;
-  document.getElementById('mainBtn').disabled = on;
-  document.getElementById('btnLabel').style.display = on ? 'none' : 'inline';
-  document.getElementById('btnSpinner').style.display = on ? 'block' : 'none';
-}
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2800);
-}
-
-/* ── 초기화 ── */
-window.onload = () => {
-  const rem = localStorage.getItem('qlog_remember');
-  if (rem) {
-    document.getElementById('emailInput').value = rem;
-    document.getElementById('rememberMe').checked = true;
-  }
-  initGoogleClient();
-  clearMessages();
-};
-
-document.addEventListener('keydown', e => {
-  if (e.key === 'Enter') handleSubmit();
-});
-</script>
 <script type="module" src="Login.js"></script>
 </body>
 </html>

@@ -394,62 +394,147 @@ function deleteLog(index){
     renderLogs();
 }
 
-/* 달력 */
-function renderCalendar(){
-    let box = document.getElementById('calendarBox');
-    let title = document.getElementById('calendarTitle');
-    let dayLogs = document.getElementById('dayLogs');
+/* ══════════════════════════════════════════
+   달력 — 완전 재작성 (버그 수정)
+   ══════════════════════════════════════════ */
+let selectedDay = null; // 현재 선택된 날짜 {year, month, day}
 
-    box.innerHTML="";
-    dayLogs.innerHTML="";
+// ✅ 버튼 이벤트를 addEventListener로 연결 (onclick 속성 방식 제거)
+document.getElementById('prevMonthBtn').addEventListener('click', () => changeMonth(-1));
+document.getElementById('nextMonthBtn').addEventListener('click', () => changeMonth(1));
 
-    let year = currentDate.getFullYear();
-    let month = currentDate.getMonth();
+function changeMonth(delta) {
+    currentDate.setMonth(currentDate.getMonth() + delta);
+    selectedDay = null;
+    renderCalendar();
+}
 
-    title.innerText = `${year}년 ${month+1}월`;
+function renderCalendar() {
+    const box      = document.getElementById('calendarBox');
+    const title    = document.getElementById('calendarTitle');
+    const dayLogs  = document.getElementById('dayLogs');
 
-    let week = ['일','월','화','수','목','금','토'];
-    week.forEach(w=>{
-        let d = document.createElement('div');
-        d.innerText = w;
-        d.className = 'weekday';
+    box.innerHTML     = '';
+    dayLogs.innerHTML = '';
+    selectedDay       = null;
+
+    const year  = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+
+    title.innerText = `${year}년 ${month + 1}월`;
+
+    // 요일 헤더
+    ['일','월','화','수','목','금','토'].forEach(w => {
+        const d = document.createElement('div');
+        d.innerText   = w;
+        d.className   = 'weekday';
         box.appendChild(d);
     });
 
-    let firstDay = new Date(year, month, 1).getDay();
-    let lastDate = new Date(year, month+1, 0).getDate();
-    let prevLast = new Date(year, month, 0).getDate();
+    const firstDay = new Date(year, month, 1).getDay();
+    const lastDate = new Date(year, month + 1, 0).getDate();
+    const prevLast = new Date(year, month, 0).getDate();
+    const today    = new Date();
 
-    for(let i=firstDay-1;i>=0;i--){
-        let d=document.createElement('div');
-        d.className='day other-month';
-        d.innerText=prevLast-i;
+    // 이전 달 빈 칸
+    for (let i = firstDay - 1; i >= 0; i--) {
+        const d = document.createElement('div');
+        d.className  = 'day other-month';
+        d.innerText  = prevLast - i;
         box.appendChild(d);
     }
 
-    for(let i=1;i<=lastDate;i++){
-        let d=document.createElement('div');
-        d.className='day';
-        d.innerText=i;
+    // 이번 달 날짜
+    for (let i = 1; i <= lastDate; i++) {
+        const d = document.createElement('div');
+        d.className = 'day';
+        d.innerText = i;
 
-        let today=new Date();
-        if(today.getFullYear()===year &&
-           today.getMonth()===month &&
-           today.getDate()===i){
+        // 오늘 강조
+        if (today.getFullYear() === year &&
+            today.getMonth()    === month &&
+            today.getDate()     === i) {
             d.classList.add('today');
         }
 
-        let hasLog = logs.some(l=>{
-            let date=new Date(l.date);
-            return date.getFullYear()===year &&
-                   date.getMonth()===month &&
-                   date.getDate()===i;
+        // 일기 있는 날 표시
+        const hasLog = logs.some(l => {
+            const ld = new Date(l.date);
+            return ld.getFullYear() === year &&
+                   ld.getMonth()    === month &&
+                   ld.getDate()     === i;
         });
-        if(hasLog) d.classList.add('has-log');
+        if (hasLog) d.classList.add('has-log');
 
-        d.onclick=()=>showDayLogs(year,month,i);
+        // ✅ 클릭 이벤트 — 클로저 문제 방지를 위해 let으로 캡처
+        const day = i;
+        d.addEventListener('click', () => {
+            // 이전 선택 해제
+            box.querySelectorAll('.day.selected').forEach(el => el.classList.remove('selected'));
+            d.classList.add('selected');
+            selectedDay = { year, month, day };
+            showDayLogs(year, month, day);
+        });
+
         box.appendChild(d);
     }
+}
+
+/* ══════════════════════════════════════════
+   선택한 날짜의 일기 표시
+   ══════════════════════════════════════════ */
+function showDayLogs(year, month, day) {
+    const container = document.getElementById('dayLogs');
+    container.innerHTML = '';
+
+    // 해당 날짜 일기 필터
+    const dayEntries = logs.map((l, idx) => ({ ...l, _idx: idx })).filter(l => {
+        const ld = new Date(l.date);
+        return ld.getFullYear() === year &&
+               ld.getMonth()    === month &&
+               ld.getDate()     === day;
+    });
+
+    // 날짜 헤더
+    const header = document.createElement('div');
+    header.className = 'day-logs-header';
+    header.innerText = `${month + 1}월 ${day}일의 기록 (${dayEntries.length}건)`;
+    container.appendChild(header);
+
+    if (dayEntries.length === 0) {
+        const msg = document.createElement('div');
+        msg.className = 'no-log-msg';
+        msg.innerHTML = '📭 이날의 기록이 없습니다.';
+        container.appendChild(msg);
+        return;
+    }
+
+    dayEntries.forEach(entry => {
+        const card = document.createElement('div');
+        card.className = 'day-log-card';
+
+        const logDate = new Date(entry.date);
+        const timeStr = logDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+
+        card.innerHTML = `
+            <div class="day-log-mood">${entry.mood || '📝'}</div>
+            <div class="day-log-body">
+                <div class="day-log-text">${entry.text}</div>
+                <div class="day-log-time">${timeStr}</div>
+            </div>
+            <button class="day-log-delete" title="삭제" onclick="deleteDayLog(${entry._idx})">🗑</button>
+        `;
+        container.appendChild(card);
+    });
+}
+
+/* 달력뷰에서 삭제 후 해당 날 재렌더 */
+function deleteDayLog(index) {
+    if (!confirm('이 기록을 삭제하시겠습니까?')) return;
+    logs.splice(index, 1);
+    localStorage.setItem('logs', JSON.stringify(logs));
+    renderCalendar(); // 달력 새로고침 (점 업데이트)
+    if (selectedDay) showDayLogs(selectedDay.year, selectedDay.month, selectedDay.day);
 }
 
 
