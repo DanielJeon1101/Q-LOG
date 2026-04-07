@@ -19,7 +19,126 @@ body {
 
 .screen { display: none; padding: 20px; text-align: center; }
 .active { display: block; }
+
+/* ─── 홈 화면 ─── */
 #home.active { padding-top: 100vh; padding-left: 0; padding-right: 0; padding-bottom: 90px; }
+/* 헤더가 이미 최소화된 상태로 돌아왔을 때 — 카드가 잘리지 않게 충분한 여백 */
+#home.active.was-minimized { padding-top: calc(80px + 12px); }
+
+/* ─── 달력 화면 전체 스크롤 허용 ─── */
+#calendar.active {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 90px;
+}
+.calendar-sticky-top {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+    padding: 16px 16px 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.cal-nav-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+.cal-nav-row h2 { font-size: 20px; font-weight: 800; margin: 0; }
+.cal-nav-btn {
+    width: 36px; height: 36px;
+    border: none; background: #f2f4f6;
+    border-radius: 50%; font-size: 16px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+}
+.cal-nav-btn:hover { background: #e5e8eb; }
+
+/* dayLogs 영역: 스크롤 제거 (부모인 화면 전체가 스크롤) */
+#dayLogs {
+    margin-top: 16px;
+    padding: 0 12px;
+    flex: 1;
+}
+
+/* ─── 태그 검색 바 (달력 화면) ─── */
+.tag-search-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: white;
+    border-bottom: 1px solid #f2f4f6;
+}
+.tag-search-bar input {
+    flex: 1; height: 38px;
+    padding: 0 14px 0 36px;
+    border: 1.5px solid #e5e8eb;
+    border-radius: 20px;
+    font-size: 14px; outline: none;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+.tag-search-bar input:focus { border-color: #4f46e5; }
+.tag-search-icon {
+    position: absolute;
+    left: 28px;
+    color: #aaa; font-size: 14px;
+    pointer-events: none;
+}
+.tag-search-wrap { position: relative; flex: 1; }
+.tag-search-clear {
+    background: none; border: none;
+    color: #aaa; font-size: 18px;
+    cursor: pointer; padding: 4px; margin: 0;
+    line-height: 1;
+}
+.tag-search-clear:hover { color: #333; }
+
+/* 검색 결과 목록 */
+.search-result-section { padding: 0 12px 12px; }
+.search-result-header {
+    font-size: 14px; font-weight: 700;
+    color: #4f46e5; padding: 10px 4px 8px;
+}
+.search-empty {
+    text-align: center; padding: 30px;
+    color: #aaa; font-size: 14px;
+}
+
+/* ─── 홈 스크롤 상태 힌트 애니메이션 ─── */
+.swipe-hint {
+    position: absolute;
+    bottom: 96px; /* 네비 위 */
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    pointer-events: none;
+    z-index: 86;
+    animation: hintBounce 2.2s ease-in-out infinite;
+}
+.swipe-hint-text {
+    font-size: 13px;
+    color: rgba(140,149,161,0.85);
+    letter-spacing: 0.3px;
+    font-weight: 500;
+}
+.swipe-hint-arrow {
+    font-size: 18px;
+    color: rgba(140,149,161,0.6);
+    line-height: 1;
+}
+/* 힌트는 헤더가 최소화되면 숨김 */
+.swipe-hint.hidden { display: none; }
+
+@keyframes hintBounce {
+    0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.7; }
+    50%       { transform: translateX(-50%) translateY(-8px); opacity: 1; }
+}
 
 .title { font-size: 28px; font-weight: bold; margin-top: 30px; }
 .time  { font-size: 40px; margin: 10px 0 5px; }
@@ -130,8 +249,11 @@ button {
 .delete-btn { float:right; background:none; color:#aaa; font-size:14px; padding:4px 8px; margin:0; }
 .delete-btn:hover { color:red; }
 
+/* 달력 화면: 기본 padding 제거하고 flex column으로 */
+#calendar { padding: 0 !important; text-align: left; }
+
 /* 달력 */
-.calendar { margin-top:20px; display:grid; grid-template-columns:repeat(7,1fr); gap:5px; }
+.calendar { margin-top: 4px; display:grid; grid-template-columns:repeat(7,1fr); gap:5px; }
 .day { padding:10px; background:white; border-radius:8px; cursor:pointer; font-size:13px; text-align:center; }
 .day:hover { background:#eaeaea; }
 .has-log  { background:#d0ebff; }
@@ -140,7 +262,6 @@ button {
 .other-month { opacity:0.3; }
 .day.selected { background:#bde0ff; font-weight:bold; }
 
-#dayLogs { margin-top:20px; }
 .day-logs-header { font-weight:bold; margin-bottom:10px; text-align:left; padding:0 5px; }
 .no-log-msg { color:#aaa; text-align:center; padding:20px; font-size:14px; }
 .future-quote {
@@ -152,10 +273,23 @@ button {
     display:flex; align-items:flex-start; background:white;
     border-radius:12px; padding:12px; margin-bottom:8px;
     box-shadow:0 2px 6px rgba(0,0,0,0.06); gap:10px;
+    /* ★ 넘침 방지 */
+    min-width: 0;
+    overflow: hidden;
 }
 .day-log-mood { font-size:24px; flex-shrink:0; }
-.day-log-body { flex:1; }
-.day-log-text { font-size:14px; color:#333; line-height:1.5; }
+.day-log-body {
+    flex:1;
+    min-width: 0; /* ★ flex 자식의 텍스트 넘침 방지 핵심 */
+    overflow: hidden;
+}
+.day-log-text {
+    font-size:14px; color:#333; line-height:1.5;
+    /* ★ 긴 텍스트 줄바꿈 강제 */
+    word-break: break-all;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+}
 .day-log-time { font-size:12px; color:#aaa; margin-top:4px; }
 .day-log-delete { background:none; border:none; color:#ccc; font-size:16px; cursor:pointer; padding:4px; margin:0; }
 .day-log-delete:hover { color:red; }
@@ -201,6 +335,11 @@ button {
         <div class="time" id="time"></div>
         <div id="date" class="date-display"></div>
     </div>
+    <!-- 위로 스크롤 유도 힌트 -->
+    <div class="swipe-hint" id="swipeHint">
+        <div class="swipe-hint-arrow">↑</div>
+        <div class="swipe-hint-text">위로 쓸어올려 일기 보기</div>
+    </div>
     <div id="logList"></div>
 </div>
 
@@ -240,11 +379,28 @@ button {
 
 <!-- 달력 -->
 <div id="calendar" class="screen">
-    <h2 id="calendarTitle"></h2>
-    <button id="prevMonthBtn">◀</button>
-    <button id="nextMonthBtn">▶</button>
-    <div class="calendar" id="calendarBox"></div>
+    <!-- 고정 상단 영역: 내비 + 달력 그리드 -->
+    <div class="calendar-sticky-top">
+        <div class="cal-nav-row">
+            <button class="cal-nav-btn" id="prevMonthBtn">&#9664;</button>
+            <h2 id="calendarTitle"></h2>
+            <button class="cal-nav-btn" id="nextMonthBtn">&#9654;</button>
+        </div>
+        <div class="calendar" id="calendarBox"></div>
+    </div>
+
+    <!-- 태그 검색 바 -->
+    <div class="tag-search-bar" id="tagSearchBar">
+        <div class="tag-search-wrap">
+            <i class="fa-solid fa-hashtag tag-search-icon"></i>
+            <input type="text" id="tagSearchInput" placeholder="태그로 일기 검색... (예: 운동)">
+        </div>
+        <button class="tag-search-clear" id="tagSearchClear" style="display:none;">✕</button>
+    </div>
+
+    <!-- 스크롤 가능 영역: 날짜별 일기 OR 태그 검색 결과 -->
     <div id="dayLogs"></div>
+    <div id="tagSearchResults" style="display:none;"></div>
 </div>
 
 <!-- 프로필 -->
@@ -353,9 +509,46 @@ onAuthStateChanged(auth, (user) => {
 });
 
 // ── 화면 전환 ────────────────────────────────
+// 홈 이전 스크롤 위치 기억
+let homeScrollY = 0;
+let homeWasMinimized = false;
+
 window.go = function(id) {
+    // 홈에서 나갈 때 스크롤 위치 저장
+    const homeEl = document.getElementById('home');
+    if (homeEl.classList.contains('active')) {
+        homeScrollY = window.scrollY;
+        homeWasMinimized = document.getElementById('homeHeader').classList.contains('minimized');
+    }
+
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
+    const target = document.getElementById(id);
+    target.classList.add('active');
+
+    if (id === 'home') {
+        // 홈으로 돌아올 때 이전 스크롤 상태 복원
+        if (homeWasMinimized) {
+            target.classList.add('was-minimized');
+            // 헤더 즉시 최소화
+            const header = document.getElementById('homeHeader');
+            header.style.height = MIN_HEADER + 'px';
+            header.classList.add('minimized');
+            header.querySelector('.title').style.fontSize = '18px';
+            header.querySelector('.time').style.fontSize  = '20px';
+            // 힌트 숨김
+            document.getElementById('swipeHint').classList.add('hidden');
+        } else {
+            target.classList.remove('was-minimized');
+        }
+        // 스크롤 위치 복원 (다음 프레임에서)
+        requestAnimationFrame(() => {
+            window.scrollTo({ top: homeScrollY, behavior: 'instant' });
+        });
+    } else {
+        // 홈 아닌 화면: 맨 위로
+        window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+
     if (id === 'stats')    renderStats();
     if (id === 'calendar') renderCalendar();
     if (id === 'profile')  renderProfile();
@@ -387,18 +580,27 @@ const MIN_HEADER = 80;
 window.addEventListener('scroll', () => {
     if (!document.getElementById('home').classList.contains('active')) return;
     const header     = document.getElementById('homeHeader');
+    const hint       = document.getElementById('swipeHint');
     const scrollY    = window.scrollY;
     const vh         = window.innerHeight;
     const collapseAt = vh - MIN_HEADER;
+
     if (scrollY >= collapseAt) {
         header.style.height = MIN_HEADER + 'px';
         header.classList.add('minimized');
+        header.querySelector('.title').style.fontSize = '18px';
+        header.querySelector('.time').style.fontSize  = '20px';
+        hint.classList.add('hidden'); // 최소화되면 힌트 숨김
     } else {
         header.style.height = (vh - scrollY) + 'px';
         header.classList.remove('minimized');
+        hint.classList.remove('hidden'); // 원래 상태면 힌트 표시
         const ratio = scrollY / collapseAt;
         header.querySelector('.title').style.fontSize = (28 - ratio * 10) + 'px';
         header.querySelector('.time').style.fontSize  = (40 - ratio * 20) + 'px';
+        // 힌트 텍스트도 헤더와 함께 위로 올라가도록
+        hint.style.bottom = (96 + scrollY * 0.3) + 'px';
+        hint.style.opacity = Math.max(0, 1 - ratio * 2);
     }
 });
 
@@ -599,12 +801,34 @@ function renderLogs() {
         return;
     }
 
+    // 같은 날짜에 일기가 몇 개인지 미리 집계 → 날짜+시간 표시 여부 결정
+    const dateCounts = {};
+    logs.forEach(l => {
+        if (l.date instanceof Date) {
+            const key = `${l.date.getFullYear()}-${l.date.getMonth()}-${l.date.getDate()}`;
+            dateCounts[key] = (dateCounts[key] || 0) + 1;
+        }
+    });
+
     logs.forEach(l => {
         const div = document.createElement('div');
         div.className = 'card';
-        const dateStr = l.date instanceof Date
-            ? l.date.toLocaleDateString('ko-KR', { month:'long', day:'numeric', weekday:'short' })
-            : '';
+
+        let dateLabel = '';
+        if (l.date instanceof Date) {
+            const key = `${l.date.getFullYear()}-${l.date.getMonth()}-${l.date.getDate()}`;
+            const sameDay = dateCounts[key] > 1;
+            const dateStr = l.date.toLocaleDateString('ko-KR', { month:'long', day:'numeric', weekday:'short' });
+            if (sameDay) {
+                // 같은 날 여러 개 → 날짜 + 시간
+                const timeStr = l.date.toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit' });
+                dateLabel = `${dateStr} · ${timeStr}`;
+            } else {
+                // 하루 하나 → 날짜만
+                dateLabel = dateStr;
+            }
+        }
+
         div.innerHTML = `
             <div class="card-header">
                 <span style="font-size:22px">${l.mood}</span>
@@ -614,7 +838,7 @@ function renderLogs() {
             ${(l.tags && l.tags.length > 0)
                 ? `<div class="card-tags">${l.tags.map(t => `<span class="card-tag">${t}</span>`).join('')}</div>`
                 : ''}
-            <div class="card-date">${dateStr}</div>
+            <div class="card-date">${dateLabel}</div>
         `;
         div.querySelector('.delete-btn').addEventListener('click', async (e) => {
             e.stopPropagation();
@@ -793,6 +1017,99 @@ function renderCalendar() {
         selectedDay = { year, month, day: today.getDate() };
         showDayLogs(year, month, today.getDate());
     }
+
+    // 태그 검색 초기화
+    initTagSearch();
+}
+
+// ── 태그 검색 ─────────────────────────────────
+function initTagSearch() {
+    const input   = document.getElementById('tagSearchInput');
+    const clearBtn= document.getElementById('tagSearchClear');
+    const results = document.getElementById('tagSearchResults');
+    const dayLogs = document.getElementById('dayLogs');
+
+    // 이미 이벤트 등록됐으면 skip (달력 재렌더 시 중복 방지)
+    if (input._searchBound) return;
+    input._searchBound = true;
+
+    input.addEventListener('input', () => {
+        const q = input.value.trim().replace(/^#+/, '').toLowerCase();
+        clearBtn.style.display = q ? 'block' : 'none';
+        if (!q) {
+            results.style.display = 'none';
+            dayLogs.style.display = '';
+        } else {
+            dayLogs.style.display = 'none';
+            results.style.display = '';
+            renderTagSearch(q);
+        }
+    });
+    clearBtn.addEventListener('click', () => {
+        input.value = '';
+        clearBtn.style.display = 'none';
+        results.style.display  = 'none';
+        dayLogs.style.display  = '';
+        results.innerHTML = '';
+    });
+}
+
+function renderTagSearch(query) {
+    const results = document.getElementById('tagSearchResults');
+    results.innerHTML = '';
+
+    if (!currentUser) {
+        results.innerHTML = `<div class="search-empty">로그인 후 태그 검색이 가능합니다.</div>`;
+        return;
+    }
+
+    const tag = '#' + query;
+    // 태그 배열 OR 텍스트 내 #태그 모두 검색
+    const matched = logs.filter(l => {
+        if (l.tags && l.tags.some(t => t.toLowerCase().includes(query))) return true;
+        if (l.text && l.text.toLowerCase().includes('#' + query)) return true;
+        return false;
+    });
+
+    const header = document.createElement('div');
+    header.className = 'search-result-header';
+    header.innerHTML = `<i class="fa-solid fa-hashtag"></i> "${query}" 검색 결과 <span style="color:#aaa;font-weight:400;">(${matched.length}건)</span>`;
+    results.appendChild(header);
+
+    if (matched.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'search-empty';
+        empty.innerHTML = `📭 해당 태그의 일기가 없습니다.`;
+        results.appendChild(empty);
+        return;
+    }
+
+    matched.forEach(entry => {
+        const card = document.createElement('div');
+        card.className = 'day-log-card';
+        card.style.cursor = 'pointer';
+        const dateStr = entry.date instanceof Date
+            ? entry.date.toLocaleDateString('ko-KR', { month:'long', day:'numeric', weekday:'short' })
+            : '';
+        const timeStr = entry.date instanceof Date
+            ? entry.date.toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit' })
+            : '';
+        // 태그 중 검색어 매칭되는 것 강조
+        const tagsHtml = (entry.tags || []).map(t => {
+            const isMatch = t.toLowerCase().includes(query);
+            return `<span class="card-tag" style="${isMatch ? 'background:#ede9fe;color:#5b21b6;font-weight:800;' : ''}">${t}</span>`;
+        }).join(' ');
+        card.innerHTML = `
+            <div class="day-log-mood">${entry.mood || '📝'}</div>
+            <div class="day-log-body">
+                <div class="day-log-text" style="-webkit-line-clamp:2;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;">${entry.text}</div>
+                ${tagsHtml ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">${tagsHtml}</div>` : ''}
+                <div class="day-log-time">${dateStr} ${timeStr}</div>
+            </div>
+        `;
+        card.addEventListener('click', () => openDetail(entry));
+        results.appendChild(card);
+    });
 }
 
 function showDayLogs(year, month, day) {
