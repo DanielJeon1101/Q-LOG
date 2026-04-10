@@ -240,19 +240,36 @@ html, body {
     transform: translateX(-50%);
     width: 100%;
     max-width: 480px;
-    height: 100vh;
+    height: 100dvh;
+    z-index: 85;
+    background: #f8f8f8;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background: #f8f8f8;
-    z-index: 85;
-    overflow: hidden;
-    /* height는 JS requestAnimationFrame으로 직접 조정 */
+    /* 스크롤 시 덜덜거림 방지 */
+    will-change: height, background-color, box-shadow;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.home-header.is-fixed {
+  flex-direction: row;
+    height: 80px !important; /* 최소 높이 강제 고정 */
+    background-color: rgba(248, 248, 248, 0.95);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+    justify-content: center; /* 고정 시 내용 중앙 정렬 */
+}
+
+/* --- 홈 리스트 스크롤 가속도 안정화 --- */
+#home.active {
+    padding-top: 100dvh;
+    scroll-behavior: auto; /* 리스트가 튀는 현상을 막기 위해 수동 계산 시 auto 권장 */
+    -webkit-overflow-scrolling: touch;
 }
 
 /* 텍스트는 부드럽게 전환 */
 .title, .time, .date-display {
+  opacity: 1 !important;
     transition: font-size 0.15s ease, opacity 0.15s ease;
     will-change: font-size;
 }
@@ -264,8 +281,8 @@ html, body {
     align-items: center;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
-.home-header.minimized .title        { font-size: 20px; font-weight: 700; }
-.home-header.minimized .time         { font-size: 16px; }
+.home-header.minimized .title        { font-size: 24px; font-weight: 700; }
+.home-header.minimized .time         { font-size: 20px; }
 .home-header.minimized .date-display { display: none; }
 
 /* ── 로그 리스트 ── */
@@ -278,6 +295,6 @@ html, body {
 }
 
 /* 날짜 표시용 추가 스타일 */
-.date-display { font-size: 18px; color: #666; }
+.date-display { font-size: 20px; color: #666; }
 
 /*수정사항 추가*/
