@@ -345,38 +345,107 @@ body:has(#write.active) .nav {
 
 /* ── 통계 화면 ── */
 #stats.active { padding-bottom: 90px; }
+
+/* 통계 상단 헤더 */
+.stats-top-bar {
+    display: flex; align-items: center;
+    padding: 20px 16px 0; gap: 10px;
+}
+.stats-back-btn {
+    width: 36px; height: 36px;
+    background: #f2f4f6; border: none; border-radius: 50%;
+    font-size: 16px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+    flex-shrink: 0; color: #191f28;
+}
+.stats-back-btn:hover { background: #e5e8eb; }
+.stats-top-title {
+    font-size: 20px; font-weight: 800;
+    letter-spacing: -0.5px; color: #191f28;
+}
+
+/* 기간 버튼 */
 .stats-period-btns {
-    display: flex; gap: 8px; justify-content: center; margin: 12px 0 20px;
+    display: flex; gap: 8px;
+    padding: 16px 16px 4px;
 }
 .period-btn {
-    padding: 7px 18px; border-radius: 20px;
-    border: 1.5px solid #e5e8eb; background: white;
-    font-size: 13px; font-weight: 700; color: #555;
+    padding: 7px 16px; border-radius: 20px;
+    border: 1.5px solid #e5e8eb;
+    background: white; color: #8b95a1;
+    font-size: 13px; font-weight: 600;
     cursor: pointer; margin: 0;
     transition: all 0.15s;
 }
-.period-btn.active-period {
-    background: #191f28; color: white; border-color: #191f28;
+.period-btn:hover { border-color: #4f46e5; color: #4f46e5; }
+.active-period {
+    background: #4f46e5 !important; color: white !important;
+    border-color: #4f46e5 !important;
 }
+
+/* 추세 섹션 제목 */
+.stats-section-title {
+    font-size: 18px; font-weight: 800;
+    padding: 16px 16px 10px;
+    color: #191f28; letter-spacing: -0.3px;
+}
+
+/* 추세 지표 2×n 그리드 */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 0 16px 4px;
+}
+.metric-card {
+    background: white;
+    border-radius: 16px;
+    padding: 16px 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    display: flex; flex-direction: column; gap: 4px;
+    min-height: 80px;
+}
+.metric-card-label {
+    font-size: 12px; color: #8b95a1; font-weight: 600;
+    display: flex; align-items: center; gap: 5px;
+}
+.metric-trend-icon { font-size: 14px; }
+.metric-trend-up   { color: #ef4444; }
+.metric-trend-down { color: #3b82f6; }
+.metric-trend-mid  { color: #f59e0b; }
+.metric-card-value {
+    font-size: 22px; font-weight: 800;
+    letter-spacing: -0.5px; margin-top: 2px;
+}
+.metric-card-unit {
+    font-size: 12px; font-weight: 500; color: #8b95a1;
+}
+.metrics-empty {
+    grid-column: 1 / -1;
+    text-align: center; padding: 24px;
+    color: #aaa; font-size: 14px;
+}
+
+/* 차트 섹션 */
 .chart-wrap {
-    background: white; border-radius: 16px; padding: 16px;
-    margin: 0 auto 16px; width: 90%;
+    background: white; border-radius: 16px;
+    padding: 16px; margin: 10px 16px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 .chart-title {
-    font-size: 13px; font-weight: 700; color: #555;
-    margin-bottom: 12px; text-align: left;
+    font-size: 15px; font-weight: 700;
+    color: #191f28; margin-bottom: 12px;
 }
-.stats-row-list { width: 90%; margin: 0 auto; text-align: left; }
+.stats-row-list { padding: 0 16px 16px; }
 .stats-mood-row {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 0; border-bottom: 1px solid #f2f4f6;
-    font-size: 14px;
+    display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
 }
-.stats-mood-bar-wrap { flex: 1; background: #f2f4f6; border-radius: 10px; height: 8px; overflow: hidden; }
-.stats-mood-bar      { height: 100%; border-radius: 10px; background: #4f46e5; transition: width 0.4s; }
-.stats-mood-count    { font-size: 12px; color: #aaa; min-width: 30px; text-align: right; }
-.stats-empty { text-align: center; padding: 40px; color: #aaa; font-size: 14px; }
+.stats-mood-bar-wrap {
+    flex: 1; background: #f2f4f6; border-radius: 4px; height: 8px; overflow: hidden;
+}
+.stats-mood-bar { height: 100%; border-radius: 4px; transition: width 0.4s; }
+.stats-mood-count { font-size: 13px; color: #555; min-width: 28px; text-align: right; }
+.stats-empty { text-align: center; padding: 40px 20px; color: #aaa; font-size: 14px; }
 
 /* ── 달력 화면 ── */
 #calendar { padding: 0 !important; text-align: left; }
@@ -560,13 +629,28 @@ body:has(#write.active) .nav {
 </div>
 
 <!-- 통계 -->
-<div id="stats" class="screen">
-    <h2>통계</h2>
+<div id="stats" class="screen" style="padding:0; text-align:left;">
+
+    <!-- 상단 헤더 -->
+    <div class="stats-top-bar">
+        <button class="stats-back-btn" id="statsBackBtn">←</button>
+        <span class="stats-top-title">나의 작성</span>
+    </div>
+
+    <!-- 기간 선택 -->
     <div class="stats-period-btns">
         <button class="period-btn active-period" data-period="7">1주일</button>
         <button class="period-btn" data-period="30">1개월</button>
         <button class="period-btn" data-period="90">3개월</button>
     </div>
+
+    <!-- 추세 섹션 -->
+    <div class="stats-section-title">추세</div>
+    <div class="metrics-grid" id="metricsGrid">
+        <!-- JS로 채워짐 -->
+    </div>
+
+    <!-- 차트/감정 섹션 -->
     <div id="statsBox"></div>
 </div>
 
@@ -606,10 +690,6 @@ body:has(#write.active) .nav {
         <div class="profile-card">
             <div class="profile-label">로그인된 계정</div>
             <div class="profile-email" id="profileEmail"></div>
-        </div>
-        <div class="card">
-            <h3>나의 작성능력</h3>
-            <div id="metricsBox" style="margin-top:10px; font-size:14px; color:#555;"></div>
         </div>
         <div class="card"><h3>계정 및 로그인</h3></div>
         <div class="card"><h3>비밀번호 변경</h3></div>
@@ -1194,31 +1274,17 @@ function renderProfile() {
     if (currentUser) {
         before.style.display = 'none'; after.style.display = 'block';
         document.getElementById('profileEmail').innerText = currentUser.email;
-        renderMetrics();
+        // 나의 작성능력은 통계 화면으로 이동했으므로 여기선 제거
     } else { before.style.display = 'block'; after.style.display = 'none'; }
-}
-function renderMetrics() {
-    const box = document.getElementById('metricsBox');
-    if (!box) return;
-    const validLogs = logs.filter(l => l.metrics);
-    if (!validLogs.length) { box.innerHTML = '<span style="color:#aaa">일기를 작성하면 통계가 쌓여요!</span>'; return; }
-    const avg = key => {
-        const vals = validLogs.map(l => l.metrics[key]).filter(v => v != null);
-        return vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : '-';
-    };
-    box.innerHTML = `
-        <div>✏️ 평균 글자 수: <b>${avg('charCount')}자</b></div>
-        <div>⏱ 평균 첫 문장까지: <b>${avg('timeToFirst')}초</b></div>
-        <div>🕐 평균 집필 시간: <b>${avg('writingDuration')}초</b></div>
-        <div>⚡ 평균 글쓰기 속도: <b>${avg('charsPerMinute')}자/분</b></div>
-        <div>🔢 평균 문장 수: <b>${avg('sentenceCount')}문장</b></div>
-    `;
 }
 document.getElementById('logoutBtn').addEventListener('click', async () => {
     await signOut(auth); alert('로그아웃 되었습니다.'); window.go('home');
 });
 
-// ── 통계 (기간 필터 + 차트) ──────────────────
+// ── 통계 뒤로가기 ─────────────────────────────
+document.getElementById('statsBackBtn').addEventListener('click', () => window.go('home'));
+
+// ── 통계 (기간 필터 + 추세 + 차트) ──────────────────
 document.querySelectorAll('.period-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active-period'));
@@ -1236,8 +1302,59 @@ function getFilteredLogs(days) {
 
 function renderStats() {
     const box      = document.getElementById('statsBox');
+    const grid     = document.getElementById('metricsGrid');
     const filtered = getFilteredLogs(statsPeriod);
     box.innerHTML  = '';
+
+    // ── 추세(나의 작성능력) 카드 그리드 ──────────
+    const validLogs = filtered.filter(l => l.metrics);
+    if (!validLogs.length) {
+        grid.innerHTML = `<div class="metrics-empty">📭 해당 기간에 작성된 일기가 없어요.<br>일기를 작성하면 추세가 쌓여요!</div>`;
+    } else {
+        const avg = key => {
+            const vals = validLogs.map(l => l.metrics[key]).filter(v => v != null);
+            return vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : null;
+        };
+        const avgChar  = avg('charCount');
+        const avgFirst = avg('timeToFirst');
+        const avgDur   = avg('writingDuration');
+        const avgCpm   = avg('charsPerMinute');
+        const avgSent  = avg('sentenceCount');
+        const fmt = (v, unit) => v !== null ? `<span class="metric-card-value">${v}</span><span class="metric-card-unit">${unit}</span>` : '-';
+
+        grid.innerHTML = `
+            <div class="metric-card">
+                <div class="metric-card-label">
+                    <span class="metric-trend-icon metric-trend-up">↑</span> 평균 글자 수
+                </div>
+                ${fmt(avgChar, '자/일')}
+            </div>
+            <div class="metric-card">
+                <div class="metric-card-label">
+                    <span class="metric-trend-icon metric-trend-up">↑</span> 평균 첫 문장까지
+                </div>
+                ${fmt(avgFirst, '초')}
+            </div>
+            <div class="metric-card">
+                <div class="metric-card-label">
+                    <span class="metric-trend-icon metric-trend-down">↓</span> 평균 집필 시간
+                </div>
+                ${fmt(avgDur !== null ? Math.round(avgDur / 60 * 10) / 10 : null, '시간/일')}
+            </div>
+            <div class="metric-card">
+                <div class="metric-card-label">
+                    <span class="metric-trend-icon metric-trend-down">↓</span> 평균 글쓰기 속도
+                </div>
+                ${fmt(avgCpm, 'KM/일')}
+            </div>
+            <div class="metric-card" style="grid-column:1/-1;">
+                <div class="metric-card-label">
+                    <span class="metric-trend-icon metric-trend-mid">→</span> 평균 문장 수
+                </div>
+                ${fmt(avgSent, '분/시간')}
+            </div>
+        `;
+    }
 
     if (!filtered.length) {
         box.innerHTML = `<div class="stats-empty">📭 해당 기간에 작성된 일기가 없어요.</div>`;
@@ -1274,7 +1391,7 @@ function renderStats() {
         }
     });
 
-    // ② 일별 작성 횟수 라인 차트
+    // ② 일별 작성 횟수 바 차트
     const dayMap = {};
     for (let i = statsPeriod - 1; i >= 0; i--) {
         const d = new Date(); d.setDate(d.getDate() - i);
@@ -1313,7 +1430,7 @@ function renderStats() {
         }
     });
 
-    // ③ 감정별 카운트 목록
+    // ③ 감정별 카운트 막대
     const rowList = document.createElement('div');
     rowList.className = 'stats-row-list';
     const total = moodEntries.reduce((s,[,c]) => s+c, 0);
@@ -1326,8 +1443,7 @@ function renderStats() {
                     <div class="stats-mood-bar" style="width:${pct}%; background:${chartColors[i % chartColors.length]};"></div>
                 </div>
                 <span class="stats-mood-count">${c}회</span>
-            </div>
-        `;
+            </div>`;
     });
     box.appendChild(rowList);
 }
