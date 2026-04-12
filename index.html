@@ -448,7 +448,18 @@ body:has(#write.active) .nav {
 .stats-empty { text-align: center; padding: 40px 20px; color: #aaa; font-size: 14px; }
 
 /* ── 달력 화면 ── */
-#calendar { padding: 0 !important; text-align: left; }
+#calendar { 
+    display: none;
+    padding: 20px;
+    text-align: center;
+    
+    /* [핵심 수정] 하단 내비게이션 바 높이(약 70~90px)만큼 여백 확보 */
+    padding-bottom: 120px !important; 
+    
+    /* 내용이 많아질 경우 화면 자체에서 스크롤이 가능하도록 설정 */
+    overflow-y: auto;
+    min-height: 100vh;
+ }
 #calendar.active {
     display: flex; flex-direction: column;
     padding-bottom: 90px;
@@ -480,6 +491,15 @@ body:has(#write.active) .nav {
 .weekday  { font-weight:bold; background:#eee; }
 .other-month { opacity:0.3; }
 .day.selected { background:#bde0ff; font-weight:bold; }
+
+#dayLogs {
+    margin-top: 20px;
+    /* 리스트가 늘어날 때 레이아웃이 깨지지 않도록 설정 */
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
 
 /* ── 태그 검색 (다중 태그) ── */
 .tag-search-bar {
@@ -786,6 +806,8 @@ let homeWasMinimized   = false;
 
 window.go = function(id) {
     const homeEl = document.getElementById('home');
+    // 화면 전환 시 항상 최상단으로 스크롤 초기화
+    window.scrollTo(0, 0);
     if (homeEl.classList.contains('active')) {
         homeScrollY      = window.scrollY;
         homeWasMinimized = document.getElementById('homeHeader').classList.contains('minimized');
