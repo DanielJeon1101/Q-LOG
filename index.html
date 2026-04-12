@@ -806,6 +806,8 @@ let homeWasMinimized   = false;
 
 window.go = function(id) {
     const homeEl = document.getElementById('home');
+    const header = document.getElementById('homeHeader');
+    const hint   = document.getElementById('swipeHint');
     
     if (homeEl.classList.contains('active')) {
         homeScrollY      = window.scrollY;
@@ -825,20 +827,21 @@ window.go = function(id) {
     }
 
     if (id === 'home') {
-        window.scrollTo(0, 0);
-        if (homeWasMinimized) {
-            // 헤더와 레이아웃 상태를 '즉시' 적용하여 높이 불일치 방지
-            header.classList.add('minimized');
-            header.style.height = '80px'; // 최소 높이 강제 지정 (값은 CSS 설정에 맞게 조절)
-            homeEl.classList.add('header-collapsed');
-            if (hint) hint.classList.add('hidden');
-        } else {
-            header.classList.remove('minimized');
-            header.style.height = '100vh'; // 초기 높이 강제 지정
-            homeEl.classList.remove('header-collapsed');
-            if (hint) hint.classList.remove('hidden');
+        // 1. 헤더 및 힌트 초기화 (큰 헤더 상태로)
+        header.classList.remove('minimized');
+        header.style.height = '100vh'; // 초기 높이 복구
+        homeEl.classList.remove('header-collapsed');
+        if (hint) hint.classList.remove('hidden');
+
+        // 2. 리스트 목록 새로고침
+        if (typeof renderLogs === 'function') {
+            renderLogs();
         }
+
+        // 3. 홈 화면 최상단으로 즉시 이동
+        window.scrollTo({ top: 0, behavior: 'instant' });
     } else {
+        // 홈 외의 화면도 최상단에서 시작
         window.scrollTo({ top: 0, behavior: 'instant' });
     }
 
@@ -857,6 +860,12 @@ window.go = function(id) {
         resetIdleTimer();
     }
 };
+
+window.addEventListener('load', () => {
+    if (document.getElementById('home').classList.contains('active')) {
+        window.scrollTo(0, 0);
+    }
+});
 
 document.getElementById('navHome').addEventListener('click',     () => window.go('home'));
 document.getElementById('navStats').addEventListener('click',    () => window.go('stats'));
