@@ -415,6 +415,13 @@ body.dark-mode .period-btn {
   color: var(--dm-sub) !important;
   border-color: var(--dm-border) !important;
 }
+/* 다크모드 활성 기간 버튼 — 밝게 강조 */
+body.dark-mode .period-btn.active-period {
+  background: #4f46e5 !important;
+  color: #ffffff !important;
+  border-color: #4f46e5 !important;
+  box-shadow: 0 0 0 3px rgba(99,89,255,0.35), 0 2px 8px rgba(79,70,229,0.5) !important;
+}
 
 /* 달력 화면 */
 body.dark-mode #calendar { background: var(--dm-app-bg) !important; }
