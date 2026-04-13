@@ -13,6 +13,10 @@
   --border-radius-sm: 8px;
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
   --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.08);
+  --header-max: 100vh;
+  --header-min: 80px;
+  /* 실시간 계산을 위한 변수 (JS에서 제어) */
+  --header-current-height: 100vh;
 }
 
 /* 2. 글로벌 리셋 및 PC 환경 제어 */
@@ -234,6 +238,16 @@ html, body {
 
 /* ── 홈 헤더: fixed, JS가 height를 실시간으로 제어 ── */
 .home-header {
+<<<<<<< Updated upstream
+=======
+    width: 100%;
+    max-width: 480px;
+    height: var(--header-current-height); /* 실시간 높이 적용 */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+>>>>>>> Stashed changes
     position: fixed;
     top: 0;
     left: 50%;
@@ -285,11 +299,27 @@ html, body {
 .home-header.minimized .time         { font-size: 20px; }
 .home-header.minimized .date-display { display: none; }
 
+<<<<<<< Updated upstream
 /* ── 로그 리스트 ── */
 #logList {
     position: relative;
     z-index: 20;
     background: #f8f8f8;
+=======
+/* 헤더가 최소 높이에 도달했을 때의 스타일 */
+.home-header.is-minimized {
+    flex-direction: row;
+    justify-content: space-around;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+/* 리스트: 실제 스크롤에 따라 물리적으로 올라옴 */
+#logList {
+    position: relative;
+    z-index: 20; /* 헤더보다 위 */
+    margin-top: calc(var(--header-full) - (var(--header-full) - var(--header-min)) * var(--scroll-ratio));
+    background: #f8f8f8; /* 올라올 때 헤더를 가리기 위해 배경색 필요 */
+>>>>>>> Stashed changes
     padding: 20px 20px 100px 20px;
     min-height: 100vh;
 }
