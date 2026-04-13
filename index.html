@@ -103,6 +103,7 @@ body.dark-mode .home-header-spacer { background: var(--dm-app-bg); }
     -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;
 }
 .card-date   { font-size: 12px; color: #aaa; margin-top: 6px; }
+.card-edited { font-size: 11px; color: #b0b8c4; margin-top: 2px; letter-spacing: -0.1px; }
 .card-header { display: flex; justify-content: space-between; align-items: center; }
 .card-tags   { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
 .card-tag {
@@ -241,7 +242,24 @@ body.dark-mode .detail-cancel-btn { background:#333 !important; color:#ccc !impo
     display: flex; flex-direction: column;
     padding: 0 0 40px 0;
     min-height: 100vh;
+    transition: background 0.5s ease;
 }
+
+/* ── 감정 반응형 테마 ── */
+#write.mood-happy  { background: linear-gradient(160deg, #fff9f0 0%, #fff3e0 100%); }
+#write.mood-good   { background: linear-gradient(160deg, #f0fff4 0%, #e8f5e9 100%); }
+#write.mood-neutral{ background: linear-gradient(160deg, #f8f9ff 0%, #f0f2ff 100%); }
+#write.mood-sad    { background: linear-gradient(160deg, #f0f6ff 0%, #e3eeff 100%); }
+#write.mood-angry  { background: linear-gradient(160deg, #fff5f5 0%, #ffe5e5 100%); }
+#write.mood-tired  { background: linear-gradient(160deg, #f5f3ff 0%, #ede8ff 100%); }
+
+/* 감정별 질문 박스 색상 */
+#write.mood-happy  .write-question-box { background: linear-gradient(135deg, #f97316, #fb923c); }
+#write.mood-good   .write-question-box { background: linear-gradient(135deg, #22c55e, #16a34a); }
+#write.mood-neutral .write-question-box{ background: linear-gradient(135deg, #667eea, #764ba2); }
+#write.mood-sad    .write-question-box { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+#write.mood-angry  .write-question-box { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+#write.mood-tired  .write-question-box { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
 
 /* 글쓰기 화면에서 네비바 숨기기 */
 #write.active ~ .nav,
@@ -578,6 +596,13 @@ body:has(#write.active) .nav {
 .day { padding:10px; background:white; border-radius:8px; cursor:pointer; font-size:13px; text-align:center; }
 .day:hover { background:#eaeaea; }
 .has-log  { background:#d0ebff; }
+/* 감정별 달력 칸 배경색 */
+.has-log.mood-cal-happy  { background: #fff3cd; }
+.has-log.mood-cal-good   { background: #d1fae5; }
+.has-log.mood-cal-neutral{ background: #e0e7ff; }
+.has-log.mood-cal-sad    { background: #dbeafe; }
+.has-log.mood-cal-angry  { background: #fee2e2; }
+.has-log.mood-cal-tired  { background: #ede9fe; }
 .today    { border:2px solid red; }
 .weekday  { font-weight:bold; background:#eee; }
 .other-month { opacity:0.3; }
@@ -1162,6 +1187,16 @@ document.getElementById('tagInput').addEventListener('keydown', e => {
     if (e.key === 'Enter') { e.preventDefault(); addManualTag(); }
 });
 
+// 감정 → 테마 클래스 매핑
+const moodThemeMap = {
+    '😀': 'mood-happy',
+    '🙂': 'mood-good',
+    '😐': 'mood-neutral',
+    '😢': 'mood-sad',
+    '😡': 'mood-angry',
+    '😫': 'mood-tired'
+};
+
 window.selectMood = function(m) {
     selectedMood = m; closeMood(); window.go('write');
     document.getElementById('writeMoodDisplay').innerText = m;
@@ -1172,6 +1207,10 @@ window.selectMood = function(m) {
     document.getElementById('tagInput').value = '';
     autoTags = new Set(); manualTags = new Set(); renderTagList();
     _lastAutoKey = '';
+    // 감정 테마 적용
+    const writeEl = document.getElementById('write');
+    writeEl.classList.remove('mood-happy','mood-good','mood-neutral','mood-sad','mood-angry','mood-tired');
+    if (moodThemeMap[m]) writeEl.classList.add(moodThemeMap[m]);
 };
 
 // ── Gemini 상태 ───────────────────────────────
@@ -1456,18 +1495,12 @@ function renderLogs() {
         div.innerHTML = `
             <div class="card-header">
                 <span style="font-size:22px">${l.mood}</span>
-                <button class="delete-btn" data-id="${l.id}">🗑</button>
             </div>
             <div class="card-text">${l.text}</div>
             ${(l.tags && l.tags.length > 0) ? `<div class="card-tags">${l.tags.map(t=>`<span class="card-tag">${t}</span>`).join('')}</div>` : ''}
-            <div class="card-date">${dateLabel}${l.updatedAt ? ` · <span style="color:#8b95a1;font-style:italic;">최종수정 ${l.updatedAt.toLocaleDateString('ko-KR',{month:'long',day:'numeric'})} ${l.updatedAt.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}</span>` : ''}</div>
+            <div class="card-date">${dateLabel}</div>
+            ${l.updatedAt ? `<div class="card-edited">수정됨 · ${l.updatedAt.toLocaleDateString('ko-KR',{month:'long',day:'numeric'})} ${l.updatedAt.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}</div>` : ''}
         `;
-        div.querySelector('.delete-btn').addEventListener('click', async (e) => {
-            e.stopPropagation();
-            if (!confirm("삭제하시겠습니까?")) return;
-            try { await deleteDoc(doc(db, "logs", l.id)); await loadLogs(); }
-            catch (err) { alert("삭제 실패: " + err.message); }
-        });
         div.addEventListener('click', () => openDetail(l));
         list.appendChild(div);
     });
@@ -1832,7 +1865,11 @@ function renderCalendar() {
             return ld.getFullYear()===year && ld.getMonth()===month && ld.getDate()===i;
         });
         d.innerText = dayLog ? dayLog.mood : i;
-        if (dayLog) d.classList.add('has-log');
+        if (dayLog) {
+            d.classList.add('has-log');
+            const calClass = moodThemeMap[dayLog.mood];
+            if (calClass) d.classList.add('mood-cal-' + calClass.replace('mood-',''));
+        }
         const day = i;
         d.addEventListener('click', () => {
             box.querySelectorAll('.day.selected').forEach(el => el.classList.remove('selected'));
