@@ -415,6 +415,13 @@ body.dark-mode .period-btn {
   color: var(--dm-sub) !important;
   border-color: var(--dm-border) !important;
 }
+/* 다크모드 활성 기간 버튼 — 밝게 강조 */
+body.dark-mode .period-btn.active-period {
+  background: #4f46e5 !important;
+  color: #ffffff !important;
+  border-color: #4f46e5 !important;
+  box-shadow: 0 0 0 3px rgba(99,89,255,0.35), 0 2px 8px rgba(79,70,229,0.5) !important;
+}
 
 /* 달력 화면 */
 body.dark-mode #calendar { background: var(--dm-app-bg) !important; }
@@ -493,7 +500,7 @@ body.dark-mode .home-header {
 }
 
 /* ── 다크모드 토글 슬라이더 UI ── */
-.dark-toggle-row {
+.dark-toggle-row, #notiSettingBtn {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -558,4 +565,42 @@ body.dark-mode .dark-toggle-label { color: var(--dm-text) !important; }
 }
 .toggle-switch input:checked + .toggle-slider::before {
   transform: translateX(24px);
+}
+
+/* style.css 하단에 추가 */
+.settings-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: #fff;
+    border-radius: 16px;
+    margin: 10px 0;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.settings-item:active {
+    background: #f2f4f6;
+}
+
+.settings-item-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.settings-item .icon {
+    font-size: 20px;
+}
+
+.settings-item .label {
+    font-size: 16px;
+    font-weight: 500;
+    color: #191f28;
+}
+
+.settings-item .arrow {
+    color: #b0b8c1;
+    font-weight: bold;
 }
