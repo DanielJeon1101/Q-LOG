@@ -1177,11 +1177,17 @@ window.selectMood = function(m) {
 // ── Gemini 상태 ───────────────────────────────
 // ★ 본인의 Google AI Studio API 키를 아래에 직접 입력하세요
 // 발급: https://aistudio.google.com/app/apikey
+<<<<<<< Updated upstream
 
 // 교체 코드
 const GEMINI_API_KEY = window.GEMINI_KEY || '';
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
+=======
+// 교체 코드
+const GEMINI_API_KEY = window.GEMINI_KEY || '';
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-lite:generateContent?key=${GEMINI_API_KEY}`;
+>>>>>>> Stashed changes
 
 let aiHelpCount  = 2;  // 일기당 최대 2회
 let idleTimer    = null;
