@@ -344,8 +344,20 @@ body:has(#write.active) .nav {
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── 통계 화면 ── */
-#stats.active { padding-bottom: 90px; }
+#stats {
+    display: none;
+    padding: 0;
+    text-align: left;
+    min-height: 100vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+}
 
+#stats.active {
+    display: block;
+    padding-bottom: 110px !important;
+}
 /* 통계 상단 헤더 */
 .stats-top-bar {
     display: flex; align-items: center;
@@ -584,6 +596,11 @@ body:has(#write.active) .nav {
 }
 .login-required { text-align:center; padding:40px 20px; color:#8b95a1; }
 .login-required p { font-size:15px; margin-bottom:16px; }
+
+.stats-container {
+    padding-bottom: 40px;
+    min-height: calc(100vh - 70px);
+}
 </style>
 </head>
 
@@ -649,29 +666,32 @@ body:has(#write.active) .nav {
 </div>
 
 <!-- 통계 -->
-<div id="stats" class="screen" style="padding:0; text-align:left;">
+<div id="stats" class="screen">
+    <div class="stats-container">   <!-- ← 이 div를 새로 추가 -->
 
-    <!-- 상단 헤더 -->
-    <div class="stats-top-bar">
-        <button class="stats-back-btn" id="statsBackBtn">←</button>
-        <span class="stats-top-title">나의 작성</span>
+        <!-- 상단 헤더 -->
+        <div class="stats-top-bar">
+            <button class="stats-back-btn" id="statsBackBtn">←</button>
+            <span class="stats-top-title">나의 작성</span>
+        </div>
+
+        <!-- 기간 선택 -->
+        <div class="stats-period-btns">
+            <button class="period-btn active-period" data-period="7">1주일</button>
+            <button class="period-btn" data-period="30">1개월</button>
+            <button class="period-btn" data-period="90">3개월</button>
+        </div>
+
+        <!-- 추세 섹션 -->
+        <div class="stats-section-title">추세</div>
+        <div class="metrics-grid" id="metricsGrid">
+            <!-- JS로 채워짐 -->
+        </div>
+
+        <!-- 차트/감정 섹션 -->
+        <div id="statsBox"></div>
+
     </div>
-
-    <!-- 기간 선택 -->
-    <div class="stats-period-btns">
-        <button class="period-btn active-period" data-period="7">1주일</button>
-        <button class="period-btn" data-period="30">1개월</button>
-        <button class="period-btn" data-period="90">3개월</button>
-    </div>
-
-    <!-- 추세 섹션 -->
-    <div class="stats-section-title">추세</div>
-    <div class="metrics-grid" id="metricsGrid">
-        <!-- JS로 채워짐 -->
-    </div>
-
-    <!-- 차트/감정 섹션 -->
-    <div id="statsBox"></div>
 </div>
 
 <!-- 달력 -->
