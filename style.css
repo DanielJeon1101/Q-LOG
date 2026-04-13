@@ -298,3 +298,264 @@ html, body {
 .date-display { font-size: 20px; color: #666; }
 
 /*수정사항 추가*/
+
+/* ══════════════════════════════════════════
+   🌙 다크모드
+   ══════════════════════════════════════════ */
+:root {
+  --dm-bg:        #121212;
+  --dm-app-bg:    #1e1e1e;
+  --dm-card-bg:   #2a2a2a;
+  --dm-text:      #e8eaed;
+  --dm-sub:       #9aa0a6;
+  --dm-border:    #3c4043;
+  --dm-nav-bg:    #1e1e1e;
+  --dm-header-bg: #1e1e1e;
+  --dm-input-bg:  #2a2a2a;
+  --dm-blue:      #4ca3f8;
+  --dm-shadow:    rgba(0,0,0,0.4);
+}
+
+/* body 다크모드 */
+body.dark-mode {
+  background-color: #121212 !important;
+  color: var(--dm-text) !important;
+}
+
+/* 앱 컨테이너 */
+body.dark-mode .app-container {
+  background: var(--dm-app-bg) !important;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5) !important;
+}
+
+/* 홈 헤더 */
+body.dark-mode .home-header {
+  background: var(--dm-header-bg) !important;
+}
+body.dark-mode .title,
+body.dark-mode .time,
+body.dark-mode .date-display {
+  color: var(--dm-text) !important;
+}
+body.dark-mode #home {
+  background: var(--dm-app-bg) !important;
+}
+
+/* 카드 */
+body.dark-mode .card {
+  background: var(--dm-card-bg) !important;
+  box-shadow: 0 4px 10px var(--dm-shadow) !important;
+  border-color: var(--dm-border) !important;
+}
+body.dark-mode .card-text { color: #ccc !important; }
+body.dark-mode .card-date { color: var(--dm-sub) !important; }
+body.dark-mode .card-tag  { background: #2d2b4e !important; color: #a5b4fc !important; }
+
+/* 네비 바 */
+body.dark-mode .nav,
+body.dark-mode .bottom-nav {
+  background: var(--dm-nav-bg) !important;
+  border-top-color: var(--dm-border) !important;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.4) !important;
+}
+body.dark-mode .nav button { color: var(--dm-text) !important; }
+body.dark-mode .nav-center {
+  background: #444 !important;
+}
+
+/* 모달 */
+body.dark-mode .modal-content,
+body.dark-mode .detail-content {
+  background: var(--dm-card-bg) !important;
+  color: var(--dm-text) !important;
+}
+body.dark-mode .detail-text  { color: #ccc !important; }
+body.dark-mode .detail-date  { color: var(--dm-sub) !important; }
+body.dark-mode .detail-close { background: #444 !important; }
+body.dark-mode .mood-grid button { background: #333 !important; }
+
+/* 글쓰기 화면 */
+body.dark-mode #write.active { background: var(--dm-app-bg) !important; }
+body.dark-mode .write-back-btn { background: #333 !important; color: var(--dm-text) !important; }
+body.dark-mode .write-header h2 { color: var(--dm-text) !important; }
+body.dark-mode .write-textarea-wrap {
+  background: var(--dm-card-bg) !important;
+  box-shadow: 0 2px 8px var(--dm-shadow) !important;
+}
+body.dark-mode .write-textarea-wrap textarea { color: var(--dm-text) !important; }
+body.dark-mode .write-tag-box {
+  background: var(--dm-card-bg) !important;
+  box-shadow: 0 2px 8px var(--dm-shadow) !important;
+}
+body.dark-mode .write-tag-input-row input {
+  background: var(--dm-input-bg) !important;
+  border-color: #4f46e5 !important;
+  color: var(--dm-text) !important;
+}
+body.dark-mode .write-save-btn { background: #333 !important; }
+
+/* 통계 화면 */
+body.dark-mode #stats { background: var(--dm-app-bg) !important; }
+body.dark-mode .stats-container { background: var(--dm-app-bg) !important; }
+body.dark-mode .stats-back-btn { background: #333 !important; color: var(--dm-text) !important; }
+body.dark-mode .stats-top-title { color: var(--dm-text) !important; }
+body.dark-mode .stats-section-title { color: var(--dm-text) !important; }
+body.dark-mode .metric-card {
+  background: var(--dm-card-bg) !important;
+  box-shadow: 0 2px 8px var(--dm-shadow) !important;
+}
+body.dark-mode .metric-card-label { color: var(--dm-sub) !important; }
+body.dark-mode .chart-wrap {
+  background: var(--dm-card-bg) !important;
+  box-shadow: 0 2px 8px var(--dm-shadow) !important;
+}
+body.dark-mode .chart-title { color: var(--dm-text) !important; }
+body.dark-mode .period-btn {
+  background: #2a2a2a !important;
+  color: var(--dm-sub) !important;
+  border-color: var(--dm-border) !important;
+}
+
+/* 달력 화면 */
+body.dark-mode #calendar { background: var(--dm-app-bg) !important; }
+body.dark-mode .calendar-sticky-top {
+  background: var(--dm-app-bg) !important;
+  box-shadow: 0 2px 8px var(--dm-shadow) !important;
+}
+body.dark-mode .cal-nav-row h2 { color: var(--dm-text) !important; }
+body.dark-mode .cal-nav-btn { background: #333 !important; color: var(--dm-text) !important; }
+body.dark-mode .day { background: #2a2a2a !important; color: var(--dm-text) !important; }
+body.dark-mode .day:hover { background: #3a3a3a !important; }
+body.dark-mode .weekday  { background: #333 !important; color: var(--dm-sub) !important; }
+body.dark-mode .has-log  { background: #1a3a5c !important; }
+body.dark-mode .day.selected { background: #1e4080 !important; }
+body.dark-mode .day-log-card {
+  background: var(--dm-card-bg) !important;
+  box-shadow: 0 2px 6px var(--dm-shadow) !important;
+}
+body.dark-mode .day-log-text { color: #ccc !important; }
+body.dark-mode .day-log-time { color: var(--dm-sub) !important; }
+body.dark-mode .day-logs-header { color: var(--dm-text) !important; }
+body.dark-mode .tag-search-bar {
+  background: var(--dm-card-bg) !important;
+  border-color: var(--dm-border) !important;
+}
+body.dark-mode .tag-search-input-wrap input {
+  background: var(--dm-input-bg) !important;
+  border-color: var(--dm-border) !important;
+  color: var(--dm-text) !important;
+}
+
+/* 프로필 화면 */
+body.dark-mode #profile { background: var(--dm-app-bg) !important; }
+body.dark-mode #profile h2 { color: var(--dm-text) !important; }
+body.dark-mode .profile-card {
+  background: var(--dm-card-bg) !important;
+  box-shadow: 0 4px 10px var(--dm-shadow) !important;
+}
+body.dark-mode .profile-email { color: var(--dm-text) !important; }
+body.dark-mode .profile-label { color: var(--dm-sub) !important; }
+
+/* 로그인/회원가입/비밀번호 페이지 다크모드 */
+body.dark-mode .app-container {
+  background: var(--dm-app-bg) !important;
+}
+body.dark-mode input[type="email"],
+body.dark-mode input[type="password"],
+body.dark-mode input[type="text"] {
+  background: var(--dm-input-bg) !important;
+  border-color: var(--dm-border) !important;
+  color: var(--dm-text) !important;
+}
+body.dark-mode .back-btn {
+  background: #333 !important;
+  color: var(--dm-text) !important;
+}
+body.dark-mode .form-wrap { background: var(--dm-app-bg) !important; }
+body.dark-mode .logo-title { color: var(--dm-text) !important; }
+body.dark-mode .logo-sub   { color: var(--dm-sub) !important; }
+body.dark-mode .bottom-links { color: var(--dm-sub) !important; }
+body.dark-mode .divider { color: var(--dm-sub) !important; }
+body.dark-mode .divider::before,
+body.dark-mode .divider::after { background: var(--dm-border) !important; }
+
+/* 스크린 배경 */
+body.dark-mode .screen { background: var(--dm-app-bg) !important; }
+
+/* logList 영역 */
+body.dark-mode #logList {
+  background: var(--dm-app-bg) !important;
+}
+
+/* home-header 다크모드 배경 (z-index 낮아도 배경색 맞춰야 함) */
+body.dark-mode .home-header {
+  background: var(--dm-header-bg) !important;
+}
+
+/* ── 다크모드 토글 슬라이더 UI ── */
+.dark-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: white;
+  border-radius: 14px;
+  margin: 10px 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  cursor: pointer;
+  user-select: none;
+}
+body.dark-mode .dark-toggle-row {
+  background: var(--dm-card-bg) !important;
+  box-shadow: 0 2px 8px var(--dm-shadow) !important;
+}
+.dark-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #191f28;
+}
+body.dark-mode .dark-toggle-label { color: var(--dm-text) !important; }
+.dark-toggle-icon { font-size: 20px; }
+
+/* 슬라이더 스위치 */
+.toggle-switch {
+  position: relative;
+  width: 52px;
+  height: 28px;
+  flex-shrink: 0;
+}
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: #e5e8eb;
+  border-radius: 28px;
+  transition: background 0.3s;
+  cursor: pointer;
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  left: 3px;
+  top: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.3s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+.toggle-switch input:checked + .toggle-slider {
+  background: #3182f6;
+}
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(24px);
+}

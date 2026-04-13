@@ -53,8 +53,25 @@
             text-decoration: none;
         }
     </style>
+    <style>
+        /* 🌙 다크모드 */
+        body.dark-mode { background: #121212 !important; }
+        body.dark-mode .join-container {
+            background: #1e1e1e !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4) !important;
+        }
+        body.dark-mode h2 { color: #e8eaed !important; }
+        body.dark-mode .input-group label { color: #9aa0a6 !important; }
+        body.dark-mode input {
+            background: #2a2a2a !important;
+            border-color: #3c4043 !important;
+            color: #e8eaed !important;
+        }
+        body.dark-mode .back-link { color: #9aa0a6 !important; }
+    </style>
 </head>
-<body>
+<body class="">
+<script>if(localStorage.getItem('qlog_dark')==='1')document.body.classList.add('dark-mode');</script>
 
 <div class="join-container">
     <h2>회원가입</h2>

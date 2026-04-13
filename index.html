@@ -43,7 +43,7 @@ body {
     display: flex; flex-direction: column;
     justify-content: center; align-items: center;
     background: #f8f8f8;
-    z-index: 85;
+    z-index: 10; /* ★ 낮게 유지 — 리스트가 헤더 위로 올라오게 */
     transition: height 0.1s linear;
 }
 /* ★ 헤더 minimized 상태: 홈 복귀 시 즉시 적용 */
@@ -51,6 +51,7 @@ body {
     height: 80px !important;
     justify-content: center;
     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    z-index: 84; /* 최소화 후에는 다시 올려서 그림자가 리스트 위에 보이게 */
 }
 .home-header.minimized .title { font-size: 18px !important; margin-top: 0; }
 .home-header.minimized .time  { font-size: 20px !important; margin: 2px 0; }
@@ -63,6 +64,13 @@ body {
     pointer-events: none;
 }
 body.dark-mode .home-header-spacer { background: var(--dm-app-bg); }
+
+/* ★ logList가 헤더보다 위 레이어에 있어야 스크롤 시 가려지지 않음 */
+#logList {
+    position: relative;
+    z-index: 20; /* home-header(z-index:10)보다 높아야 함 */
+    background: #f8f8f8;
+}
 
 /* 스크롤 힌트 */
 .swipe-hint {
@@ -932,29 +940,28 @@ updateTime();
 function updateHeader() {
     const scrollTop = window.scrollY;
     const vh = window.innerHeight;
-    const minHeight = 100; // 고정되었을 때의 최소 높이 (px)
+    const minHeight = 100;
 
-    // 계산식 수정: 0 이하로 떨어지지 않도록 Math.max 사용
     let newHeight = Math.max(minHeight, vh - scrollTop);
     
     const header = document.querySelector('.home-header');
     header.style.height = `${newHeight}px`;
 
-    // 헤더가 상단에 완전히 붙었을 때(minHeight 도달 시) 처리
     if (newHeight <= minHeight) {
         header.classList.add('minimized');
         header.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+        header.style.zIndex = '84'; // 최소화 후엔 리스트 위로 올라와서 그림자가 보여야 함
     } else {
         header.classList.remove('minimized');
         header.style.boxShadow = 'none';
+        header.style.zIndex = '10'; // 스크롤 중엔 리스트가 헤더 위로 — 가려짐 방지
     }
 
-    // 텍스트 크기 및 투명도 조절 (스크롤 비율에 따라)
     const ratio = Math.max(0, (newHeight - minHeight) / (vh - minHeight));
     const title = document.querySelector('.title');
     if (title) {
         title.style.fontSize = `${1.5 + ratio * 1.5}rem`;
-        title.style.opacity = ratio < 0.3 ? 0 : 1; // 너무 작아지면 아예 숨김 처리
+        title.style.opacity = ratio < 0.3 ? 0 : 1;
     }
 }
 
@@ -1079,9 +1086,8 @@ window.selectMood = function(m) {
 // ── Gemini 상태 ───────────────────────────────
 // ★ 본인의 Google AI Studio API 키를 아래에 직접 입력하세요
 // 발급: https://aistudio.google.com/app/apikey
-// 교체 코드
-const GEMINI_API_KEY = window.GEMINI_KEY || '';
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
+const GEMINI_API_KEY = 'AIzaSyDHdvXa7vZEBk2UBqVwR43oZoiR4wvaDLM';   // ← 여기에 실제 키 입력
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 let aiHelpCount  = 2;  // 일기당 최대 2회
 let idleTimer    = null;
@@ -1121,61 +1127,36 @@ document.getElementById('aiStuckPopup').addEventListener('click', () => {
 });
 
 // Gemini API 호출
-// Gemini API 호출
 async function callGeminiHelp() {
     const text = document.getElementById('text').value.trim();
+    const mood = selectedMood || '😐';
     const btn  = document.getElementById('aiHelpBtn');
 
     if (aiHelpCount <= 0) return;
     if (!text) { alert('먼저 글을 조금 써보세요 ✏️'); return; }
-    if (!GEMINI_API_KEY) {
-        document.getElementById('aiResponseArea').innerHTML = `
-            <div class="ai-response-box" style="background:linear-gradient(135deg,#f59e0b,#d97706);">
-                <div class="ai-response-label">⚠️ 설정 필요</div>
-                <div class="ai-response-text">gemini-config.js 파일에 API 키를 입력해주세요.</div>
-            </div>`;
-        return;
-    }
 
     // 로딩 상태
     btn.disabled = true;
     document.getElementById('aiHelpLabel').innerHTML = '<span class="ai-loading"></span>';
     document.getElementById('aiStuckPopup').style.display = 'none';
 
-    // 위기 키워드 사전 검사 (API 호출 전 JS에서 먼저 처리)
-    const crisisWords = ['자살','자해','죽고싶','죽을것같','끝내고싶','사라지고싶','없어지고싶'];
-    if (crisisWords.some(w => text.includes(w))) {
-        document.getElementById('aiResponseArea').innerHTML = `
-            <div class="ai-response-box" style="background:linear-gradient(135deg,#0ea5e9,#0284c7);">
-                <div class="ai-response-label">💙 마음 건강 안내</div>
-                <div class="ai-response-text">오늘도 수고했어요. 힘드시면 마음이음 상담전화 1577-0199로 연락해보세요.</div>
-            </div>`;
-        aiHelpCount--;
-        updateAiHelpBtn();
-        return;
-    }
+    // ★ 프롬프트: 인간친화적 + 법적 안전장치 포함
+    const prompt = `너는 일기 글쓰기 코치야.
+사용자가 일기를 쓰다 막혔을 때, 계속 쓸 수 있도록 돕는 질문을 만들어줘.
 
-    // Chain of Thought 프롬프트
-    const prompt = `You are a warm Korean diary writing coach.
-
-Read the diary entry below carefully, then follow these thinking steps silently:
-
-STEP 1 - Find the emotional core: What is the most emotionally charged moment, person, or event in this entry?
-STEP 2 - Find the gap: What has the writer NOT said yet? (reason behind the feeling, what happened next, what they wish for)
-STEP 3 - Craft one open-ended question in Korean that gently invites the writer to explore that gap.
-
-DIARY:
+[일기 내용]
 ${text}
 
-OUTPUT RULES (strictly follow):
-- Output ONLY the final question from STEP 3
-- Must end with "?"
-- Must be in Korean
-- 15 to 40 Korean characters only
-- No explanations, no numbering, no quotes, no other text
+[출력 규칙 - 반드시 지킬 것]
+- 반드시 "?"로 끝나는 완성된 질문 한 문장만 출력
+- 20자~45자 사이
+- 일기 속 구체적인 상황이나 감정에 연결된 질문
+- 따뜻하고 긍정적인 방향
+- 위기 표현(자해, 자살 등)이 보이면 질문 대신 이것만 출력: "오늘도 수고했어요. 힘들면 마음이음 1577-0199 💙"
+- 질문 외에 다른 말, 번호, 따옴표는 절대 출력하지 마
 
-GOOD EXAMPLE:
-그 말을 들었을 때 가장 먼저 든 감정은 무엇이었나요?`;
+[출력 예시]
+그 순간 어떤 감정이 가장 크게 느껴졌나요?`;
 
     try {
         const res = await fetch(GEMINI_URL, {
@@ -1183,7 +1164,11 @@ GOOD EXAMPLE:
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: { temperature: 0.75, maxOutputTokens: 80 },
+                generationConfig: {
+                    temperature: 0.7,
+                    maxOutputTokens: 100,
+                    topP: 0.9
+                },
                 safetySettings: [
                     { category: 'HARM_CATEGORY_HARASSMENT',        threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
                     { category: 'HARM_CATEGORY_HATE_SPEECH',       threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
@@ -1194,20 +1179,24 @@ GOOD EXAMPLE:
         });
 
         if (!res.ok) {
-            const errData = await res.json();
-            throw new Error(errData.error?.message || `HTTP ${res.status}`);
+            const err = await res.json();
+            throw new Error(err.error?.message || `HTTP ${res.status}`);
         }
 
         const data     = await res.json();
         const question = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-        if (!question)  throw new Error('응답이 비어있습니다');
 
-        document.getElementById('aiResponseArea').innerHTML = `
+        if (!question) throw new Error('응답이 비어있습니다');
+
+        // 응답 표시
+        const area = document.getElementById('aiResponseArea');
+        area.innerHTML = `
             <div class="ai-response-box">
                 <div class="ai-response-label">✦ AI 추가 질문</div>
                 <div class="ai-response-text">${question}</div>
             </div>`;
 
+        // 사용 횟수 차감
         aiHelpCount--;
         updateAiHelpBtn();
         resetIdleTimer();
@@ -1215,16 +1204,22 @@ GOOD EXAMPLE:
     } catch (err) {
         console.error('Gemini API 오류:', err);
 
-        let errMsg   = '잠시 후 다시 시도해주세요.';
+        let errMsg = '잠시 후 다시 시도해주세요.';
         let errStyle = 'background:linear-gradient(135deg,#6b7280,#4b5563);';
 
-        if (err.message.includes('API_KEY_INVALID') ||
-            err.message.includes('400') ||
-            err.message.includes('403')) {
-            errMsg   = 'API 키가 올바르지 않습니다. Google AI Studio에서 재발급하세요.';
+        // API 키 미설정
+        if (!GEMINI_API_KEY || GEMINI_API_KEY === 'AIzaSyDHdvXa7vZEBk2UBqVwR43oZoiR4wvaDLM') {
+            errMsg   = 'GEMINI_API_KEY를 index.html에 직접 입력해주세요.';
+            errStyle = 'background:linear-gradient(135deg,#f59e0b,#d97706);';
+        }
+        // API 키 잘못됨 (403 / 400 / invalid key)
+        else if (err.message && (err.message.includes('API_KEY_INVALID') || err.message.includes('400') || err.message.includes('403'))) {
+            errMsg   = 'API 키가 올바르지 않습니다. Google AI Studio에서 키를 재발급하세요.';
             errStyle = 'background:linear-gradient(135deg,#ef4444,#b91c1c);';
-        } else if (err.message.includes('404')) {
-            errMsg   = '모델을 찾을 수 없습니다.';
+        }
+        // 모델명 오류 (404)
+        else if (err.message && err.message.includes('404')) {
+            errMsg   = '모델을 찾을 수 없습니다. 모델명을 확인하세요.';
             errStyle = 'background:linear-gradient(135deg,#f59e0b,#d97706);';
         }
 
@@ -1233,6 +1228,7 @@ GOOD EXAMPLE:
                 <div class="ai-response-label">⚠️ 오류</div>
                 <div class="ai-response-text">${errMsg}</div>
             </div>`;
+
         updateAiHelpBtn();
     }
 }
@@ -1778,6 +1774,5 @@ function showDayLogs(year, month, day) {
     });
 }
 </script>
-<script src="gemini-config.js"></script>
 </body>
 </html>

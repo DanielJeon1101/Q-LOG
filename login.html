@@ -105,9 +105,38 @@
             box-shadow: 0 4px 16px rgba(0,0,0,0.18);
         }
         .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        /* 🌙 다크모드 */
+        body.dark-mode { background: #121212 !important; }
+        body.dark-mode .app-container { background: #1e1e1e !important; }
+        body.dark-mode .top-title { color: #e8eaed !important; }
+        body.dark-mode .back-btn { background: #333 !important; color: #e8eaed !important; }
+        body.dark-mode .logo-title { color: #e8eaed !important; }
+        body.dark-mode .logo-sub { color: #9aa0a6 !important; }
+        body.dark-mode .field label { color: #9aa0a6 !important; }
+        body.dark-mode input[type="email"],
+        body.dark-mode input[type="password"] {
+            background: #2a2a2a !important;
+            border-color: #3c4043 !important;
+            color: #e8eaed !important;
+        }
+        body.dark-mode .toggle-pw { color: #9aa0a6 !important; }
+        body.dark-mode .bottom-links { color: #9aa0a6 !important; }
+        body.dark-mode .divider { color: #9aa0a6 !important; }
+        body.dark-mode .divider::before,
+        body.dark-mode .divider::after { background: #3c4043 !important; }
+        body.dark-mode .form-wrap { background: #1e1e1e !important; }
     </style>
+<script>
+// 다크모드 자동 적용
+if (localStorage.getItem('qlog_dark') === '1') document.documentElement.classList.add('dark-mode-pending');
+</script>
+<style>
+.dark-mode-pending body, html.dark-mode-pending body { background: #121212 !important; }
+</style>
 </head>
-<body>
+<body class="">
+<script>if(localStorage.getItem('qlog_dark')==='1')document.body.classList.add('dark-mode');</script>
 
 <div class="app-container">
     <div class="top-bar">
