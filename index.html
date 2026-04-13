@@ -24,7 +24,7 @@ body {
 .active { display: block; }
 
 /* ── 홈 화면 ── */
-#home.active { padding-top: 100vh; padding-left: 0; padding-right: 0; padding-bottom: 90px; }
+#home.active { padding-top: 0; padding-left: 0; padding-right: 0; padding-bottom: 90px; }
 
 /* ★ 핵심 수정: 홈으로 복귀 시 헤더가 minimized 상태면 padding-top을 헤더 높이만큼으로 */
 #home.active.header-collapsed { padding-top: 92px; }
@@ -54,6 +54,15 @@ body {
 }
 .home-header.minimized .title { font-size: 18px !important; margin-top: 0; }
 .home-header.minimized .time  { font-size: 20px !important; margin: 2px 0; }
+
+/* 홈 헤더 아래에 자연스럽게 리스트가 오도록 하는 스페이서 */
+.home-header-spacer {
+    height: 100vh;
+    width: 100%;
+    flex-shrink: 0;
+    pointer-events: none;
+}
+body.dark-mode .home-header-spacer { background: var(--dm-app-bg); }
 
 /* 스크롤 힌트 */
 .swipe-hint {
@@ -605,10 +614,12 @@ body:has(#write.active) .nav {
 </head>
 
 <body>
+<script>if(localStorage.getItem('qlog_dark')==='1')document.body.classList.add('dark-mode');</script>
 <div class="app-container">
 
 <!-- 홈 -->
 <div id="home" class="screen active">
+    <div class="home-header-spacer" id="homeHeaderSpacer"></div>
     <div class="home-header" id="homeHeader">
         <div class="title">Q-Log</div>
         <div class="time" id="time"></div>
@@ -721,6 +732,19 @@ body:has(#write.active) .nav {
 <!-- 프로필 -->
 <div id="profile" class="screen">
     <h2>프로필</h2>
+
+    <!-- 🌙 다크모드 토글 (로그인 여부 무관하게 항상 표시) -->
+    <label class="dark-toggle-row" for="darkModeToggle">
+        <div class="dark-toggle-label">
+            <span class="dark-toggle-icon" id="darkModeIcon">🌙</span>
+            <span id="darkModeText">다크모드</span>
+        </div>
+        <div class="toggle-switch">
+            <input type="checkbox" id="darkModeToggle">
+            <span class="toggle-slider"></span>
+        </div>
+    </label>
+
     <div id="beforeLogin">
         <div class="login-required"><p>로그인하고 나만의 일기를<br>기록해보세요 ✏️</p></div>
         <button onclick="location.href='login.html'" style="width:80%; background:#007bff;">로그인</button>
@@ -850,6 +874,7 @@ window.go = function(id) {
         // 1. 헤더 및 힌트 초기화 (큰 헤더 상태로)
         header.classList.remove('minimized');
         header.style.height = '100vh'; // 초기 높이 복구
+        header.style.background = document.body.classList.contains('dark-mode') ? '#1e1e1e' : '';
         homeEl.classList.remove('header-collapsed');
         if (hint) hint.classList.remove('hidden');
 
@@ -933,7 +958,7 @@ function updateHeader() {
     }
 }
 
-// 스크롤 이벤트에 requestAnimationFrame 적용 (부들부들한 리스트 이동)
+// 스크롤 이벤트에 requestAnimationFrame 적용
 let ticking = false;
 window.addEventListener('scroll', () => {
     if (!ticking) {
@@ -944,6 +969,37 @@ window.addEventListener('scroll', () => {
         ticking = true;
     }
 });
+
+// ── 🌙 다크모드 토글 ───────────────────────────
+(function initDarkMode() {
+    const toggle = document.getElementById('darkModeToggle');
+    const icon   = document.getElementById('darkModeIcon');
+    const label  = document.getElementById('darkModeText');
+
+    function applyDark(isDark) {
+        if (isDark) {
+            document.body.classList.add('dark-mode');
+            icon.textContent  = '☀️';
+            label.textContent = '라이트모드';
+            const hh = document.querySelector('.home-header');
+            if (hh) hh.style.background = '#1e1e1e';
+        } else {
+            document.body.classList.remove('dark-mode');
+            icon.textContent  = '🌙';
+            label.textContent = '다크모드';
+            const hh = document.querySelector('.home-header');
+            if (hh) hh.style.background = '';
+        }
+        toggle.checked = isDark;
+        localStorage.setItem('qlog_dark', isDark ? '1' : '0');
+    }
+
+    // 저장된 설정 불러오기 (페이지 새로고침 시 유지)
+    const saved = localStorage.getItem('qlog_dark');
+    if (saved === '1') applyDark(true);
+
+    toggle.addEventListener('change', () => applyDark(toggle.checked));
+})();
 
 // ── FAB ──────────────────────────────────────
 document.getElementById('fabBtn').addEventListener('click', () => {
