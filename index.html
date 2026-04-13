@@ -1656,6 +1656,7 @@ function renderNotifDesc() {
     const desc = document.getElementById('notifSettingDesc');
     if (!desc) return;
     try {
+        const raw = localStorage.getItem('qlog_notification_settings');
         if (!raw) { desc.textContent = '알림 꺼짐'; return; }
         const s = JSON.parse(raw);
         if (!s.enabled || !s.days || s.days.length === 0) { desc.textContent = '알림 꺼짐'; return; }
@@ -1664,6 +1665,8 @@ function renderNotifDesc() {
         const h = s.hour ?? 21;
         const m = s.minute ?? 0;
         const ampm = h < 12 ? '오전' : '오후';
+        const h12  = h % 12 === 0 ? 12 : h % 12;
+        desc.textContent = `${daysStr} · ${ampm} ${h12}:${String(m).padStart(2,'0')}`;
     } catch { desc.textContent = '알림 꺼짐'; }
 }
 // 프로필 탭 진입 시마다 새로고침
