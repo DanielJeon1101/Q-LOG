@@ -770,6 +770,16 @@ body:has(#write.active) .nav {
                 <span style="font-size:16px; color:#aaa;">›</span>
             </h3>
         </div>
+        <div class="card" id="notifSettingCard" onclick="location.href='settings.html'" style="cursor:pointer;">
+            <h3 style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:18px;">🔔</span>
+                    알림 설정
+                </span>
+                <span style="font-size:16px; color:#aaa;">›</span>
+            </h3>
+            <p id="notifSettingDesc" style="font-size:13px; color:#8b95a1; margin-top:4px; margin-bottom:0;"></p>
+        </div>
         <button class="logout-btn" id="logoutBtn">로그아웃</button>
     </div>
 </div>
@@ -1640,6 +1650,29 @@ function renderCalendar() {
     }
     initMultiTagSearch();
 }
+
+// ── 알림 설정 상태 요약 표시 ──────────────────
+function renderNotifDesc() {
+    const desc = document.getElementById('notifSettingDesc');
+    if (!desc) return;
+    try {
+        if (!raw) { desc.textContent = '알림 꺼짐'; return; }
+        const s = JSON.parse(raw);
+        if (!s.enabled || !s.days || s.days.length === 0) { desc.textContent = '알림 꺼짐'; return; }
+        const dayNames = ['일','월','화','수','목','금','토'];
+        const daysStr  = [...s.days].sort((a,b)=>a-b).map(d=>dayNames[d]).join(', ');
+        const h = s.hour ?? 21;
+        const m = s.minute ?? 0;
+        const ampm = h < 12 ? '오전' : '오후';
+    } catch { desc.textContent = '알림 꺼짐'; }
+}
+// 프로필 탭 진입 시마다 새로고침
+const _origGo = window.go;
+window.go = function(id) {
+    _origGo(id);
+    if (id === 'profile') renderNotifDesc();
+};
+renderNotifDesc();
 
 // ── 다중 태그 검색 ────────────────────────────
 function initMultiTagSearch() {
