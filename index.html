@@ -1094,7 +1094,7 @@ window.selectMood = function(m) {
 
 // 교체 코드
 const GEMINI_API_KEY = window.GEMINI_KEY || '';
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-lite:generateContent?key=${GEMINI_API_KEY}`;
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 
 let aiHelpCount  = 2;  // 일기당 최대 2회
@@ -1174,8 +1174,8 @@ ${text}
                 contents: [{ parts: [{ text: prompt }] }],
                 generationConfig: {
                     temperature: 0.7,
-                    maxOutputTokens: 100,
-                    topP: 0.9
+                    maxOutputTokens: 300,
+                    thinkingConfig: { thinkingBudget: 0 }
                 },
                 safetySettings: [
                     { category: 'HARM_CATEGORY_HARASSMENT',        threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
