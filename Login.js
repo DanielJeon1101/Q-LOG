@@ -13,21 +13,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// ✅ 페이지 로드 시 회원가입에서 넘어온 정보가 있는지 확인
-window.addEventListener('DOMContentLoaded', () => {
-  const savedEmail = localStorage.getItem('tempEmail');
-  const savedPassword = localStorage.getItem('tempPassword');
-
-  if (savedEmail && savedPassword) {
-    document.getElementById('email').value = savedEmail;
-    document.getElementById('password').value = savedPassword;
-
-    // 정보를 한 번 사용한 후에는 보안을 위해 삭제
-    localStorage.removeItem('tempEmail');
-    localStorage.removeItem('tempPassword');
-  }
-});
-
 document.getElementById('mainBtn').addEventListener('click', function(event) {
   event.preventDefault();
 
@@ -43,6 +28,7 @@ document.getElementById('mainBtn').addEventListener('click', function(event) {
    .then((userCredential) => {
     const user = userCredential.user;
 
+    // ✅ 로그인 상태 저장
     localStorage.setItem('isLogin', 'true');
     localStorage.setItem('userEmail', user.email);
 
