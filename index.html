@@ -821,6 +821,7 @@ body:has(#write.active) .nav {
 
 </div>
 
+<<<<<<< Updated upstream
 <script type="module">
 import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut }
@@ -829,6 +830,18 @@ import {
     getFirestore, collection, addDoc, getDocs,
     deleteDoc, doc, query, where, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+=======
+function go(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if(id==='stats') renderStats();
+    if(id==='calendar') renderCalendar();
+    if(id === 'home') {
+        renderLogs();
+        window.scrollTo(0, 0); // 홈으로 오면 다시 큰 헤더로 초기화
+    }
+}
+>>>>>>> Stashed changes
 
 const firebaseConfig = {
     apiKey:            "AIzaSyCYkG8uZUET5UnW80IHKGxhL7WpNCp7kfQ",
