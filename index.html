@@ -1101,6 +1101,18 @@ function updateHeader() {
 // 스크롤 이벤트에 requestAnimationFrame 적용
 let ticking = false;
 window.addEventListener('scroll', () => {
+    const scrollY = window.scrollY;
+    const swipeHint = document.querySelector('.swipe-hint');
+    
+    if (!swipeHint) return;
+
+    // 1. 스크롤이 조금이라도 내려가면(예: 10px) 문구를 숨깁니다.
+    if (scrollY > 200) {
+        swipeHint.classList.add('hidden');
+    } else {
+        // 다시 최상단으로 올라오면 문구를 보여줍니다.
+        swipeHint.classList.remove('hidden');
+    }
     if (!ticking) {
         window.requestAnimationFrame(() => {
             updateHeader();

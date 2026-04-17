@@ -604,3 +604,12 @@ body.dark-mode .dark-toggle-label { color: var(--dm-text) !important; }
     color: #b0b8c1;
     font-weight: bold;
 }
+
+.swipe-hint {
+    transition: opacity 0.9s ease, visibility 0.5s ease;
+}
+.swipe-hint.hidden {
+    display: flex !important; /* display none 대신 opacity 사용 */
+    opacity: 0;
+    visibility: hidden;
+}
