@@ -962,6 +962,23 @@ let searchTags = [];
 // ── 로그인 상태 감지 ─────────────────────────
 onAuthStateChanged(auth, (user) => {
     currentUser = user;
+    // 현재 로그인 계정 이메일 캐시 (항상 최신으로 덮어씀)
+    if (user && user.email) {
+        const prevUser = localStorage.getItem('qlog_prev_user_email');
+        localStorage.setItem('qlog_user_email', user.email);
+        try {
+            const raw = localStorage.getItem('qlog_notification_settings');
+            const ns  = raw ? JSON.parse(raw) : {};
+            // 알림 수신 이메일이 없거나 다른 계정으로 전환된 경우에만 계정 이메일로 초기화
+            if (!ns.email || (prevUser && prevUser !== user.email)) {
+                ns.email = user.email;
+                localStorage.setItem('qlog_notification_settings', JSON.stringify(ns));
+            }
+        } catch {}
+        localStorage.setItem('qlog_prev_user_email', user.email);
+    } else if (!user) {
+        localStorage.removeItem('qlog_user_email');
+    }
     renderProfile();
     if (user) loadLogs();
     else { logs = []; renderLogs(); }
