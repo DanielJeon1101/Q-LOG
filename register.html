@@ -100,6 +100,70 @@
             margin-left: 24px;
             line-height: 1.4;
         }
+        /* 약관 그룹 컨테이너 */
+.terms-container {
+    margin: 24px 0;
+    text-align: left;
+}
+
+.term-item {
+    margin-bottom: 12px;
+    border-bottom: 1px solid #f2f4f6;
+    padding-bottom: 8px;
+}
+
+.term-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.term-header label {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    cursor: pointer;
+    flex-grow: 1;
+}
+
+.term-header input {
+    width: 18px;
+    height: 18px;
+    margin-right: 10px;
+    accent-color: #3182f6; /* 토스 블루 */
+}
+
+/* 상세보기 버튼 */
+.view-detail {
+    font-size: 12px;
+    color: #8b95a1;
+    text-decoration: underline;
+    background: none;
+    border: none;
+    padding: 5px;
+}
+
+/* 접혀있는 상세 내용 */
+.term-content {
+    display: none; /* 기본은 숨김 */
+    font-size: 12px;
+    color: #4e5968;
+    background: #f9fafb;
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 8px;
+    line-height: 1.6;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.term-content.show {
+    display: block;
+}
+
+.required-tag { color: #f04452; font-weight: bold; margin-right: 4px; }
+.optional-tag { color: #3182f6; font-weight: bold; margin-right: 4px; }
     </style>
     <style>
         /* 🌙 다크모드 */
@@ -142,7 +206,7 @@
     <label class="checkbox-container">
         <input type="checkbox" id="term-optional">
         <div>
-            <span class="terms-optional">[선택]</span> 연구 목적의 일기 데이터 제공 동의
+            <span class="terms-optional">[피]</span> 연구 목적의 일기 데이터 제공 동의
             <span class="terms-desc">
                 ※ 2학기 캡스톤 연구 목적을 위해, 작성하신 일기의 '텍스트'가 익명화 처리되어 외부 언어 분석 API(ETRI)로 전송될 수 있습니다.
             </span>
