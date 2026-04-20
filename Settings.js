@@ -10,9 +10,9 @@
 //   4. Account → Public Key 복사
 //   5. 아래 세 상수를 교체하세요
 
-const EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID';
-const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';
-const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';
+const EMAILJS_SERVICE_ID  = 'service_tdopgvz';
+const EMAILJS_TEMPLATE_ID = 'template_sijsaan';
+const EMAILJS_PUBLIC_KEY  = 'F-lMwkXBfxRTPe_fB';
 
 const STORAGE_KEY   = 'qlog_notification_settings';
 const LAST_SENT_KEY = 'qlog_notif_last_sent';

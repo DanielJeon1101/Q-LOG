@@ -348,6 +348,11 @@ body:has(#write.active) .nav {
     padding:8px 14px; border-radius:20px;
     background:#4f46e5; color:white; font-size:13px; margin:0;
 }
+.write-date-selector { display:flex; gap:8px; margin:0 20px 14px; }
+.write-date-btn { flex:1; padding:9px 0; border-radius:12px; border:1.5px solid #e5e8eb; background:white; color:#8b95a1; font-size:13px; font-weight:600; cursor:pointer; margin:0; transition:all 0.15s; }
+.write-date-btn.active { background:#191f28; color:white; border-color:#191f28; }
+.write-date-label { font-size:11px; color:#6366f1; margin:-8px 20px 10px; text-align:center; min-height:16px; }
+
 .write-save-wrap { padding: 0 20px; }
 .write-save-btn {
     width: 100%; padding: 16px; border-radius: 16px;
@@ -735,6 +740,11 @@ body:has(#write.active) .nav {
             <h2>기록하기 <span id="writeMoodDisplay"></span></h2>
         </div>
     </div>
+    <div class="write-date-selector">
+        <button class="write-date-btn active" id="dateBtnToday">오늘</button>
+        <button class="write-date-btn" id="dateBtnYesterday">어제</button>
+    </div>
+<div class="write-date-label" id="writeDateLabel"></div>
     <div class="write-question-box">
         <div class="write-question-label">오늘의 질문 ✨</div>
         <div class="write-question-row">
@@ -1225,8 +1235,32 @@ const moodThemeMap = {
     '😡': 'mood-angry',
     '😫': 'mood-tired'
 };
+let selectedWriteDate = 'today';
+function updateWriteDateLabel() {
+    const label = document.getElementById('writeDateLabel');
+    if (selectedWriteDate === 'yesterday') {
+        const yd = new Date(); yd.setDate(yd.getDate() - 1);
+        label.innerText = yd.toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'}) + ' 기록';
+    } else { label.innerText = ''; }
+}
+document.getElementById('dateBtnToday').addEventListener('click', () => {
+    selectedWriteDate = 'today';
+    document.getElementById('dateBtnToday').classList.add('active');
+    document.getElementById('dateBtnYesterday').classList.remove('active');
+    updateWriteDateLabel();
+});
+document.getElementById('dateBtnYesterday').addEventListener('click', () => {
+    selectedWriteDate = 'yesterday';
+    document.getElementById('dateBtnYesterday').classList.add('active');
+    document.getElementById('dateBtnToday').classList.remove('active');
+    updateWriteDateLabel();
+});
 
 window.selectMood = function(m) {
+    selectedWriteDate = 'today';
+    document.getElementById('dateBtnToday').classList.add('active');
+    document.getElementById('dateBtnYesterday').classList.remove('active');
+    updateWriteDateLabel();
     selectedMood = m; closeMood(); window.go('write');
     document.getElementById('writeMoodDisplay').innerText = m;
     const qList = moodQuestions[m] || moodQuestions['😐'];
@@ -1457,12 +1491,24 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     const hourOfDay      = new Date().getHours();
 
     try {
+                // 어제 날짜 처리
+        const isBackdate = selectedWriteDate === 'yesterday';
+        let logDate = serverTimestamp();
+        if (isBackdate) {
+            const yd = new Date();
+            yd.setDate(yd.getDate() - 1);
+            // 어제 날짜 + 현재 시각으로 Timestamp 생성
+            const { Timestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+            logDate = Timestamp.fromDate(yd);
+        }
+        
         await addDoc(collection(db, "logs"), {
             uid:  currentUser.uid,
             mood: selectedMood || analyzeEmotion(text),
             text: text,
             tags: [...autoTags, ...manualTags],
-            date: serverTimestamp(),
+            date: logDate,
+            isBackdate: isBackdate,
             metrics: { timeToFirst, writingDuration, charCount, sentenceCount, charsPerMinute, backspaceCount, hourOfDay }
         });
         document.getElementById('text').value = "";
@@ -1703,6 +1749,9 @@ function getFilteredLogs(days) {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
     return logs.filter(l => l.date instanceof Date && l.date >= cutoff);
+}
+function getMetricsLogs(days) {
+    return getFilteredLogs(days).filter(l => !l.isBackdate);
 }
 
 function renderStats() {
