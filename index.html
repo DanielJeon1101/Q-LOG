@@ -89,6 +89,115 @@ body.dark-mode .home-header-spacer { background: var(--dm-app-bg); }
     50%      { transform: translateX(-50%) translateY(-8px); opacity:1; }
 }
 
+/* ── 감정 필터 바 ── */
+/* 헤더와 리스트 사이 영역: 항상 보이는 점 + 열리면 이모지 행 */
+.mood-filter-bar {
+    position: relative;
+    z-index: 25;
+    background: #f8f8f8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 0 6px;
+    gap: 0;
+    /* 이 영역이 헤더(fixed) 바로 아래 logList 위에 붙어있음 */
+}
+
+/* 흰 점 버튼 - 이미지1처럼 작은 흰 원 */
+.mood-dot-btn {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid rgba(255,255,255,0.9);
+    padding: 0; margin: 0;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+    transition: transform 0.18s, box-shadow 0.18s;
+    flex-shrink: 0;
+    display: block;
+}
+.mood-dot-btn:hover { transform: scale(1.4); box-shadow: 0 3px 10px rgba(0,0,0,0.25); }
+.mood-dot-btn.open { background: rgba(255,255,255,0.6); }
+
+/* 이모지 가로 행 - 접혔다 펼쳐지는 애니메이션 */
+.mood-emoji-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.38s cubic-bezier(0.4,0,0.2,1),
+                opacity 0.28s ease,
+                margin 0.3s ease;
+    margin: 0 16px;
+    width: calc(100% - 32px);
+    justify-content: center;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+.mood-emoji-row::-webkit-scrollbar { display: none; }
+.mood-emoji-row.show {
+    max-height: 72px;
+    opacity: 1;
+    margin-top: 10px;
+    margin-bottom: 4px;
+}
+
+/* 각 이모지 버튼 */
+.mood-emoji-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.15);
+    border: 2px solid rgba(255,255,255,0.35);
+    border-radius: 50%;
+    width: 44px; height: 44px;
+    padding: 0; margin: 0;
+    cursor: pointer;
+    font-size: 22px;
+    transition: transform 0.15s, background 0.15s, border-color 0.15s;
+    flex-shrink: 0;
+}
+/* 전체 버튼은 텍스트라 별도 처리 */
+.mood-emoji-btn[data-mood="all"] {
+    font-size: 11px;
+    font-weight: 800;
+    color: #555;
+    background: rgba(255,255,255,0.85);
+    border-color: rgba(0,0,0,0.1);
+    letter-spacing: -0.3px;
+    width: auto;
+    padding: 0 12px;
+    border-radius: 22px;
+    height: 36px;
+}
+.mood-emoji-btn:not([data-mood="all"]):hover {
+    transform: scale(1.18);
+}
+.mood-emoji-btn.active {
+    background: rgba(255,255,255,0.92);
+    border-color: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+    transform: scale(1.12);
+}
+.mood-emoji-btn[data-mood="all"].active {
+    background: #191f28;
+    color: white;
+    border-color: #191f28;
+    transform: none;
+}
+
+/* 다크모드 */
+body.dark-mode .mood-filter-bar { background: #121212; }
+body.dark-mode .mood-dot-btn { background: rgba(255,255,255,0.8); border-color: rgba(255,255,255,0.6); }
+body.dark-mode .mood-emoji-btn { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); }
+body.dark-mode .mood-emoji-btn.active { background: rgba(255,255,255,0.9); box-shadow: 0 2px 12px rgba(0,0,0,0.4); }
+body.dark-mode .mood-emoji-btn[data-mood="all"] { background: rgba(255,255,255,0.12); color: #e8eaed; border-color: rgba(255,255,255,0.2); }
+body.dark-mode .mood-emoji-btn[data-mood="all"].active { background: #e8eaed; color: #191f28; border-color: #e8eaed; }
+
 /* ── 카드 ── */
 .card {
     background: white; margin: 10px auto; padding: 15px;
@@ -729,6 +838,19 @@ body:has(#write.active) .nav {
         <div class="swipe-hint-arrow">↑</div>
         <div class="swipe-hint-text">위로 쓸어올려 일기 보기</div>
     </div>
+    <!-- 이모지 필터 영역 -->
+    <div class="mood-filter-bar" id="moodFilterBar">
+        <button class="mood-dot-btn" id="moodDotBtn" title="감정 필터" aria-label="감정 필터 열기"></button>
+        <div class="mood-emoji-row" id="moodEmojiRow">
+            <button class="mood-emoji-btn active" data-mood="all">전체</button>
+            <button class="mood-emoji-btn" data-mood="😀">😀</button>
+            <button class="mood-emoji-btn" data-mood="🙂">🙂</button>
+            <button class="mood-emoji-btn" data-mood="😐">😐</button>
+            <button class="mood-emoji-btn" data-mood="😢">😢</button>
+            <button class="mood-emoji-btn" data-mood="😡">😡</button>
+            <button class="mood-emoji-btn" data-mood="😫">😫</button>
+        </div>
+    </div>
     <div id="logList"></div>
 </div>
 
@@ -1131,6 +1253,84 @@ window.addEventListener('scroll', () => {
         ticking = true;
     }
 });
+
+// ── 스크롤 스냅 (한 틱 내리면 리스트가 top으로) ─────
+(function initScrollSnap() {
+    let snapPending = false;
+    let snapTimeout = null;
+    let userScrolled = false;
+
+    window.addEventListener('scroll', () => {
+        if (!document.getElementById('home').classList.contains('active')) return;
+        const scrollY = window.scrollY;
+        const vh = window.innerHeight;
+        const header = document.getElementById('homeHeader');
+        if (!header || header.classList.contains('minimized')) return;
+
+        // 살짝 내렸을 때 (30~80% vh 사이) 스냅 발동
+        if (!snapPending && scrollY > 30 && scrollY < vh * 0.75) {
+            snapPending = true;
+            clearTimeout(snapTimeout);
+            snapTimeout = setTimeout(() => {
+                window.scrollTo({ top: vh, behavior: 'smooth' });
+                setTimeout(() => { snapPending = false; }, 500);
+            }, 60);
+        }
+    }, { passive: true });
+})();
+
+// ── 이모지 필터 ─────────────────────────────────
+(function initMoodFilter() {
+    const dotBtn   = document.getElementById('moodDotBtn');
+    const emojiRow = document.getElementById('moodEmojiRow');
+    let isOpen = false;
+
+    function openFilter() {
+        isOpen = true;
+        emojiRow.classList.add('show');
+        dotBtn.classList.add('open');
+    }
+    function closeFilter() {
+        isOpen = false;
+        emojiRow.classList.remove('show');
+        dotBtn.classList.remove('open');
+    }
+
+    dotBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        isOpen ? closeFilter() : openFilter();
+    });
+
+    emojiRow.querySelectorAll('.mood-emoji-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // 이미 선택된 걸 다시 누르면 전체로 리셋
+            if (btn.classList.contains('active') && btn.dataset.mood !== 'all') {
+                emojiRow.querySelectorAll('.mood-emoji-btn').forEach(b => b.classList.remove('active'));
+                emojiRow.querySelector('[data-mood="all"]').classList.add('active');
+            } else {
+                emojiRow.querySelectorAll('.mood-emoji-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            }
+            if (typeof renderLogs === 'function') renderLogs();
+            // 선택 후 패널은 유지 (닫지 않음)
+        });
+    });
+
+    // 필터 바 영역 클릭 시 닫기 방지
+    document.getElementById('moodFilterBar').addEventListener('click', e => e.stopPropagation());
+
+    // 외부 클릭 시에만 닫기
+    document.addEventListener('click', () => closeFilter());
+
+    window.getActiveMoodFilter = () => {
+        const active = emojiRow.querySelector('.mood-emoji-btn.active');
+        return active ? active.dataset.mood : 'all';
+    };
+})();
+
+
+
 
 // ── 🌙 다크모드 토글 ───────────────────────────
 (function initDarkMode() {
@@ -1549,14 +1749,28 @@ function renderLogs() {
     if (logs.length === 0) {
         list.innerHTML = `<div class="login-required"><p>아직 작성한 일기가 없어요.<br>+ 버튼을 눌러 시작해보세요!</p></div>`; return;
     }
+
+    // 감정 필터 적용 + 최신순 정렬
+    const activeMood = window.getActiveMoodFilter ? window.getActiveMoodFilter() : 'all';
+    const filtered = (activeMood === 'all' ? [...logs] : logs.filter(l => l.mood === activeMood))
+        .sort((a, b) => {
+            const da = a.date instanceof Date ? a.date : new Date(a.date);
+            const db = b.date instanceof Date ? b.date : new Date(b.date);
+            return db - da;
+        });
+
+    if (filtered.length === 0) {
+        list.innerHTML = `<div class="login-required"><p>해당 감정의 일기가 없어요.</p></div>`; return;
+    }
+
     const dateCounts = {};
-    logs.forEach(l => {
+    filtered.forEach(l => {
         if (l.date instanceof Date) {
             const k = `${l.date.getFullYear()}-${l.date.getMonth()}-${l.date.getDate()}`;
             dateCounts[k] = (dateCounts[k] || 0) + 1;
         }
     });
-    logs.forEach(l => {
+    filtered.forEach(l => {
         const div = document.createElement('div');
         div.className = 'card';
         let dateLabel = '';

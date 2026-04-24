@@ -217,6 +217,69 @@
     </form>
     <a href="index.html" class="back-link">돌아가기</a>
 </div>  
-<script type="module" src="Register.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCYkG8uZUET5UnW80IHKGxhL7WpNCp7kfQ",
+  authDomain: "q-log-f6aed.firebaseapp.com",
+  projectId: "q-log-f6aed",
+  storageBucket: "q-log-f6aed.firebasestorage.app",
+  messagingSenderId: "373152234648",
+  appId: "1:373152234648:web:aa2d94664a5674aca9e4ed"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+const passwordInput = document.getElementById('password');
+const pwHint = document.createElement('div');
+pwHint.id = 'pw-hint';
+pwHint.style.cssText = 'font-size:12px; margin-top:5px; color:#aaa; transition:color 0.2s;';
+pwHint.textContent = '비밀번호는 8자리 이상이어야 합니다.';
+passwordInput.parentNode.appendChild(pwHint);
+
+passwordInput.addEventListener('input', () => {
+  const len = passwordInput.value.length;
+  if (len === 0) {
+    pwHint.style.color = '#aaa';
+    pwHint.textContent = '비밀번호는 8자리 이상이어야 합니다.';
+  } else if (len < 8) {
+    pwHint.style.color = '#e53e3e';
+    pwHint.textContent = `비밀번호는 8자리 이상이어야 합니다. (현재 ${len}자리)`;
+  } else {
+    pwHint.style.color = '#38a169';
+    pwHint.textContent = `✓ 사용 가능한 비밀번호입니다.`;
+  }
+});
+
+document.getElementById('submit').addEventListener('click', function(event) {
+  event.preventDefault();
+  const email = document.getElementById('email').value;
+  const password = passwordInput.value;
+
+  if (password.length < 8) {
+    pwHint.style.color = '#e53e3e';
+    pwHint.textContent = `비밀번호는 8자리 이상이어야 합니다. (현재 ${password.length}자리)`;
+    passwordInput.focus();
+    return;
+  }
+
+  if (!document.getElementById('term-required').checked) {
+    alert('필수 약관에 동의해주세요.');
+    return;
+  }
+
+  createUserWithEmailAndPassword(auth, email, password)
+    .then((userCredential) => {
+      alert('가입이 완료되었습니다!');
+      location.href = 'index.html';
+    })
+    .catch((error) => {
+      alert('오류: ' + error.message);
+    });
+});
+</script>
 </body>
 </html>
