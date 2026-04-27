@@ -1254,30 +1254,7 @@ window.addEventListener('scroll', () => {
     }
 });
 
-// ── 스크롤 스냅 (한 틱 내리면 리스트가 top으로) ─────
-(function initScrollSnap() {
-    let snapPending = false;
-    let snapTimeout = null;
-    let userScrolled = false;
-
-    window.addEventListener('scroll', () => {
-        if (!document.getElementById('home').classList.contains('active')) return;
-        const scrollY = window.scrollY;
-        const vh = window.innerHeight;
-        const header = document.getElementById('homeHeader');
-        if (!header || header.classList.contains('minimized')) return;
-
-        // 살짝 내렸을 때 (30~80% vh 사이) 스냅 발동
-        if (!snapPending && scrollY > 30 && scrollY < vh * 0.75) {
-            snapPending = true;
-            clearTimeout(snapTimeout);
-            snapTimeout = setTimeout(() => {
-                window.scrollTo({ top: vh, behavior: 'smooth' });
-                setTimeout(() => { snapPending = false; }, 500);
-            }, 60);
-        }
-    }, { passive: true });
-})();
+// 스크롤 스냅 제거 — 사용자가 자유롭게 오르내릴 수 있도록 수동 스크롤만 허용
 
 // ── 이모지 필터 ─────────────────────────────────
 (function initMoodFilter() {
