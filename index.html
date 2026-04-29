@@ -801,6 +801,401 @@ body:has(#write.active) .nav {
     min-height: calc(100vh - 70px);
 }
 </style>
+<style>
+/* ═══════════════════════════════════════════════
+   NEW FEATURES CSS
+   1. 스트릭 배너 (홈화면 헤더)
+   2. 배지 시스템
+   3. 감정 식물 위젯
+   4. 하루 요약 박스 (글쓰기 화면)
+   5. 스트릭 팝업
+═══════════════════════════════════════════════ */
+
+/* ── 홈 헤더 새 기능 배너 ── */
+.home-streak-banner {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(8px);
+    border-radius: 30px;
+    padding: 10px 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    z-index: 5;
+    white-space: nowrap;
+}
+.home-streak-banner:hover {
+    transform: translateX(-50%) scale(1.03);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.15);
+}
+.home-streak-banner.hidden { display: none; }
+.streak-fire { font-size: 22px; animation: fireFlicker 1.5s ease-in-out infinite; }
+@keyframes fireFlicker {
+    0%,100% { transform: scale(1) rotate(-3deg); }
+    50%      { transform: scale(1.1) rotate(3deg); }
+}
+.streak-text { font-size: 14px; font-weight: 700; color: #191f28; }
+.streak-count { font-size: 20px; font-weight: 900; color: #f97316; letter-spacing: -0.5px; }
+.streak-plant-mini { font-size: 18px; margin-left: 4px; }
+
+/* ── 스트릭 팝업 모달 ── */
+.streak-modal {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex; align-items: flex-end; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s; z-index: 9999;
+}
+.streak-modal.show { opacity: 1; pointer-events: auto; }
+.streak-popup {
+    background: white;
+    border-radius: 28px 28px 0 0;
+    padding: 32px 24px 40px;
+    width: 100%; max-width: 480px;
+    text-align: center;
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
+}
+.streak-modal.show .streak-popup { transform: translateY(0); }
+.streak-popup-fire { font-size: 64px; margin-bottom: 8px; animation: fireFlicker 1s infinite; }
+.streak-popup-title {
+    font-size: 26px; font-weight: 900; letter-spacing: -0.5px;
+    color: #191f28; margin-bottom: 6px;
+}
+.streak-popup-sub { font-size: 15px; color: #8b95a1; margin-bottom: 28px; line-height: 1.6; }
+.streak-popup-stats {
+    display: flex; gap: 12px; margin-bottom: 24px;
+}
+.streak-stat-box {
+    flex: 1; background: #f8f9ff; border-radius: 16px; padding: 16px 12px;
+}
+.streak-stat-num { font-size: 28px; font-weight: 900; color: #4f46e5; }
+.streak-stat-label { font-size: 12px; color: #8b95a1; margin-top: 4px; font-weight: 600; }
+.streak-close-btn {
+    width: 100%; padding: 16px; border-radius: 16px;
+    background: #191f28; color: white; font-size: 16px; font-weight: 700;
+    border: none; cursor: pointer; margin: 0;
+}
+
+/* ── 배지 시스템 ── */
+.badge-new-popup {
+    position: fixed;
+    top: 20px; left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    background: linear-gradient(135deg, #f97316, #fb923c);
+    color: white; border-radius: 20px;
+    padding: 14px 22px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 8px 30px rgba(249,115,22,0.45);
+    z-index: 10000; max-width: 360px; width: 90%;
+    transition: transform 0.5s cubic-bezier(0.16,1,0.3,1);
+    pointer-events: none;
+}
+.badge-new-popup.show { transform: translateX(-50%) translateY(0); }
+.badge-new-emoji { font-size: 32px; }
+.badge-new-text { flex: 1; }
+.badge-new-label { font-size: 11px; font-weight: 700; opacity: 0.85; margin-bottom: 2px; }
+.badge-new-name  { font-size: 16px; font-weight: 900; }
+.badge-new-desc  { font-size: 12px; opacity: 0.85; }
+
+/* 배지 그리드 (프로필/통계에서 사용) */
+.badge-section { padding: 0 16px 16px; }
+.badge-section-title {
+    font-size: 18px; font-weight: 800; color: #191f28;
+    margin-bottom: 12px; padding-top: 16px;
+    display: flex; align-items: center; gap: 8px;
+}
+.badge-count-chip {
+    background: #4f46e5; color: white;
+    font-size: 12px; font-weight: 700;
+    padding: 2px 8px; border-radius: 20px;
+}
+.badge-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+.badge-item {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 5px; padding: 12px 6px;
+    background: white; border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transition: transform 0.2s;
+    cursor: pointer;
+}
+.badge-item:hover { transform: scale(1.05); }
+.badge-item.locked { opacity: 0.3; filter: grayscale(1); }
+.badge-emoji { font-size: 26px; }
+.badge-name { font-size: 10px; font-weight: 700; color: #555; text-align: center; line-height: 1.2; }
+
+/* ── 감정 식물 위젯 ── */
+.plant-widget {
+    margin: 12px 16px;
+    background: linear-gradient(135deg, #f0fff4, #dcfce7);
+    border-radius: 20px;
+    padding: 20px;
+    display: flex; align-items: center; gap: 16px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 12px rgba(16,185,129,0.1);
+    position: relative; overflow: hidden;
+}
+.plant-widget::before {
+    content: '';
+    position: absolute; top: 0; right: 0;
+    width: 120px; height: 120px;
+    background: radial-gradient(circle, rgba(16,185,129,0.1), transparent);
+    border-radius: 50%;
+}
+.plant-widget:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16,185,129,0.2); }
+.plant-big-emoji { font-size: 52px; animation: plantSway 3s ease-in-out infinite; flex-shrink: 0; }
+@keyframes plantSway {
+    0%,100% { transform: rotate(-3deg); }
+    50%      { transform: rotate(3deg); }
+}
+.plant-widget.wilting .plant-big-emoji { animation: wilt 2s ease-in-out infinite; }
+@keyframes wilt {
+    0%,100% { transform: rotate(-8deg) translateY(0); }
+    50%      { transform: rotate(-12deg) translateY(3px); opacity: 0.7; }
+}
+.plant-info { flex: 1; min-width: 0; }
+.plant-stage-name { font-size: 16px; font-weight: 800; color: #065f46; margin-bottom: 2px; }
+.plant-stage-desc { font-size: 13px; color: #047857; line-height: 1.4; }
+.plant-bar-wrap { margin-top: 8px; background: rgba(0,0,0,0.1); border-radius: 4px; height: 6px; overflow: hidden; }
+.plant-bar { height: 100%; background: linear-gradient(90deg, #10b981, #059669); border-radius: 4px; transition: width 0.8s cubic-bezier(0.16,1,0.3,1); }
+.plant-trend { font-size: 11px; color: #059669; font-weight: 700; margin-top: 4px; }
+.plant-trend.wilting { color: #dc2626; }
+
+/* 식물 상세 모달 */
+.plant-modal {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: flex; align-items: flex-end; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s; z-index: 9998;
+}
+.plant-modal.show { opacity: 1; pointer-events: auto; }
+.plant-popup {
+    background: white; border-radius: 28px 28px 0 0;
+    padding: 28px 24px 40px;
+    width: 100%; max-width: 480px; text-align: center;
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
+}
+.plant-modal.show .plant-popup { transform: translateY(0); }
+.plant-popup-emoji { font-size: 80px; margin-bottom: 12px; display: block; animation: plantSway 3s ease-in-out infinite; }
+.plant-popup-stage { font-size: 20px; font-weight: 900; color: #065f46; margin-bottom: 6px; }
+.plant-popup-desc { font-size: 15px; color: #555; margin-bottom: 24px; line-height: 1.6; }
+.plant-tip-box {
+    background: #f0fff4; border-radius: 16px;
+    padding: 16px 18px; margin-bottom: 20px; text-align: left;
+}
+.plant-tip-title { font-size: 13px; font-weight: 700; color: #065f46; margin-bottom: 8px; }
+.plant-tip-item { font-size: 13px; color: #047857; line-height: 1.7; }
+.plant-close-btn {
+    width: 100%; padding: 16px; border-radius: 16px;
+    background: #065f46; color: white; font-size: 16px; font-weight: 700;
+    border: none; cursor: pointer; margin: 0;
+}
+/* 식물 단계 타임라인 */
+.plant-stages-row {
+    display: flex; gap: 6px; overflow-x: auto;
+    padding: 4px 0 12px; margin-bottom: 16px;
+    scrollbar-width: none;
+}
+.plant-stages-row::-webkit-scrollbar { display: none; }
+.plant-stage-dot {
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    flex-shrink: 0; padding: 8px 10px;
+    border-radius: 12px; background: #f2f4f6;
+    opacity: 0.4; transition: opacity 0.3s;
+    font-size: 20px;
+}
+.plant-stage-dot.reached { opacity: 1; }
+.plant-stage-dot.current { background: #dcfce7; opacity: 1; }
+.plant-stage-dot span { font-size: 10px; color: #555; }
+
+/* ── 하루 요약 박스 (글쓰기 화면) ── */
+.daily-summary-box {
+    margin: 0 20px 16px;
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border-radius: 16px;
+    padding: 16px 18px;
+    text-align: left;
+    position: relative;
+}
+.daily-summary-label {
+    font-size: 11px; font-weight: 700; color: #92400e; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 5px;
+}
+.daily-summary-input {
+    width: 100%; border: none; outline: none; background: transparent;
+    font-size: 15px; color: #78350f; font-weight: 600;
+    font-family: inherit; line-height: 1.5;
+    placeholder-color: #d97706;
+    resize: none;
+}
+.daily-summary-input::placeholder { color: rgba(120,53,15,0.5); }
+.daily-summary-count {
+    font-size: 11px; color: #b45309; text-align: right; margin-top: 4px;
+}
+
+/* ── 일기 카드에 요약 표시 ── */
+.card-summary {
+    font-size: 13px; color: #b45309; font-weight: 600;
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    padding: 6px 12px; border-radius: 8px; margin-top: 8px;
+    display: flex; gap: 6px; align-items: flex-start;
+}
+.card-summary-icon { flex-shrink: 0; }
+
+/* ── 스트릭 캘린더 히트맵 (통계 화면) ── */
+.streak-heatmap-section {
+    background: white; border-radius: 16px;
+    padding: 16px; margin: 10px 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.heatmap-title { font-size: 15px; font-weight: 700; color: #191f28; margin-bottom: 12px; }
+.heatmap-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+.heatmap-cell {
+    aspect-ratio: 1; border-radius: 4px;
+    background: #f2f4f6;
+    transition: transform 0.15s;
+    cursor: default;
+}
+.heatmap-cell.has-entry { background: #a7f3d0; }
+.heatmap-cell.has-entry.good-mood { background: #6ee7b7; }
+.heatmap-cell.has-entry.great-mood { background: #10b981; }
+.heatmap-cell.has-entry.bad-mood { background: #fca5a5; }
+.heatmap-cell.today-cell { outline: 2px solid #f97316; }
+
+/* ── 프로필 개선 ── */
+.profile-hero {
+    background: linear-gradient(160deg, #4f46e5 0%, #7c3aed 100%);
+    padding: 32px 24px 28px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+.profile-hero::before {
+    content: '';
+    position: absolute; top: -50%; right: -30%;
+    width: 200px; height: 200px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 50%;
+}
+.profile-hero::after {
+    content: '';
+    position: absolute; bottom: -30%; left: -20%;
+    width: 150px; height: 150px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 50%;
+}
+.profile-avatar-wrap {
+    position: relative; display: inline-block; margin-bottom: 14px;
+}
+.profile-avatar-circle {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px; border: 3px solid rgba(255,255,255,0.4);
+    margin: 0 auto;
+}
+.profile-streak-badge {
+    position: absolute; bottom: -4px; right: -4px;
+    background: #f97316; color: white;
+    border-radius: 20px; padding: 2px 8px;
+    font-size: 11px; font-weight: 900;
+    border: 2px solid white; white-space: nowrap;
+}
+.profile-name { font-size: 20px; font-weight: 800; color: white; margin-bottom: 4px; }
+.profile-email-sub { font-size: 13px; color: rgba(255,255,255,0.7); margin-bottom: 16px; }
+.profile-hero-stats {
+    display: flex; gap: 16px; justify-content: center;
+}
+.profile-stat-item { text-align: center; }
+.profile-stat-num { font-size: 22px; font-weight: 900; color: white; }
+.profile-stat-label { font-size: 11px; color: rgba(255,255,255,0.7); font-weight: 600; }
+
+.profile-menu-list {
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 10px;
+}
+.profile-menu-item {
+    display: flex; align-items: center;
+    background: white; border-radius: 16px;
+    padding: 16px 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.15s;
+    text-decoration: none;
+}
+.profile-menu-item:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); transform: translateY(-1px); }
+.profile-menu-icon { font-size: 20px; margin-right: 14px; flex-shrink: 0; }
+.profile-menu-label { flex: 1; font-size: 15px; font-weight: 700; color: #191f28; }
+.profile-menu-sub { font-size: 12px; color: #8b95a1; margin-top: 2px; }
+.profile-menu-arrow { font-size: 16px; color: #c4c9d0; margin-left: 8px; }
+
+.profile-section-gap { height: 8px; background: #f2f4f6; margin: 4px 0; }
+
+/* ── 다크모드 새 기능 ── */
+body.dark-mode .home-streak-banner { background: rgba(40,40,40,0.95); }
+body.dark-mode .streak-text { color: #e8eaed; }
+body.dark-mode .streak-popup { background: #2a2a2a; }
+body.dark-mode .streak-popup-title { color: #e8eaed; }
+body.dark-mode .streak-stat-box { background: #1e1e1e; }
+body.dark-mode .plant-widget { background: linear-gradient(135deg, #1a2e22, #1f3a28); }
+body.dark-mode .plant-stage-name { color: #6ee7b7; }
+body.dark-mode .plant-stage-desc, body.dark-mode .plant-trend { color: #34d399; }
+body.dark-mode .plant-popup { background: #2a2a2a; }
+body.dark-mode .plant-popup-desc { color: #ccc; }
+body.dark-mode .plant-tip-box { background: #1a2e22; }
+body.dark-mode .plant-tip-title { color: #6ee7b7; }
+body.dark-mode .plant-tip-item { color: #34d399; }
+body.dark-mode .badge-item { background: #2a2a2a; }
+body.dark-mode .badge-name { color: #9aa0a6; }
+body.dark-mode .streak-heatmap-section { background: #2a2a2a; }
+body.dark-mode .heatmap-cell { background: #333; }
+body.dark-mode .profile-menu-item { background: #2a2a2a; }
+body.dark-mode .profile-menu-label { color: #e8eaed; }
+body.dark-mode .plant-stage-dot { background: #333; }
+body.dark-mode .plant-stage-dot.current { background: #1a2e22; }
+
+
+/* ── 달력 날짜 + 기분 동시 표시 ── */
+.day.has-log {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    padding: 2px 0;
+}
+.cal-day-num {
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    color: inherit;
+}
+.cal-day-mood {
+    font-size: 16px;
+    line-height: 1;
+}
+/* 기분 없는 날은 기존 스타일 유지 */
+.day:not(.has-log) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+</style>
 </head>
 
 <body>
@@ -814,6 +1209,11 @@ body:has(#write.active) .nav {
         <div class="title">Q-Log</div>
         <div class="time" id="time"></div>
         <div id="date" class="date-display"></div>
+        <div class="home-streak-banner hidden" id="streakBanner" onclick="window.showStreakPopup()">
+            <span class="streak-fire" id="streakFire">🔥</span>
+            <span class="streak-text"><span class="streak-count" id="streakCount">0</span>일 연속!</span>
+            <span class="streak-plant-mini" id="streakPlantMini">🌱</span>
+        </div>
     </div>
     <!-- 이모지 필터 영역 -->
     <div class="mood-filter-bar" id="moodFilterBar">
@@ -830,6 +1230,15 @@ body:has(#write.active) .nav {
             <button class="mood-emoji-btn" data-mood="😢">😢</button>
             <button class="mood-emoji-btn" data-mood="😡">😡</button>
             <button class="mood-emoji-btn" data-mood="😫">😫</button>
+        </div>
+    </div>
+    <div class="plant-widget" id="plantWidget" onclick="window.showPlantModal()">
+        <div class="plant-big-emoji" id="plantEmoji">🌰</div>
+        <div class="plant-info">
+            <div class="plant-stage-name" id="plantStageName">씨앗</div>
+            <div class="plant-stage-desc" id="plantStageDesc">일기를 써서 식물을 키워보세요!</div>
+            <div class="plant-bar-wrap"><div class="plant-bar" id="plantBar" style="width:5%"></div></div>
+            <div class="plant-trend" id="plantTrend">🌱 첫 일기를 작성해보세요</div>
         </div>
     </div>
     <div id="logList"></div>
@@ -879,6 +1288,13 @@ body:has(#write.active) .nav {
             <button id="tagAddBtn">+ 추가</button>
         </div>
     </div>
+    <div class="daily-summary-box" id="dailySummaryBox">
+        <div class="daily-summary-label">✨ 오늘 하루를 한 줄로 요약하면?</div>
+        <textarea class="daily-summary-input" id="dailySummaryInput"
+            placeholder="예: 소소하지만 확실한 행복을 느낀 하루였다"
+            maxlength="80" rows="2"></textarea>
+        <div class="daily-summary-count"><span id="summaryCharCount">0</span>/80자</div>
+    </div>
     <div class="write-save-wrap">
         <button class="write-save-btn" id="saveBtn">저장</button>
     </div>
@@ -909,7 +1325,14 @@ body:has(#write.active) .nav {
 
         <!-- 차트/감정 섹션 -->
         <div id="statsBox"></div>
-
+        <div class="streak-heatmap-section">
+            <div class="heatmap-title">📅 최근 28일 기록</div>
+            <div class="heatmap-grid" id="heatmapGrid"></div>
+        </div>
+        <div class="badge-section" id="statsBadgeSection" style="display:none;">
+            <div class="badge-section-title">🏆 나의 배지 <span class="badge-count-chip" id="statsBadgeChip">0/14</span></div>
+            <div class="badge-grid" id="statsBadgeGrid"></div>
+        </div>
     </div>
 </div>
 
@@ -938,49 +1361,77 @@ body:has(#write.active) .nav {
 </div>
 
 <!-- 프로필 -->
-<div id="profile" class="screen">
-    <h2>프로필</h2>
-
-    <!-- 🌙 다크모드 토글 (로그인 여부 무관하게 항상 표시) -->
-    <label class="dark-toggle-row" for="darkModeToggle">
-        <div class="dark-toggle-label">
-            <span class="dark-toggle-icon" id="darkModeIcon">🌙</span>
-            <span id="darkModeText">다크모드</span>
+<div id="profile" class="screen" style="padding:0; overflow-y:auto; text-align:left; min-height:100vh;">
+    <!-- 히어로 (로그인 후) -->
+    <div id="profileHero" class="profile-hero" style="display:none;">
+        <div class="profile-avatar-wrap">
+            <div class="profile-avatar-circle">👤</div>
+            <div class="profile-streak-badge" id="profileStreakBadge">🔥 0일</div>
         </div>
-        <div class="toggle-switch">
-            <input type="checkbox" id="darkModeToggle">
-            <span class="toggle-slider"></span>
+        <div class="profile-name" id="profileHeroName">사용자</div>
+        <div class="profile-email-sub" id="profileHeroEmail"></div>
+        <div class="profile-hero-stats">
+            <div class="profile-stat-item">
+                <div class="profile-stat-num" id="profileTotalLogs">0</div>
+                <div class="profile-stat-label">총 일기</div>
+            </div>
+            <div class="profile-stat-item">
+                <div class="profile-stat-num" id="profileLongestStreak">0</div>
+                <div class="profile-stat-label">최장 연속</div>
+            </div>
+            <div class="profile-stat-item">
+                <div class="profile-stat-num" id="profileBadgeCount">0</div>
+                <div class="profile-stat-label">배지</div>
+            </div>
         </div>
-    </label>
-
-    <div id="beforeLogin">
-        <div class="login-required"><p>로그인하고 나만의 일기를<br>기록해보세요 ✏️</p></div>
-        <button onclick="location.href='login.html'" style="width:80%; background:#007bff;">로그인</button>
-        <button onclick="location.href='register.html'" style="width:80%; background:#007bff; margin-top:8px;">회원가입</button>
     </div>
-    <div id="afterLogin" style="display:none;">
-        <div class="profile-card">
-            <div class="profile-label">로그인된 계정</div>
-            <div class="profile-email" id="profileEmail"></div>
+    <!-- 배지 그리드 (로그인 후) -->
+    <div id="profileBadgeArea" style="display:none; padding:16px 16px 8px;">
+        <div class="badge-section-title">🏆 나의 배지 <span class="badge-count-chip" id="profileBadgeChip">0/14</span></div>
+        <div class="badge-grid" id="profileBadgeGrid"></div>
+    </div>
+    <!-- 비로그인 -->
+    <div id="beforeLogin" style="padding:60px 24px 100px; text-align:center;">
+        <div style="font-size:64px;margin-bottom:16px;">📓</div>
+        <div style="font-size:20px;font-weight:800;color:#191f28;margin-bottom:8px;">Q-Log에 오신 걸 환영해요!</div>
+        <div style="font-size:15px;color:#8b95a1;line-height:1.6;margin-bottom:32px;">로그인하고 나만의 일기를<br>기록해보세요 ✏️</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+            <button onclick="location.href='login.html'" style="width:100%;background:#4f46e5;border-radius:16px;padding:16px;font-size:16px;font-weight:700;border:none;color:white;cursor:pointer;margin:0;">로그인</button>
+            <button onclick="location.href='register.html'" style="width:100%;background:#f2f4f6;border-radius:16px;padding:16px;font-size:16px;font-weight:700;border:none;color:#191f28;cursor:pointer;margin:0;">회원가입</button>
         </div>
-        <div class="card"><h3>계정 및 로그인</h3></div>
-        <div class="card" id="pwChangeCard" onclick="location.href='reset_password.html'" style="cursor:pointer;">
-            <h3 style="display:flex; justify-content:space-between; align-items:center;">
-                비밀번호 변경
-                <span style="font-size:16px; color:#aaa;">›</span>
-            </h3>
+    </div>
+    <!-- 로그인 후 -->
+    <div id="afterLogin" style="display:none; padding:0 16px 100px;">
+        <label class="dark-toggle-row" for="darkModeToggle" style="background:white;border-radius:16px;padding:14px 16px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.05);display:flex;align-items:center;cursor:pointer;">
+            <div class="dark-toggle-label" style="flex:1;">
+                <span class="dark-toggle-icon" id="darkModeIcon">🌙</span>
+                <span id="darkModeText">다크모드</span>
+            </div>
+            <div class="toggle-switch">
+                <input type="checkbox" id="darkModeToggle">
+                <span class="toggle-slider"></span>
+            </div>
+        </label>
+        <div class="profile-menu-item" onclick="location.href='reset_password.html'" style="margin-bottom:10px;">
+            <span class="profile-menu-icon">🔑</span>
+            <div style="flex:1;"><div class="profile-menu-label">비밀번호 변경</div></div>
+            <span class="profile-menu-arrow">›</span>
         </div>
-        <div class="card" id="notifSettingCard" onclick="location.href='settings.html'" style="cursor:pointer;">
-            <h3 style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="display:flex; align-items:center; gap:8px;">
-                    <span style="font-size:18px;">🔔</span>
-                    알림 설정
-                </span>
-                <span style="font-size:16px; color:#aaa;">›</span>
-            </h3>
-            <p id="notifSettingDesc" style="font-size:13px; color:#8b95a1; margin-top:4px; margin-bottom:0;"></p>
+        <div class="profile-menu-item" id="notifSettingCard" onclick="location.href='settings.html'" style="margin-bottom:10px;">
+            <span class="profile-menu-icon">🔔</span>
+            <div style="flex:1;">
+                <div class="profile-menu-label">알림 설정</div>
+                <div style="font-size:12px;color:#8b95a1;" id="notifSettingDesc"></div>
+            </div>
+            <span class="profile-menu-arrow">›</span>
         </div>
-        <button class="logout-btn" id="logoutBtn">로그아웃</button>
+        <div class="profile-menu-item" onclick="window.go('stats')" style="margin-bottom:20px;">
+            <span class="profile-menu-icon">📊</span>
+            <div style="flex:1;"><div class="profile-menu-label">나의 작성 통계</div></div>
+            <span class="profile-menu-arrow">›</span>
+        </div>
+        <span id="profileEmail" style="display:none;"></span>
+        <button class="logout-btn" id="logoutBtn" style="width:100%;margin:0;">로그아웃</button>
     </div>
 </div>
 
@@ -1035,6 +1486,7 @@ body:has(#write.active) .nav {
 
 </div>
 
+<script src="qlog-features.js"></script>
 <script type="module">
 import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut }
@@ -1653,7 +2105,16 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
         });
         document.getElementById('text').value = "";
         autoTags = new Set(); manualTags = new Set(); renderTagList();
+        const _sumEl = document.getElementById('dailySummaryInput');
+        const _sumTxt = _sumEl ? _sumEl.value.trim() : '';
+        if (_sumTxt && currentUser && window.QLogFeatures) {
+            window.QLogFeatures.saveDailySummary(currentUser.uid, _sumTxt, new Date());
+        }
+        if (_sumEl) _sumEl.value = '';
+        const _cntEl = document.getElementById('summaryCharCount');
+        if (_cntEl) _cntEl.textContent = '0';
         await loadLogs();
+        qlogCheckMilestone();
         window.go('home');
     } catch (err) {
         console.error(err);
@@ -1674,6 +2135,7 @@ async function loadLogs() {
         }));
         logs.sort((a, b) => b.date - a.date);
         renderLogs();
+        qlogNewFeatures(logs, currentUser);
     } catch (err) {
         console.error("불러오기 실패:", err);
     }
@@ -1726,6 +2188,7 @@ function renderLogs() {
                 <span style="font-size:22px">${l.mood}</span>
             </div>
             <div class="card-text">${l.text}</div>
+            ${(()=>{ try { if(currentUser&&window.QLogFeatures){const _d=l.date instanceof Date?l.date:new Date(l.date);const _s=window.QLogFeatures.getDailySummary(currentUser.uid,_d);if(_s&&_s.text)return '<div class="card-summary"><span class="card-summary-icon">✨</span><span>'+_s.text+'</span></div>';} }catch(e){} return ''; })()}
             ${(l.tags && l.tags.length > 0) ? `<div class="card-tags">${l.tags.map(t=>`<span class="card-tag">${t}</span>`).join('')}</div>` : ''}
             <div class="card-date">${dateLabel}</div>
             ${l.updatedAt ? `<div class="card-edited">수정됨 · ${l.updatedAt.toLocaleDateString('ko-KR',{month:'long',day:'numeric'})} ${l.updatedAt.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}</div>` : ''}
@@ -1878,9 +2341,20 @@ function renderProfile() {
     if (!before || !after) return;
     if (currentUser) {
         before.style.display = 'none'; after.style.display = 'block';
-        document.getElementById('profileEmail').innerText = currentUser.email;
-        // 나의 작성능력은 통계 화면으로 이동했으므로 여기선 제거
-    } else { before.style.display = 'block'; after.style.display = 'none'; }
+        const _pEmail = document.getElementById('profileEmail');
+        if (_pEmail) _pEmail.innerText = currentUser.email;
+        const _hero = document.getElementById('profileHero');
+        const _badgeArea = document.getElementById('profileBadgeArea');
+        if (_hero) _hero.style.display = 'block';
+        if (_badgeArea) _badgeArea.style.display = 'block';
+        qlogUpdateProfileHero(currentUser, logs);
+    } else {
+        before.style.display = 'block'; after.style.display = 'none';
+        const _hero = document.getElementById('profileHero');
+        const _badgeArea = document.getElementById('profileBadgeArea');
+        if (_hero) _hero.style.display = 'none';
+        if (_badgeArea) _badgeArea.style.display = 'none';
+    }
 }
 document.getElementById('logoutBtn').addEventListener('click', async () => {
     await signOut(auth); alert('로그아웃 되었습니다.'); window.go('home');
@@ -2039,6 +2513,8 @@ function renderStats() {
     });
 
     // ③ 감정별 카운트 막대
+    qlogRenderHeatmap(logs);
+    qlogRenderStatsBadges(logs);
     const rowList = document.createElement('div');
     rowList.className = 'stats-row-list';
     const total = moodEntries.reduce((s,[,c]) => s+c, 0);
@@ -2096,11 +2572,13 @@ function renderCalendar() {
             const ld = new Date(l.date);
             return ld.getFullYear()===year && ld.getMonth()===month && ld.getDate()===i;
         });
-        d.innerText = dayLog ? dayLog.mood : i;
         if (dayLog) {
+            d.innerHTML = '<span class="cal-day-num">' + i + '</span><span class="cal-day-mood">' + dayLog.mood + '</span>';
             d.classList.add('has-log');
             const calClass = moodThemeMap[dayLog.mood];
             if (calClass) d.classList.add('mood-cal-' + calClass.replace('mood-',''));
+        } else {
+            d.innerText = i;
         }
         const day = i;
         d.addEventListener('click', () => {
@@ -2143,7 +2621,248 @@ window.go = function(id) {
 };
 renderNotifDesc();
 
-// ── 다중 태그 검색 ────────────────────────────
+// ── 다중 태그 검색
+
+// ════════════════════════════════════════════════════
+//  ★ 새 기능 함수들 (모듈 스코프)
+// ════════════════════════════════════════════════════
+
+// ── 전체 업데이트 ─────────────────────────────────
+function qlogNewFeatures(logList, user) {
+    if (!window.QLogFeatures) return;
+    const F = window.QLogFeatures;
+    const streak = F.calcStreak(logList);
+    const plant  = F.calcPlant(logList);
+
+    // 스트릭 저장
+    window._qStreak = streak;
+    window._qLogs   = logList;
+    window._qUser   = user;
+
+    // 배너 업데이트
+    const banner = document.getElementById('streakBanner');
+    if (banner) {
+        if (streak.current >= 1) {
+            banner.classList.remove('hidden');
+            const cnt = document.getElementById('streakCount');
+            const fire = document.getElementById('streakFire');
+            if (cnt) cnt.textContent = streak.current;
+            if (fire) fire.textContent = streak.current >= 30 ? '🔥🔥🔥' : streak.current >= 7 ? '🔥🔥' : '🔥';
+        } else {
+            banner.classList.add('hidden');
+        }
+    }
+    const mini = document.getElementById('streakPlantMini');
+    if (mini) mini.textContent = plant.stage.emoji;
+
+    // 식물 위젯
+    const eEl = document.getElementById('plantEmoji');
+    const nEl = document.getElementById('plantStageName');
+    const dEl = document.getElementById('plantStageDesc');
+    const bEl = document.getElementById('plantBar');
+    const tEl = document.getElementById('plantTrend');
+    const wEl = document.getElementById('plantWidget');
+    if (eEl) eEl.textContent = plant.stage.emoji;
+    if (nEl) nEl.textContent = plant.stage.name;
+    if (dEl) dEl.textContent = plant.stage.desc;
+    if (bEl) bEl.style.width = Math.max(5, plant.score) + '%';
+    if (tEl) {
+        if (plant.trend === 'growing') {
+            tEl.className = 'plant-trend';
+            tEl.textContent = '🌱 기분 좋은 일들로 쑥쑥 자라고 있어요!';
+            if (wEl) { wEl.className = 'plant-widget'; wEl.style.background = ''; }
+        } else if (plant.trend === 'wilting') {
+            tEl.className = 'plant-trend wilting';
+            tEl.textContent = '💧 힘든 시간이군요. 그래도 괜찮아요';
+            if (wEl) { wEl.className = 'plant-widget wilting'; wEl.style.background = 'linear-gradient(135deg,#fff1f2,#ffe4e6)'; }
+        } else {
+            tEl.className = 'plant-trend';
+            tEl.textContent = '✨ 일기를 쓰면 식물이 자라요!';
+        }
+    }
+
+    // 배지 확인
+    if (user) {
+        const newBadges = F.getNewBadges(logList, streak, user.uid);
+        if (newBadges.length > 0) setTimeout(() => qlogBadgePopup(newBadges[0]), 900);
+    }
+
+    // 히트맵
+    qlogRenderHeatmap(logList);
+}
+
+// ── 스트릭 팝업 ──────────────────────────────────
+window.showStreakPopup = function() {
+    const streak = window._qStreak || { current: 0, longest: 0, todayDone: false };
+    const total  = (window._qLogs || []).length;
+    const modal  = document.getElementById('streakModal');
+    if (!modal) return;
+    const c = document.getElementById('streakPopupCurrent');
+    const l = document.getElementById('streakPopupLongest');
+    const t = document.getElementById('streakPopupTotal');
+    const f = document.getElementById('streakPopupFire');
+    const ti = document.getElementById('streakPopupTitle');
+    const su = document.getElementById('streakPopupSub');
+    if (c) c.textContent = streak.current;
+    if (l) l.textContent = streak.longest;
+    if (t) t.textContent = total;
+    if (f) f.textContent = streak.current >= 30 ? '🏆' : streak.current >= 7 ? '🔥🔥' : '🔥';
+    if (streak.current === 0) {
+        if (ti) ti.textContent = '오늘 일기를 써보세요!';
+        if (su) su.textContent = '오늘 일기를 쓰면 연속 기록이 시작돼요! 작은 습관이 큰 변화를 만들어요 💪';
+    } else if (streak.todayDone) {
+        if (ti) ti.textContent = streak.current + '일 연속 달성! 🎉';
+        if (su) su.textContent = '오늘도 일기를 썼어요! 내일도 계속해보세요. 당신이 멋져요!';
+    } else {
+        if (ti) ti.textContent = streak.current + '일 연속 진행 중!';
+        if (su) su.textContent = '아직 오늘 일기를 쓰지 않았어요. 기록을 이어가 봐요 💪';
+    }
+    modal.classList.add('show');
+};
+window.closeStreakModal = function() {
+    const m = document.getElementById('streakModal');
+    if (m) m.classList.remove('show');
+};
+
+// ── 식물 팝업 ────────────────────────────────────
+window.showPlantModal = function() {
+    if (!window.QLogFeatures) return;
+    const F = window.QLogFeatures;
+    const plant = F.calcPlant(window._qLogs || []);
+    const modal = document.getElementById('plantModal');
+    if (!modal) return;
+    const e = document.getElementById('plantPopupEmoji');
+    const s = document.getElementById('plantPopupStage');
+    const d = document.getElementById('plantPopupDesc');
+    if (e) e.textContent = plant.stage.emoji;
+    if (s) s.textContent = plant.stage.name + ' 단계';
+    if (d) d.textContent = plant.stage.desc;
+    const row = document.getElementById('plantStagesRow');
+    if (row) {
+        let rowHtml = '';
+        F.PLANT_STAGES.forEach(function(st, i) {
+            let cls = 'plant-stage-dot';
+            if (i <= plant.stage.level) cls += ' reached';
+            if (i === plant.stage.level) cls += ' current';
+            rowHtml += '<div class="' + cls + '"><span>' + st.emoji + '</span><span>' + st.name + '</span></div>';
+        });
+        row.innerHTML = rowHtml;
+    }
+    modal.classList.add('show');
+};
+window.closePlantModal = function() {
+    const m = document.getElementById('plantModal');
+    if (m) m.classList.remove('show');
+};
+
+// ── 배지 팝업 ────────────────────────────────────
+function qlogBadgePopup(badge) {
+    const popup = document.getElementById('badgeNewPopup');
+    if (!popup) return;
+    const e = document.getElementById('badgeNewEmoji');
+    const n = document.getElementById('badgeNewName');
+    const d = document.getElementById('badgeNewDesc');
+    if (e) e.textContent = badge.emoji;
+    if (n) n.textContent = badge.name;
+    if (d) d.textContent = badge.desc;
+    popup.classList.add('show');
+    setTimeout(function() { popup.classList.remove('show'); }, 4000);
+}
+
+// ── 배지 그리드 ──────────────────────────────────
+function qlogBadgeGrid(containerId, logList, streak) {
+    const el = document.getElementById(containerId);
+    if (!el || !window.QLogFeatures) return;
+    const F = window.QLogFeatures;
+    const earned = new Set(F.getEarnedBadges(logList, streak).map(function(b) { return b.id; }));
+    let html = '';
+    F.BADGES.forEach(function(b) {
+        const locked = earned.has(b.id) ? '' : ' locked';
+        html += '<div class="badge-item' + locked + '" title="' + b.desc + '">'
+             + '<span class="badge-emoji">' + b.emoji + '</span>'
+             + '<span class="badge-name">' + b.name + '</span></div>';
+    });
+    el.innerHTML = html;
+}
+
+// ── 프로필 히어로 ─────────────────────────────────
+function qlogUpdateProfileHero(user, logList) {
+    if (!user || !window.QLogFeatures) return;
+    const F = window.QLogFeatures;
+    const streak = F.calcStreak(logList);
+    const earned = F.getEarnedBadges(logList, streak);
+    const name = user.displayName || user.email.split('@')[0] || '사용자';
+    const setTxt = function(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; };
+    setTxt('profileHeroName', name);
+    setTxt('profileHeroEmail', user.email);
+    setTxt('profileStreakBadge', '🔥 ' + streak.current + '일');
+    setTxt('profileTotalLogs', logList.length);
+    setTxt('profileLongestStreak', streak.longest);
+    setTxt('profileBadgeCount', earned.length);
+    setTxt('profileBadgeChip', earned.length + '/' + F.BADGES.length);
+    qlogBadgeGrid('profileBadgeGrid', logList, streak);
+}
+
+// ── 히트맵 ───────────────────────────────────────
+function qlogRenderHeatmap(logList) {
+    const grid = document.getElementById('heatmapGrid');
+    if (!grid) return;
+    const moodScore = { '😀': 2, '🙂': 1, '😐': 0, '😢': -1, '😡': -1, '😫': -1 };
+    const today = new Date();
+    let cells = '';
+    for (let i = 27; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        const dKey = d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+        const dayLogs = logList.filter(function(l) {
+            const ld = l.date instanceof Date ? l.date : new Date(l.date);
+            return ld.getFullYear() + '-' + ld.getMonth() + '-' + ld.getDate() === dKey;
+        });
+        let cls = 'heatmap-cell';
+        if (i === 0) cls += ' today-cell';
+        if (dayLogs.length > 0) {
+            cls += ' has-entry';
+            const avg = dayLogs.reduce(function(s, l) { return s + (moodScore[l.mood] || 0); }, 0) / dayLogs.length;
+            if (avg >= 1.5) cls += ' great-mood';
+            else if (avg >= 0.5) cls += ' good-mood';
+            else if (avg < -0.5) cls += ' bad-mood';
+        }
+        const label = (d.getMonth()+1) + '/' + d.getDate() + (dayLogs.length > 0 ? ' ' + dayLogs.length + '건' : ' 기록없음');
+        cells += '<div class="' + cls + '" title="' + label + '"></div>';
+    }
+    grid.innerHTML = cells;
+}
+
+// ── 통계 배지 ─────────────────────────────────────
+function qlogRenderStatsBadges(logList) {
+    const sec = document.getElementById('statsBadgeSection');
+    if (!sec || !window.QLogFeatures) return;
+    sec.style.display = 'block';
+    const streak = window.QLogFeatures.calcStreak(logList);
+    const earned = window.QLogFeatures.getEarnedBadges(logList, streak);
+    const chip = document.getElementById('statsBadgeChip');
+    if (chip) chip.textContent = earned.length + '/' + window.QLogFeatures.BADGES.length;
+    qlogBadgeGrid('statsBadgeGrid', logList, streak);
+}
+
+// ── 마일스톤 체크 ─────────────────────────────────
+function qlogCheckMilestone() {
+    const streak = window._qStreak;
+    if (!streak) return;
+    const milestones = [3, 7, 14, 30, 60, 100];
+    if (milestones.includes(streak.current) && streak.todayDone) {
+        setTimeout(function() { window.showStreakPopup && window.showStreakPopup(); }, 700);
+    }
+}
+
+// ── 요약 글자수 ───────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+    const inp = document.getElementById('dailySummaryInput');
+    const cnt = document.getElementById('summaryCharCount');
+    if (inp && cnt) inp.addEventListener('input', function() { cnt.textContent = inp.value.length; });
+});
+
+// ────────────────────────────
 function initMultiTagSearch() {
     if (document.getElementById('tagSearchInput')._bound) return;
     document.getElementById('tagSearchInput')._bound = true;
@@ -2285,5 +3004,43 @@ function showDayLogs(year, month, day) {
 }
 </script>
 <script src="gemini-config.js"></script>
+
+<!-- 스트릭 팝업 -->
+<div class="streak-modal" id="streakModal" onclick="if(event.target===this)window.closeStreakModal()">
+    <div class="streak-popup">
+        <div class="streak-popup-fire" id="streakPopupFire">🔥</div>
+        <div class="streak-popup-title" id="streakPopupTitle">연속 기록 현황</div>
+        <div class="streak-popup-sub" id="streakPopupSub">매일 일기를 쓰면 연속 기록이 올라가요!</div>
+        <div class="streak-popup-stats">
+            <div class="streak-stat-box"><div class="streak-stat-num" id="streakPopupCurrent">0</div><div class="streak-stat-label">현재 연속</div></div>
+            <div class="streak-stat-box"><div class="streak-stat-num" id="streakPopupLongest">0</div><div class="streak-stat-label">최장 기록</div></div>
+            <div class="streak-stat-box"><div class="streak-stat-num" id="streakPopupTotal">0</div><div class="streak-stat-label">총 일기</div></div>
+        </div>
+        <button class="streak-close-btn" onclick="window.closeStreakModal()">닫기</button>
+    </div>
+</div>
+<!-- 식물 팝업 -->
+<div class="plant-modal" id="plantModal" onclick="if(event.target===this)window.closePlantModal()">
+    <div class="plant-popup">
+        <span class="plant-popup-emoji" id="plantPopupEmoji">🌰</span>
+        <div class="plant-popup-stage" id="plantPopupStage">씨앗 단계</div>
+        <div class="plant-popup-desc" id="plantPopupDesc">일기를 쓰면 식물이 자라요!</div>
+        <div class="plant-stages-row" id="plantStagesRow"></div>
+        <div class="plant-tip-box">
+            <div class="plant-tip-title">🌱 식물 키우는 방법</div>
+            <div class="plant-tip-item">😀🙂 좋은 기분 일기를 쓰면 쑥쑥 자라요<br>📝 매일 써서 연속 보너스를 받아요<br>✍️ 500자 이상 긴 일기는 특별 성장!</div>
+        </div>
+        <button class="plant-close-btn" onclick="window.closePlantModal()">알겠어요!</button>
+    </div>
+</div>
+<!-- 배지 획득 팝업 -->
+<div class="badge-new-popup" id="badgeNewPopup">
+    <div class="badge-new-emoji" id="badgeNewEmoji">🏆</div>
+    <div class="badge-new-text">
+        <div class="badge-new-label">🎉 새 배지 획득!</div>
+        <div class="badge-new-name" id="badgeNewName"></div>
+        <div class="badge-new-desc" id="badgeNewDesc"></div>
+    </div>
+</div>
 </body>
 </html>
