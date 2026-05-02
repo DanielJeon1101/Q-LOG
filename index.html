@@ -1195,6 +1195,332 @@ body.dark-mode .plant-stage-dot.current { background: #1a2e22; }
     align-items: center;
     justify-content: center;
 }
+
+/* ══════════════════════════════════════════════════
+   ★ UPGRADE CSS — 앱 수준 퀄리티
+══════════════════════════════════════════════════ */
+
+/* ── 검색바 ── */
+.home-search-wrap {
+    padding: 10px 16px 0;
+    position: relative;
+}
+.home-search-bar {
+    display: flex; align-items: center;
+    background: white; border-radius: 14px;
+    padding: 10px 14px; gap: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+    border: 1.5px solid transparent;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.home-search-bar:focus-within {
+    border-color: #4f46e5;
+    box-shadow: 0 2px 16px rgba(79,70,229,0.15);
+}
+.home-search-icon { font-size: 16px; color: #aaa; flex-shrink: 0; }
+.home-search-input {
+    flex: 1; border: none; outline: none;
+    font-size: 14px; color: #191f28; background: transparent;
+    font-family: inherit;
+}
+.home-search-input::placeholder { color: #c4c9d0; }
+.home-search-clear {
+    background: none; border: none; padding: 0; margin: 0;
+    color: #aaa; font-size: 18px; cursor: pointer; line-height: 1;
+    display: none;
+}
+.home-search-clear.show { display: block; }
+.search-results-wrap {
+    background: white; border-radius: 16px;
+    margin: 8px 0 0; padding: 8px 0;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    max-height: 320px; overflow-y: auto;
+    display: none;
+}
+.search-results-wrap.show { display: block; }
+.search-result-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 16px; cursor: pointer;
+    transition: background 0.15s;
+}
+.search-result-item:hover { background: #f8f9ff; }
+.search-result-mood { font-size: 22px; flex-shrink: 0; }
+.search-result-body { flex: 1; min-width: 0; }
+.search-result-text {
+    font-size: 14px; color: #333; line-height: 1.4;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.search-result-text mark {
+    background: #fef3c7; color: #92400e; padding: 0 2px;
+    border-radius: 3px;
+}
+.search-result-date { font-size: 12px; color: #aaa; margin-top: 3px; }
+.search-no-result {
+    text-align: center; padding: 24px; color: #aaa; font-size: 14px;
+}
+
+/* ── 날짜별 그룹핑 ── */
+.log-date-group { margin-bottom: 4px; }
+.log-date-header {
+    font-size: 12px; font-weight: 700; color: #8b95a1;
+    padding: 14px 20px 6px;
+    display: flex; align-items: center; gap: 8px;
+}
+.log-date-header::after {
+    content: ''; flex: 1; height: 1px; background: #f2f4f6;
+}
+
+/* ── 카드 업그레이드 ── */
+.card {
+    background: white; margin: 0 16px 10px; padding: 16px;
+    border-radius: 18px; width: auto;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    transition: transform 0.15s, box-shadow 0.2s;
+}
+.card:active { transform: scale(0.98); }
+.card:hover  { box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+.card-header {
+    display: flex; justify-content: space-between;
+    align-items: center; margin-bottom: 8px;
+}
+.card-mood-badge {
+    display: flex; align-items: center; gap: 6px;
+}
+.card-mood-label {
+    font-size: 11px; font-weight: 700; color: #8b95a1;
+    background: #f2f4f6; padding: 2px 8px; border-radius: 10px;
+}
+.card-char-count {
+    font-size: 11px; color: #c4c9d0; font-weight: 600;
+}
+.card-text {
+    font-size: 15px; color: #333; line-height: 1.65;
+    display: -webkit-box; -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical; overflow: hidden;
+    margin-bottom: 10px;
+}
+
+/* ── 감정 타임라인 (홈 위젯) ── */
+.mood-timeline-wrap {
+    margin: 0 16px 12px;
+    background: white; border-radius: 18px;
+    padding: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+}
+.mood-timeline-title {
+    font-size: 13px; font-weight: 700; color: #8b95a1;
+    margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+}
+.mood-timeline-row {
+    display: flex; align-items: flex-end; gap: 6px;
+    height: 56px; justify-content: space-between;
+}
+.mood-timeline-col {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; gap: 4px;
+}
+.mood-timeline-bar-wrap {
+    flex: 1; width: 100%; display: flex; flex-direction: column;
+    justify-content: flex-end; align-items: center;
+}
+.mood-timeline-bar {
+    width: 100%; max-width: 32px; border-radius: 6px 6px 0 0;
+    min-height: 4px;
+    transition: height 0.5s cubic-bezier(0.16,1,0.3,1);
+}
+.mood-timeline-emoji { font-size: 16px; line-height: 1; }
+.mood-timeline-day { font-size: 10px; color: #aaa; font-weight: 600; }
+.mood-timeline-empty {
+    font-size: 13px; color: #c4c9d0; text-align: center;
+    padding: 8px 0; width: 100%;
+}
+
+/* ── 빈 상태 화면 ── */
+.empty-state {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 48px 32px; text-align: center;
+}
+.empty-state-emoji { font-size: 64px; margin-bottom: 16px; animation: float 3s ease-in-out infinite; }
+@keyframes float {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-8px); }
+}
+.empty-state-title {
+    font-size: 18px; font-weight: 800; color: #191f28;
+    margin-bottom: 8px; letter-spacing: -0.3px;
+}
+.empty-state-sub {
+    font-size: 14px; color: #8b95a1; line-height: 1.7;
+    margin-bottom: 24px;
+}
+.empty-state-btn {
+    background: #4f46e5; color: white; border: none;
+    border-radius: 14px; padding: 13px 28px;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+    margin: 0; box-shadow: 0 4px 14px rgba(79,70,229,0.35);
+    transition: transform 0.15s, box-shadow 0.2s;
+}
+.empty-state-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(79,70,229,0.4); }
+.empty-state-btn:active { transform: scale(0.97); }
+
+/* ── 온보딩 ── */
+.onboarding-overlay {
+    position: fixed; inset: 0; z-index: 99999;
+    background: linear-gradient(160deg, #4f46e5, #7c3aed);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-end;
+    padding-bottom: 48px;
+}
+.onboarding-slides {
+    width: 100%; display: flex;
+    transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
+}
+.onboarding-slide {
+    min-width: 100%; padding: 0 32px;
+    text-align: center; flex-shrink: 0;
+}
+.onboarding-emoji { font-size: 80px; margin-bottom: 24px; display: block; }
+.onboarding-title {
+    font-size: 26px; font-weight: 900; color: white;
+    margin-bottom: 12px; letter-spacing: -0.5px; line-height: 1.3;
+}
+.onboarding-sub {
+    font-size: 16px; color: rgba(255,255,255,0.75);
+    line-height: 1.7; margin-bottom: 40px;
+}
+.onboarding-dots {
+    display: flex; gap: 8px; justify-content: center; margin-bottom: 32px;
+}
+.onboarding-dot {
+    width: 8px; height: 8px; border-radius: 4px;
+    background: rgba(255,255,255,0.3);
+    transition: width 0.3s, background 0.3s;
+}
+.onboarding-dot.active { width: 24px; background: white; }
+.onboarding-btn {
+    width: calc(100% - 64px); padding: 18px; border-radius: 18px;
+    background: white; color: #4f46e5;
+    font-size: 17px; font-weight: 900;
+    border: none; cursor: pointer; margin: 0;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    transition: transform 0.15s;
+}
+.onboarding-btn:active { transform: scale(0.97); }
+.onboarding-skip {
+    background: none; border: none; color: rgba(255,255,255,0.5);
+    font-size: 14px; cursor: pointer; margin: 0; padding: 16px;
+    margin-top: 8px;
+}
+
+/* ── 주간 리포트 카드 ── */
+.weekly-report-card {
+    margin: 0 16px 12px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    border-radius: 20px; padding: 20px;
+    color: white; position: relative; overflow: hidden;
+    cursor: pointer; transition: transform 0.15s, box-shadow 0.2s;
+    box-shadow: 0 4px 20px rgba(79,70,229,0.3);
+}
+.weekly-report-card:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(79,70,229,0.4); }
+.weekly-report-card::before {
+    content: ''; position: absolute;
+    top: -30%; right: -10%; width: 160px; height: 160px;
+    background: rgba(255,255,255,0.08); border-radius: 50%;
+}
+.weekly-report-label {
+    font-size: 11px; font-weight: 700; opacity: 0.75; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 5px;
+}
+.weekly-report-title { font-size: 18px; font-weight: 900; margin-bottom: 12px; line-height: 1.4; }
+.weekly-report-row { display: flex; gap: 12px; }
+.weekly-report-stat {
+    background: rgba(255,255,255,0.15); border-radius: 12px;
+    padding: 10px 14px; flex: 1; text-align: center;
+}
+.weekly-report-stat-num { font-size: 22px; font-weight: 900; }
+.weekly-report-stat-label { font-size: 11px; opacity: 0.75; margin-top: 2px; }
+.weekly-report-close {
+    position: absolute; top: 14px; right: 14px;
+    background: rgba(255,255,255,0.2); border: none; color: white;
+    width: 28px; height: 28px; border-radius: 50%; font-size: 14px;
+    cursor: pointer; margin: 0; display: flex; align-items: center; justify-content: center;
+}
+
+/* ── 글쓰기 단어수 표시 ── */
+.write-word-count {
+    font-size: 12px; color: #c4c9d0; font-weight: 600;
+    display: flex; align-items: center; gap: 8px; margin-top: 8px;
+}
+.write-word-count-num { color: #8b95a1; font-weight: 700; }
+.write-char-progress {
+    flex: 1; height: 3px; background: #f2f4f6; border-radius: 2px; overflow: hidden;
+}
+.write-char-progress-bar {
+    height: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, #4f46e5, #7c3aed);
+    transition: width 0.3s;
+}
+
+/* ── 네비바 업그레이드 ── */
+.nav {
+    background: white;
+    box-shadow: 0 -1px 0 rgba(0,0,0,0.06), 0 -4px 20px rgba(0,0,0,0.08);
+}
+.nav button { position: relative; transition: transform 0.15s; }
+.nav button:active { transform: scale(0.85); }
+.nav-label {
+    display: block; font-size: 10px; font-weight: 700;
+    color: #c4c9d0; margin-top: 2px; transition: color 0.2s;
+}
+.nav button.nav-active .nav-label { color: #4f46e5; }
+.nav button.nav-active { color: #4f46e5 !important; }
+.nav-center { background: linear-gradient(135deg, #4f46e5, #7c3aed) !important; }
+
+/* ── 다크모드 업그레이드 ── */
+body.dark-mode .home-search-bar { background: #2a2a2a; border-color: #3c4043; }
+body.dark-mode .home-search-input { color: #e8eaed; }
+body.dark-mode .search-results-wrap { background: #2a2a2a; }
+body.dark-mode .search-result-item:hover { background: #333; }
+body.dark-mode .search-result-text { color: #ccc; }
+body.dark-mode .card { background: #2a2a2a; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+body.dark-mode .card-text { color: #ccc; }
+body.dark-mode .card-mood-label { background: #333; color: #9aa0a6; }
+body.dark-mode .mood-timeline-wrap { background: #2a2a2a; }
+body.dark-mode .log-date-header { color: #6b7280; }
+body.dark-mode .log-date-header::after { background: #333; }
+body.dark-mode .nav { background: #1e1e1e; box-shadow: 0 -1px 0 rgba(255,255,255,0.06); }
+body.dark-mode .nav button { color: #9aa0a6; }
+body.dark-mode .nav button.nav-active { color: #818cf8 !important; }
+body.dark-mode .nav-label { color: #555; }
+body.dark-mode .nav button.nav-active .nav-label { color: #818cf8; }
+body.dark-mode .weekly-report-card { box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+body.dark-mode .empty-state-title { color: #e8eaed; }
+body.dark-mode .streak-popup { background: #2a2a2a; }
+body.dark-mode .streak-popup-title { color: #e8eaed; }
+body.dark-mode .streak-popup-sub { color: #9aa0a6; }
+body.dark-mode .streak-stat-box { background: #1e1e1e; }
+body.dark-mode .streak-stat-label { color: #9aa0a6; }
+body.dark-mode .modal-content { background: #2a2a2a; }
+body.dark-mode .modal-content h3 { color: #e8eaed; }
+body.dark-mode .mood-grid button { background: #333; color: inherit; }
+body.dark-mode .write-textarea-wrap { background: #2a2a2a; }
+body.dark-mode .write-textarea-wrap textarea { color: #e8eaed; }
+body.dark-mode .write-tag-box { background: #2a2a2a; }
+body.dark-mode .write-tag-label { color: #666; }
+body.dark-mode .daily-summary-box { background: linear-gradient(135deg, #2d2200, #3d2e00); }
+body.dark-mode .daily-summary-input { color: #fde68a; }
+body.dark-mode .write-word-count { color: #555; }
+body.dark-mode .write-char-progress { background: #333; }
+body.dark-mode .stats-top-title { color: #e8eaed; }
+body.dark-mode .stats-section-title { color: #e8eaed; }
+body.dark-mode .metric-card { background: #2a2a2a; }
+body.dark-mode .metric-card-label { color: #6b7280; }
+body.dark-mode .chart-wrap { background: #2a2a2a; }
+body.dark-mode .chart-title { color: #e8eaed; }
+body.dark-mode .period-btn { background: #2a2a2a; border-color: #3c4043; color: #9aa0a6; }
+body.dark-mode .period-btn:hover { border-color: #818cf8; color: #818cf8; }
+body.dark-mode .profile-menu-item { background: #2a2a2a; }
+body.dark-mode .dark-toggle-row { background: #2a2a2a !important; }
+
 </style>
 </head>
 
@@ -1232,6 +1558,27 @@ body.dark-mode .plant-stage-dot.current { background: #1a2e22; }
             <button class="mood-emoji-btn" data-mood="😫">😫</button>
         </div>
     </div>
+    <!-- ★ 검색바 -->
+    <div class="home-search-wrap" id="homeSearchWrap">
+        <div class="home-search-bar">
+            <span class="home-search-icon">🔍</span>
+            <input class="home-search-input" id="homeSearchInput" type="text" placeholder="일기 검색..." autocomplete="off">
+            <button class="home-search-clear" id="homeSearchClear">×</button>
+        </div>
+        <div class="search-results-wrap" id="searchResultsWrap"></div>
+    </div>
+
+    <!-- ★ 감정 타임라인 -->
+    <div class="mood-timeline-wrap" id="moodTimelineWrap">
+        <div class="mood-timeline-title">📈 이번 주 감정 흐름</div>
+        <div class="mood-timeline-row" id="moodTimelineRow">
+            <div class="mood-timeline-empty">일기를 쓰면 감정 흐름이 표시돼요</div>
+        </div>
+    </div>
+
+    <!-- ★ 주간 리포트 (조건부 표시) -->
+    <div id="weeklyReportCard" style="display:none;"></div>
+
     <div class="plant-widget" id="plantWidget" onclick="window.showPlantModal()">
         <div class="plant-big-emoji" id="plantEmoji">🌰</div>
         <div class="plant-info">
@@ -1279,6 +1626,13 @@ body.dark-mode .plant-stage-dot.current { background: #1a2e22; }
     <div class="write-textarea-wrap">
         <textarea id="text" placeholder="오늘의 이야기를 써보세요..."></textarea>
         <div class="write-ai-hint" id="aiSuggestion" style="display:none;"></div>
+        <div class="write-word-count">
+            <span class="write-word-count-num" id="writeCharCount">0</span>자
+            <span id="writeWordCount" style="color:#c4c9d0;">· 0단어</span>
+            <div class="write-char-progress">
+                <div class="write-char-progress-bar" id="writeCharBar" style="width:0%"></div>
+            </div>
+        </div>
     </div>
     <div class="write-tag-box">
         <div class="write-tag-label">태그</div>
@@ -1477,11 +1831,11 @@ body.dark-mode .plant-stage-dot.current { background: #1a2e22; }
 
 <!-- 네비 -->
 <div class="nav">
-    <button id="navHome">🏠</button>
-    <button id="navStats">📊</button>
+    <button id="navHome" class="nav-active"><span>🏠</span><span class="nav-label">홈</span></button>
+    <button id="navStats"><span>📊</span><span class="nav-label">통계</span></button>
     <div class="nav-center" id="fabBtn">+</div>
-    <button id="navCalendar">📅</button>
-    <button id="navProfile">👤</button>
+    <button id="navCalendar"><span>📅</span><span class="nav-label">달력</span></button>
+    <button id="navProfile"><span>👤</span><span class="nav-label">프로필</span></button>
 </div>
 
 </div>
@@ -2142,59 +2496,96 @@ async function loadLogs() {
 }
 
 // ── 일기 목록 렌더링 ─────────────────────────
+function goProfile() { window.go('profile'); }
+function clickFab() { document.getElementById('fabBtn').click(); }
 function renderLogs() {
     const list = document.getElementById('logList');
-    list.innerHTML = "";
+    list.innerHTML = '';
     if (!currentUser) {
-        list.innerHTML = `<div class="login-required"><p>로그인하면 나의 일기를 볼 수 있어요 📖</p></div>`; return;
+        list.innerHTML = '<div class="empty-state"><div class="empty-state-emoji">📖</div><div class="empty-state-title">로그인하고 시작해요</div><div class="empty-state-sub">로그인하면 나만의 일기를<br>기록하고 볼 수 있어요</div><button class="empty-state-btn" onclick="goProfile()">로그인하기</button></div>';
+        return;
     }
     if (logs.length === 0) {
-        list.innerHTML = `<div class="login-required"><p>아직 작성한 일기가 없어요.<br>+ 버튼을 눌러 시작해보세요!</p></div>`; return;
+        list.innerHTML = '<div class="empty-state"><div class="empty-state-emoji">✏️</div><div class="empty-state-title">첫 일기를 써볼까요?</div><div class="empty-state-sub">오늘의 감정을 기록하면<br>식물이 자라고 배지를 얻어요</div><button class="empty-state-btn" onclick="clickFab()">일기 쓰기</button></div>';
+        return;
     }
 
-    // 감정 필터 적용 + 최신순 정렬
     const activeMood = window.getActiveMoodFilter ? window.getActiveMoodFilter() : 'all';
     const filtered = (activeMood === 'all' ? [...logs] : logs.filter(l => l.mood === activeMood))
         .sort((a, b) => {
             const da = a.date instanceof Date ? a.date : new Date(a.date);
-            const db = b.date instanceof Date ? b.date : new Date(b.date);
-            return db - da;
+            const db2 = b.date instanceof Date ? b.date : new Date(b.date);
+            return db2 - da;
         });
 
     if (filtered.length === 0) {
-        list.innerHTML = `<div class="login-required"><p>해당 감정의 일기가 없어요.</p></div>`; return;
+        list.innerHTML = '<div class="empty-state"><div class="empty-state-emoji">🔍</div><div class="empty-state-title">해당 감정 없음</div><div class="empty-state-sub">이 감정으로 쓴 일기가 없어요</div></div>';
+        return;
     }
 
-    const dateCounts = {};
+    // 날짜별 그룹핑
+    const groups = {};
+    const groupOrder = [];
+    const moodLabels = {'😀':'행복','🙂':'좋음','😐':'보통','😢':'슬픔','😡':'화남','😫':'피곤'};
     filtered.forEach(l => {
-        if (l.date instanceof Date) {
-            const k = `${l.date.getFullYear()}-${l.date.getMonth()}-${l.date.getDate()}`;
-            dateCounts[k] = (dateCounts[k] || 0) + 1;
+        const d = l.date instanceof Date ? l.date : new Date(l.date);
+        const today = new Date();
+        const yesterday = new Date(); yesterday.setDate(today.getDate()-1);
+        let gKey;
+        if (d.getFullYear()===today.getFullYear() && d.getMonth()===today.getMonth() && d.getDate()===today.getDate()) {
+            gKey = '오늘';
+        } else if (d.getFullYear()===yesterday.getFullYear() && d.getMonth()===yesterday.getMonth() && d.getDate()===yesterday.getDate()) {
+            gKey = '어제';
+        } else {
+            gKey = d.toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
         }
+        if (!groups[gKey]) { groups[gKey] = []; groupOrder.push(gKey); }
+        groups[gKey].push(l);
     });
-    filtered.forEach(l => {
-        const div = document.createElement('div');
-        div.className = 'card';
-        let dateLabel = '';
-        if (l.date instanceof Date) {
-            const k = `${l.date.getFullYear()}-${l.date.getMonth()}-${l.date.getDate()}`;
-            const dateStr = l.date.toLocaleDateString('ko-KR', { month:'long', day:'numeric', weekday:'short' });
-            dateLabel = dateCounts[k] > 1
-                ? `${dateStr} · ${l.date.toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit' })}`
-                : dateStr;
-        }
-        div.innerHTML = `
-            <div class="card-header">
-                <span style="font-size:22px">${l.mood}</span>
-            </div>
-            <div class="card-text">${l.text}</div>
-            ${(()=>{ try { if(currentUser&&window.QLogFeatures){const _d=l.date instanceof Date?l.date:new Date(l.date);const _s=window.QLogFeatures.getDailySummary(currentUser.uid,_d);if(_s&&_s.text)return '<div class="card-summary"><span class="card-summary-icon">✨</span><span>'+_s.text+'</span></div>';} }catch(e){} return ''; })()}
-            ${(l.tags && l.tags.length > 0) ? `<div class="card-tags">${l.tags.map(t=>`<span class="card-tag">${t}</span>`).join('')}</div>` : ''}
-            <div class="card-date">${dateLabel}</div>
-            ${l.updatedAt ? `<div class="card-edited">수정됨 · ${l.updatedAt.toLocaleDateString('ko-KR',{month:'long',day:'numeric'})} ${l.updatedAt.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}</div>` : ''}
-        `;
-        div.addEventListener('click', () => openDetail(l));
-        list.appendChild(div);
+
+    groupOrder.forEach(gKey => {
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'log-date-group';
+        const header = document.createElement('div');
+        header.className = 'log-date-header';
+        header.textContent = gKey;
+        groupDiv.appendChild(header);
+
+        groups[gKey].forEach(l => {
+            const div = document.createElement('div');
+            div.className = 'card';
+            const d = l.date instanceof Date ? l.date : new Date(l.date);
+            const timeStr = groups[gKey].length > 1
+                ? d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}) : '';
+            const moodLabel = moodLabels[l.mood] || '';
+            const charCount = l.text ? l.text.length : 0;
+            let summaryHtml = '';
+            try {
+                if (currentUser && window.QLogFeatures) {
+                    const _s = window.QLogFeatures.getDailySummary(currentUser.uid, d);
+                    if (_s && _s.text) summaryHtml = '<div class="card-summary"><span class="card-summary-icon">✨</span><span>' + _s.text + '</span></div>';
+                }
+            } catch(e) {}
+            const tagsHtml = (l.tags && l.tags.length > 0)
+                ? '<div class="card-tags">' + l.tags.map(t => '<span class="card-tag">' + t + '</span>').join('') + '</div>'
+                : '';
+            const editedHtml = l.updatedAt
+                ? '<div class="card-edited">수정됨 · ' + l.updatedAt.toLocaleDateString('ko-KR',{month:'long',day:'numeric'}) + ' ' + l.updatedAt.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}) + '</div>'
+                : '';
+            div.innerHTML =
+                '<div class="card-header">'
+                + '<div class="card-mood-badge"><span style="font-size:24px">' + l.mood + '</span>'
+                + (moodLabel ? '<span class="card-mood-label">' + moodLabel + '</span>' : '')
+                + '</div>'
+                + '<span class="card-char-count">' + charCount + '자' + (timeStr ? ' · ' + timeStr : '') + '</span>'
+                + '</div>'
+                + '<div class="card-text">' + l.text + '</div>'
+                + summaryHtml + tagsHtml
+                + editedHtml;
+            div.addEventListener('click', function() { openDetail(l); });
+            groupDiv.appendChild(div);
+        });
+        list.appendChild(groupDiv);
     });
 }
 
@@ -2623,6 +3014,239 @@ renderNotifDesc();
 
 // ── 다중 태그 검색
 
+
+// ════════════════════════════════════════════════════
+//  ★★★ UPGRADE FEATURES ★★★
+// ════════════════════════════════════════════════════
+
+// ── 온보딩 ────────────────────────────────────────
+(function initOnboarding() {
+    if (localStorage.getItem('qlog_onboarded') === '1') return;
+    const overlay  = document.getElementById('onboardingOverlay');
+    const slides   = document.getElementById('onboardingSlides');
+    const dots     = document.getElementById('onboardingDots').children;
+    const btn      = document.getElementById('onboardingBtn');
+    const skipBtn  = document.getElementById('onboardingSkip');
+    if (!overlay) return;
+    overlay.style.display = 'flex';
+    let cur = 0;
+    const total = 4;
+    function goTo(i) {
+        cur = i;
+        slides.style.transform = 'translateX(-' + (i * 100) + '%)';
+        for (let j = 0; j < dots.length; j++) dots[j].classList.toggle('active', j === i);
+        btn.textContent = i === total - 1 ? '시작하기' : '다음';
+    }
+    btn.addEventListener('click', function() {
+        if (cur < total - 1) { goTo(cur + 1); }
+        else { overlay.style.display = 'none'; localStorage.setItem('qlog_onboarded', '1'); }
+    });
+    skipBtn.addEventListener('click', function() {
+        overlay.style.display = 'none'; localStorage.setItem('qlog_onboarded', '1');
+    });
+    // 스와이프
+    let startX = 0;
+    slides.addEventListener('touchstart', function(e) { startX = e.touches[0].clientX; }, {passive:true});
+    slides.addEventListener('touchend', function(e) {
+        const diff = startX - e.changedTouches[0].clientX;
+        if (diff > 40 && cur < total-1) goTo(cur+1);
+        if (diff < -40 && cur > 0) goTo(cur-1);
+    });
+})();
+
+// ── 네비 활성화 ───────────────────────────────────
+(function initNavActive() {
+    const navMap = { home:'navHome', stats:'navStats', calendar:'navCalendar', profile:'navProfile' };
+    const orig = window.go;
+    window.go = function(id) {
+        orig(id);
+        Object.values(navMap).forEach(function(navId) {
+            const el = document.getElementById(navId);
+            if (el) el.classList.remove('nav-active');
+        });
+        if (navMap[id]) {
+            const el = document.getElementById(navMap[id]);
+            if (el) el.classList.add('nav-active');
+        }
+    };
+})();
+
+// ── 글쓰기 단어수 실시간 표시 ─────────────────────
+(function initWordCount() {
+    const textarea = document.getElementById('text');
+    const charEl   = document.getElementById('writeCharCount');
+    const wordEl   = document.getElementById('writeWordCount');
+    const barEl    = document.getElementById('writeCharBar');
+    if (!textarea) return;
+    const MAX_CHARS = 1000;
+    function update() {
+        const txt = textarea.value;
+        const chars = txt.length;
+        const words = txt.trim() ? txt.trim().split(/\s+/).length : 0;
+        if (charEl) charEl.textContent = chars;
+        if (wordEl) wordEl.textContent = '· ' + words + '단어';
+        if (barEl) {
+            const pct = Math.min(100, Math.round((chars / MAX_CHARS) * 100));
+            barEl.style.width = pct + '%';
+            barEl.style.background = chars >= MAX_CHARS
+                ? 'linear-gradient(90deg,#ef4444,#b91c1c)'
+                : 'linear-gradient(90deg,#4f46e5,#7c3aed)';
+        }
+    }
+    textarea.addEventListener('input', update);
+})();
+
+// ── 홈 검색 ──────────────────────────────────────
+(function initHomeSearch() {
+    const input    = document.getElementById('homeSearchInput');
+    const clearBtn = document.getElementById('homeSearchClear');
+    const wrap     = document.getElementById('searchResultsWrap');
+    if (!input) return;
+
+    function highlight(text, query) {
+        if (!query) return text;
+        const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return text.replace(new RegExp('(' + escaped + ')', 'gi'), '<mark>$1</mark>');
+    }
+
+    function doSearch(q) {
+        wrap.innerHTML = '';
+        if (!q || !window._qLogs || !window._qLogs.length) {
+            wrap.classList.remove('show'); return;
+        }
+        const lower = q.toLowerCase();
+        const results = window._qLogs.filter(function(l) {
+            return (l.text && l.text.toLowerCase().includes(lower))
+                || (l.tags && l.tags.some(function(t) { return t.toLowerCase().includes(lower); }));
+        }).slice(0, 10);
+
+        wrap.classList.add('show');
+        if (!results.length) {
+            wrap.innerHTML = '<div class="search-no-result">🔍 검색 결과가 없어요</div>'; return;
+        }
+        results.forEach(function(l) {
+            const item = document.createElement('div');
+            item.className = 'search-result-item';
+            const d = l.date instanceof Date ? l.date : new Date(l.date);
+            const dateStr = d.toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
+            const snippet = l.text.length > 60 ? l.text.slice(0,60) + '...' : l.text;
+            item.innerHTML = '<div class="search-result-mood">' + l.mood + '</div>'
+                + '<div class="search-result-body">'
+                + '<div class="search-result-text">' + highlight(snippet, q) + '</div>'
+                + '<div class="search-result-date">' + dateStr + '</div>'
+                + '</div>';
+            item.addEventListener('click', function() {
+                input.value = ''; wrap.classList.remove('show');
+                clearBtn.classList.remove('show');
+                openDetail(l);
+            });
+            wrap.appendChild(item);
+        });
+    }
+
+    let searchTimer;
+    input.addEventListener('input', function() {
+        const q = input.value.trim();
+        clearBtn.classList.toggle('show', q.length > 0);
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(function() { doSearch(q); }, 200);
+    });
+    clearBtn.addEventListener('click', function() {
+        input.value = ''; clearBtn.classList.remove('show');
+        wrap.classList.remove('show');
+    });
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#homeSearchWrap')) wrap.classList.remove('show');
+    });
+})();
+
+// ── 감정 타임라인 ─────────────────────────────────
+function renderMoodTimeline(logList) {
+    const row = document.getElementById('moodTimelineRow');
+    if (!row) return;
+
+    const moodColors = {'😀':'#fbbf24','🙂':'#34d399','😐':'#a78bfa','😢':'#60a5fa','😡':'#f87171','😫':'#c084fc'};
+    const moodScoreMap = {'😀':6,'🙂':5,'😐':4,'😢':2,'😡':1,'😫':2};
+    const today = new Date();
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date(today); d.setDate(today.getDate() - i);
+        days.push(d);
+    }
+    const dayLabels = ['일','월','화','수','목','금','토'];
+    let hasAny = false;
+    const cols = days.map(function(d) {
+        const key = d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+        const dayLogs = logList.filter(function(l) {
+            const ld = l.date instanceof Date ? l.date : new Date(l.date);
+            return ld.getFullYear() + '-' + ld.getMonth() + '-' + ld.getDate() === key;
+        });
+        const isToday = d.getDate() === today.getDate() && d.getMonth() === today.getMonth();
+        if (dayLogs.length) hasAny = true;
+        const topMood = dayLogs.length
+            ? dayLogs.reduce(function(best, l) {
+                return (moodScoreMap[l.mood]||0) > (moodScoreMap[best.mood]||0) ? l : best;
+              }).mood
+            : null;
+        const score = topMood ? moodScoreMap[topMood] || 4 : 0;
+        const color = topMood ? (moodColors[topMood] || '#e5e7eb') : '#f2f4f6';
+        const heightPx = dayLogs.length ? Math.max(8, score * 6) : 4;
+        return { label: dayLabels[d.getDay()], emoji: topMood, color, heightPx, isToday, count: dayLogs.length };
+    });
+
+    if (!hasAny) {
+        row.innerHTML = '<div class="mood-timeline-empty">일기를 쓰면 감정 흐름이 표시돼요</div>'; return;
+    }
+    row.innerHTML = cols.map(function(c) {
+        return '<div class="mood-timeline-col">'
+            + '<div class="mood-timeline-bar-wrap">'
+            + '<div class="mood-timeline-bar" style="height:' + c.heightPx + 'px; background:' + c.color + '; width:' + (c.isToday ? '28px' : '20px') + '; border:' + (c.isToday ? '2px solid #f97316' : 'none') + ';"></div>'
+            + '</div>'
+            + '<div class="mood-timeline-emoji">' + (c.emoji || '') + '</div>'
+            + '<div class="mood-timeline-day" style="color:' + (c.isToday ? '#f97316' : '#aaa') + '; font-weight:' + (c.isToday ? '900' : '600') + ';">' + c.label + '</div>'
+            + '</div>';
+    }).join('');
+}
+
+// ── 주간 리포트 ──────────────────────────────────────────────
+function dismissWeeklyReport() {
+    var c = document.getElementById('weeklyReportCard');
+    if (c) c.style.display = 'none';
+    var t = new Date(); var d = t.getDay();
+    localStorage.setItem('qlog_report_shown', t.getFullYear()+'-'+t.getMonth()+'-'+(t.getDate()-d));
+}
+function renderWeeklyReport(logList) {
+    const card = document.getElementById('weeklyReportCard');
+    if (!card) return;
+    const today = new Date(); const dow = today.getDay();
+    const thisWeek = today.getFullYear()+'-'+today.getMonth()+'-'+(today.getDate()-dow);
+    if (localStorage.getItem('qlog_report_shown') === thisWeek || dow !== 1) { card.style.display='none'; return; }
+    const ws = new Date(today); ws.setDate(today.getDate()-dow-7);
+    const we = new Date(today); we.setDate(today.getDate()-dow);
+    const wl = logList.filter(function(l){return l.date>=ws && l.date<we;});
+    if (!wl.length) { card.style.display='none'; return; }
+    const mc={};
+    wl.forEach(function(l){mc[l.mood]=(mc[l.mood]||0)+1;});
+    const top = Object.entries(mc).sort(function(a,b){return b[1]-a[1];})[0];
+    const tc  = wl.reduce(function(s,l){return s+(l.text?l.text.length:0);},0);
+    card.style.display='block';
+    const wrap=document.createElement('div'); wrap.className='weekly-report-card';
+    const cb=document.createElement('button'); cb.className='weekly-report-close'; cb.textContent='×';
+    cb.addEventListener('click', dismissWeeklyReport);
+    wrap.appendChild(cb);
+    const body=document.createElement('div');
+    body.innerHTML='<div class="weekly-report-label">📋 지난주 리포트</div>'
+        +'<div class="weekly-report-title">지난주엔 '+(top?top[0]:'')+' 감정이<br>가장 많았어요</div>'
+        +'<div class="weekly-report-row">'
+        +'<div class="weekly-report-stat"><div class="weekly-report-stat-num">'+wl.length+'</div><div class="weekly-report-stat-label">일기 수</div></div>'
+        +'<div class="weekly-report-stat"><div class="weekly-report-stat-num">'+tc+'</div><div class="weekly-report-stat-label">총 글자</div></div>'
+        +'<div class="weekly-report-stat"><div class="weekly-report-stat-num">'+Object.keys(mc).length+'</div><div class="weekly-report-stat-label">감정 종류</div></div>'
+        +'</div>';
+    wrap.appendChild(body);
+    card.innerHTML=''; card.appendChild(wrap);
+}
+
+
 // ════════════════════════════════════════════════════
 //  ★ 새 기능 함수들 (모듈 스코프)
 // ════════════════════════════════════════════════════
@@ -2689,6 +3313,10 @@ function qlogNewFeatures(logList, user) {
 
     // 히트맵
     qlogRenderHeatmap(logList);
+
+    // ★ 타임라인 + 주간리포트
+    renderMoodTimeline(logList);
+    renderWeeklyReport(logList);
 }
 
 // ── 스트릭 팝업 ──────────────────────────────────
@@ -3042,5 +3670,52 @@ function showDayLogs(year, month, day) {
         <div class="badge-new-desc" id="badgeNewDesc"></div>
     </div>
 </div>
+
+<!-- ★ 온보딩 오버레이 -->
+<div class="onboarding-overlay" id="onboardingOverlay" style="display:none;">
+    <div style="flex:1; display:flex; align-items:center; width:100%;">
+        <div class="onboarding-slides" id="onboardingSlides">
+            <div class="onboarding-slide">
+                <span class="onboarding-emoji">📓</span>
+                <div class="onboarding-title">나만의 AI 일기장,<br>Q-Log에 오신 걸 환영해요</div>
+                <div class="onboarding-sub">매일의 감정을 기록하고<br>나를 더 깊이 이해해 보세요</div>
+            </div>
+            <div class="onboarding-slide">
+                <span class="onboarding-emoji">✦</span>
+                <div class="onboarding-title">AI가 질문을<br>대신 만들어줘요</div>
+                <div class="onboarding-sub">글이 막힐 때 AI 도움받기를 누르면<br>딱 맞는 질문이 나타나요</div>
+            </div>
+            <div class="onboarding-slide">
+                <span class="onboarding-emoji">🌱</span>
+                <div class="onboarding-title">매일 쓸수록<br>식물이 자라요</div>
+                <div class="onboarding-sub">기분 좋은 일기를 쓸수록 식물이 성장해요<br>배지도 모아 나만의 프로필을 꾸며보세요</div>
+            </div>
+            <div class="onboarding-slide">
+                <span class="onboarding-emoji">🔥</span>
+                <div class="onboarding-title">연속 기록으로<br>습관을 만들어요</div>
+                <div class="onboarding-sub">매일 꾸준히 쓰면 연속 기록이 쌓여요<br>작은 습관이 큰 변화를 만들어요</div>
+            </div>
+        </div>
+    </div>
+    <div class="onboarding-dots" id="onboardingDots">
+        <div class="onboarding-dot active"></div>
+        <div class="onboarding-dot"></div>
+        <div class="onboarding-dot"></div>
+        <div class="onboarding-dot"></div>
+    </div>
+    <button class="onboarding-btn" id="onboardingBtn">다음</button>
+    <button class="onboarding-skip" id="onboardingSkip">건너뛰기</button>
+</div>
+
 </body>
-</html>
+</html    if (!currentUser) {
+        var _es1=document.createElement('div'); _es1.className='empty-state';
+        _es1.innerHTML='<div class="empty-state-emoji">📖</div><div class="empty-state-title">로그인하고 시작해요</div><div class="empty-state-sub">로그인하면 나만의 일기를<br>기록하고 볼 수 있어요</div>';
+        var _b1=document.createElement('button'); _b1.className='empty-state-btn'; _b1.textContent='로그인하기';
+        _b1.onclick=function(){window.go('profile');}; _es1.appendChild(_b1); list.appendChild(_es1); return;
+    }    if (logs.length === 0) {
+        var _es2=document.createElement('div'); _es2.className='empty-state';
+        _es2.innerHTML='<div class="empty-state-emoji">✏️</div><div class="empty-state-title">첫 일기를 써볼까요?</div><div class="empty-state-sub">오늘의 감정을 기록하면<br>식물이 자라고 배지를 얻어요</div>';
+        var _b2=document.createElement('button'); _b2.className='empty-state-btn'; _b2.textContent='일기 쓰기';
+        _b2.onclick=function(){document.getElementById('fabBtn').click();}; _es2.appendChild(_b2); list.appendChild(_es2); return;
+    }>
