@@ -500,7 +500,16 @@ body.dark-mode .home-header {
 }
 
 /* ── 다크모드 토글 슬라이더 UI ── */
-.dark-toggle-row, #notiSettingBtn {
+/* dark-toggle-row는 profile-menu-item과 동일한 너비/스타일을 공유 */
+.dark-toggle-row {
+  user-select: none;
+}
+body.dark-mode .dark-toggle-row {
+  background: var(--dm-card-bg) !important;
+  box-shadow: 0 2px 8px var(--dm-shadow) !important;
+}
+/* 레거시 호환 — 다른 페이지(settings 등)에서 단독으로 쓸 경우 */
+#notiSettingBtn {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -511,10 +520,6 @@ body.dark-mode .home-header {
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   cursor: pointer;
   user-select: none;
-}
-body.dark-mode .dark-toggle-row {
-  background: var(--dm-card-bg) !important;
-  box-shadow: 0 2px 8px var(--dm-shadow) !important;
 }
 .dark-toggle-label {
   display: flex;
@@ -605,11 +610,228 @@ body.dark-mode .dark-toggle-label { color: var(--dm-text) !important; }
     font-weight: bold;
 }
 
-.swipe-hint {
-    transition: opacity 0.9s ease, visibility 0.5s ease;
-}
-.swipe-hint.hidden {
-    display: flex !important; /* display none 대신 opacity 사용 */
+/* ══════════════════════════════════════════
+   배지 상세 팝업 (하단 시트)
+══════════════════════════════════════════ */
+.badge-detail-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
     opacity: 0;
-    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 9999;
+}
+.badge-detail-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+.badge-detail-modal {
+    background: white;
+    border-radius: 28px 28px 0 0;
+    padding: 36px 28px 52px;
+    width: 100%;
+    max-width: 480px;
+    text-align: center;
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.badge-detail-overlay.show .badge-detail-modal {
+    transform: translateY(0);
+}
+/* 드래그 핸들 */
+.badge-detail-modal::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 4px;
+    background: #e5e8eb;
+    border-radius: 4px;
+    margin: -20px auto 24px;
+}
+.badge-detail-emoji {
+    font-size: 72px;
+    display: block;
+    margin-bottom: 14px;
+    transition: filter 0.3s, opacity 0.3s;
+    line-height: 1;
+}
+.badge-detail-emoji.locked-emoji {
+    filter: grayscale(1);
+    opacity: 0.4;
+}
+.badge-detail-name {
+    font-size: 22px;
+    font-weight: 900;
+    color: #191f28;
+    margin-bottom: 10px;
+    letter-spacing: -0.4px;
+}
+.badge-detail-desc {
+    font-size: 15px;
+    color: #6b7280;
+    line-height: 1.7;
+    margin-bottom: 18px;
+}
+.badge-detail-status {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 7px 18px;
+    border-radius: 20px;
+    margin-bottom: 28px;
+}
+.badge-detail-status.earned {
+    background: #dcfce7;
+    color: #16a34a;
+}
+.badge-detail-status.locked {
+    background: #f3f4f6;
+    color: #9ca3af;
+}
+.badge-detail-close {
+    width: 100%;
+    padding: 16px;
+    border-radius: 16px;
+    background: #191f28;
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    margin: 0;
+    transition: background 0.15s;
+}
+.badge-detail-close:hover { background: #2d3748; }
+
+/* 다크모드 */
+body.dark-mode .badge-detail-modal  { background: #2a2a2a; }
+body.dark-mode .badge-detail-modal::before { background: #444; }
+body.dark-mode .badge-detail-name   { color: #e8eaed; }
+body.dark-mode .badge-detail-desc   { color: #9aa0a6; }
+body.dark-mode .badge-detail-status.locked { background: #333; color: #6b7280; }
+body.dark-mode .badge-detail-close  { background: #444; }
+body.dark-mode .badge-detail-close:hover { background: #555; }
+
+/* ══════════════════════════════════════════
+   닉네임 수정 모달 (센터 팝업)
+══════════════════════════════════════════ */
+.nickname-edit-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    z-index: 9999;
+    padding: 0 24px;
+    box-sizing: border-box;
+}
+.nickname-edit-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+.nickname-edit-modal {
+    background: white;
+    border-radius: 24px;
+    padding: 28px 24px 24px;
+    width: 100%;
+    max-width: 360px;
+    text-align: center;
+    transform: scale(0.88);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+.nickname-edit-overlay.show .nickname-edit-modal {
+    transform: scale(1);
+}
+.nickname-edit-title {
+    font-size: 18px;
+    font-weight: 900;
+    color: #191f28;
+    margin-bottom: 18px;
+    letter-spacing: -0.3px;
+}
+.nickname-edit-input {
+    width: 100%;
+    padding: 13px 16px;
+    border-radius: 14px;
+    border: 1.5px solid #e5e8eb;
+    font-size: 16px;
+    font-family: 'Pretendard', sans-serif;
+    color: #191f28;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+    margin: 0;
+    background: #fafafa;
+}
+.nickname-edit-input:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+    background: white;
+}
+.nickname-edit-btns {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+}
+.nickname-cancel-btn {
+    flex: 1;
+    padding: 14px;
+    border-radius: 14px;
+    background: #f2f4f6;
+    color: #555;
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    margin: 0;
+    transition: background 0.15s;
+    font-family: 'Pretendard', sans-serif;
+}
+.nickname-cancel-btn:hover { background: #e5e8eb; }
+.nickname-save-btn {
+    flex: 1;
+    padding: 14px;
+    border-radius: 14px;
+    background: #4f46e5;
+    color: white;
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    margin: 0;
+    transition: background 0.15s;
+    font-family: 'Pretendard', sans-serif;
+}
+.nickname-save-btn:hover { background: #3730a3; }
+
+/* 다크모드 */
+body.dark-mode .nickname-edit-modal  { background: #2a2a2a; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+body.dark-mode .nickname-edit-title  { color: #e8eaed; }
+body.dark-mode .nickname-edit-input  { background: #1e1e1e; border-color: #3c4043; color: #e8eaed; }
+body.dark-mode .nickname-edit-input:focus { border-color: #818cf8; background: #252525; }
+body.dark-mode .nickname-cancel-btn  { background: #333; color: #ccc; }
+body.dark-mode .nickname-cancel-btn:hover { background: #3c3c3c; }
+
+/* ══════════════════════════════════════════
+   배지 아이템 — 미수집 시 흑백
+══════════════════════════════════════════ */
+.badge-item {
+    cursor: pointer;
+}
+.badge-item.locked {
+    filter: grayscale(1);
+    opacity: 0.5;
+}
+/* 닉네임 수정 버튼 (프로필 히어로) */
+#editNicknameBtn:hover {
+    background: rgba(255, 255, 255, 0.38) !important;
 }

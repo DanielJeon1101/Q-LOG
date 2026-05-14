@@ -1710,7 +1710,10 @@ body.dark-mode .dark-toggle-row { background: #2a2a2a !important; }
             <div class="profile-avatar-circle">👤</div>
             <div class="profile-streak-badge" id="profileStreakBadge">🔥 0일</div>
         </div>
-        <div class="profile-name" id="profileHeroName">사용자</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+            <div class="profile-name" id="profileHeroName">사용자</div>
+            <button id="editNicknameBtn" title="닉네임 수정" style="background:rgba(255,255,255,0.25);border:1.5px solid rgba(255,255,255,0.5);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;padding:0;margin:0;color:white;flex-shrink:0;transition:background 0.2s;">✏️</button>
+        </div>
         <div class="profile-email-sub" id="profileHeroEmail"></div>
         <div class="profile-hero-stats">
             <div class="profile-stat-item">
@@ -1744,11 +1747,9 @@ body.dark-mode .dark-toggle-row { background: #2a2a2a !important; }
     </div>
     <!-- 로그인 후 -->
     <div id="afterLogin" style="display:none; padding:0 16px 100px;">
-        <label class="dark-toggle-row" for="darkModeToggle" style="background:white;border-radius:16px;padding:14px 16px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.05);display:flex;align-items:center;cursor:pointer;">
-            <div class="dark-toggle-label" style="flex:1;">
-                <span class="dark-toggle-icon" id="darkModeIcon">🌙</span>
-                <span id="darkModeText">다크모드</span>
-            </div>
+        <label class="dark-toggle-row profile-menu-item" for="darkModeToggle" style="margin-bottom:10px;cursor:pointer;">
+            <span class="profile-menu-icon" id="darkModeIcon">🌙</span>
+            <div style="flex:1;"><div class="profile-menu-label" id="darkModeText">다크모드</div></div>
             <div class="toggle-switch">
                 <input type="checkbox" id="darkModeToggle">
                 <span class="toggle-slider"></span>
@@ -1831,7 +1832,7 @@ body.dark-mode .dark-toggle-row { background: #2a2a2a !important; }
 <script src="qlog-features.js"></script>
 <script type="module">
 import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut }
+import { getAuth, onAuthStateChanged, signOut, updateProfile }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
     getFirestore, collection, addDoc, getDocs,
@@ -2739,6 +2740,49 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
     await signOut(auth); alert('로그아웃 되었습니다.'); window.go('home');
 });
 
+// ── 닉네임 수정 ──────────────────────────────────
+(function initNicknameEdit() {
+    const btn = document.getElementById('editNicknameBtn');
+    if (!btn) return;
+    btn.addEventListener('click', function() {
+        if (!currentUser) return;
+        const current = currentUser.displayName || currentUser.email.split('@')[0] || '';
+        const input = document.getElementById('nicknameInput');
+        if (input) input.value = current;
+        const overlay = document.getElementById('nicknameEditOverlay');
+        if (overlay) overlay.classList.add('show');
+        setTimeout(function() { if (input) input.focus(); }, 300);
+    });
+})();
+
+function closeNicknameEdit() {
+    const overlay = document.getElementById('nicknameEditOverlay');
+    if (overlay) overlay.classList.remove('show');
+}
+window.closeNicknameEdit = closeNicknameEdit;
+
+async function saveNickname() {
+    if (!currentUser) return;
+    const input = document.getElementById('nicknameInput');
+    const newName = input ? input.value.trim() : '';
+    if (!newName) { alert('닉네임을 입력해주세요.'); return; }
+    try {
+        await updateProfile(currentUser, { displayName: newName });
+        const nameEl = document.getElementById('profileHeroName');
+        if (nameEl) nameEl.textContent = newName;
+        closeNicknameEdit();
+        // 간단 토스트
+        const t = document.createElement('div');
+        t.textContent = '닉네임이 변경되었습니다. 🎉';
+        t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#191f28;color:white;padding:12px 20px;border-radius:14px;font-size:14px;font-weight:700;z-index:99999;pointer-events:none;';
+        document.body.appendChild(t);
+        setTimeout(function() { t.remove(); }, 2500);
+    } catch (err) {
+        alert('저장 중 오류: ' + err.message);
+    }
+}
+window.saveNickname = saveNickname;
+
 // ── 통계 뒤로가기 ─────────────────────────────
 document.getElementById('statsBackBtn').addEventListener('click', () => window.go('home'));
 
@@ -3391,15 +3435,41 @@ function qlogBadgeGrid(containerId, logList, streak) {
     if (!el || !window.QLogFeatures) return;
     const F = window.QLogFeatures;
     const earned = new Set(F.getEarnedBadges(logList, streak).map(function(b) { return b.id; }));
-    let html = '';
+    el.innerHTML = '';
     F.BADGES.forEach(function(b) {
-        const locked = earned.has(b.id) ? '' : ' locked';
-        html += '<div class="badge-item' + locked + '" title="' + b.desc + '">'
-             + '<span class="badge-emoji">' + b.emoji + '</span>'
-             + '<span class="badge-name">' + b.name + '</span></div>';
+        const isEarned = earned.has(b.id);
+        const item = document.createElement('div');
+        item.className = 'badge-item' + (isEarned ? '' : ' locked');
+        item.innerHTML = '<span class="badge-emoji">' + b.emoji + '</span>'
+                       + '<span class="badge-name">' + b.name + '</span>';
+        item.addEventListener('click', function() {
+            openBadgeDetail(b, isEarned);
+        });
+        el.appendChild(item);
     });
-    el.innerHTML = html;
 }
+
+// ── 배지 상세 팝업 ───────────────────────────────
+function openBadgeDetail(badge, isEarned) {
+    const overlay = document.getElementById('badgeDetailOverlay');
+    const emojiEl = document.getElementById('badgeDetailEmoji');
+    const nameEl  = document.getElementById('badgeDetailName');
+    const descEl  = document.getElementById('badgeDetailDesc');
+    const statEl  = document.getElementById('badgeDetailStatus');
+    if (!overlay) return;
+    emojiEl.textContent = badge.emoji;
+    emojiEl.className   = 'badge-detail-emoji' + (isEarned ? '' : ' locked-emoji');
+    nameEl.textContent  = badge.name;
+    descEl.textContent  = badge.desc;
+    statEl.textContent  = isEarned ? '✅ 획득 완료' : '🔒 아직 획득하지 못한 배지예요';
+    statEl.className    = 'badge-detail-status ' + (isEarned ? 'earned' : 'locked');
+    overlay.classList.add('show');
+}
+function closeBadgeDetail() {
+    const overlay = document.getElementById('badgeDetailOverlay');
+    if (overlay) overlay.classList.remove('show');
+}
+window.closeBadgeDetail = closeBadgeDetail;
 
 // ── 프로필 히어로 ─────────────────────────────────
 function qlogUpdateProfileHero(user, logList) {
@@ -3656,6 +3726,29 @@ function showDayLogs(year, month, day) {
         <div class="badge-new-label">🎉 새 배지 획득!</div>
         <div class="badge-new-name" id="badgeNewName"></div>
         <div class="badge-new-desc" id="badgeNewDesc"></div>
+    </div>
+</div>
+
+<!-- 배지 상세 팝업 -->
+<div class="badge-detail-overlay" id="badgeDetailOverlay" onclick="if(event.target===this)closeBadgeDetail()">
+    <div class="badge-detail-modal">
+        <div class="badge-detail-emoji" id="badgeDetailEmoji">🏆</div>
+        <div class="badge-detail-name" id="badgeDetailName"></div>
+        <div class="badge-detail-desc" id="badgeDetailDesc"></div>
+        <div class="badge-detail-status" id="badgeDetailStatus"></div>
+        <button class="badge-detail-close" onclick="closeBadgeDetail()">닫기</button>
+    </div>
+</div>
+
+<!-- 닉네임 수정 모달 -->
+<div class="nickname-edit-overlay" id="nicknameEditOverlay" onclick="if(event.target===this)closeNicknameEdit()">
+    <div class="nickname-edit-modal">
+        <div class="nickname-edit-title">닉네임 수정</div>
+        <input type="text" id="nicknameInput" class="nickname-edit-input" placeholder="새 닉네임을 입력하세요" maxlength="20">
+        <div class="nickname-edit-btns">
+            <button class="nickname-cancel-btn" onclick="closeNicknameEdit()">취소</button>
+            <button class="nickname-save-btn" onclick="saveNickname()">저장</button>
+        </div>
     </div>
 </div>
 
