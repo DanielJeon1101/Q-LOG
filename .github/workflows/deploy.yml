@@ -10,11 +10,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 코드 가져오기
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Firebase 배포
-        uses: w9jds/firebase-action@master
+      - name: Gemini 설정 파일 생성  # ← 이 단계 추가
+        run: echo "window.GEMINI_KEY = '${{ secrets.GEMINI_API_KEY }}';" > gemini-config.js
+
+      - uses: w9jds/firebase-action@master
         with:
           args: deploy --only hosting
         env:
