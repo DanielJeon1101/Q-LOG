@@ -1,0 +1,837 @@
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+/* 1. 디자인 시스템 변수 (향후 다크모드 확장을 위한 핵심) */
+:root {
+  --primary-blue: #3182f6; /* 토스 블루 */
+  --primary-blue-hover: #1b64da;
+  --bg-color: #f2f4f6; /* 앱 밖의 PC 배경 */
+  --app-bg: #ffffff; /* 실제 앱 배경 */
+  --text-main: #191f28; /* 완전 블랙이 아닌 가독성 높은 짙은 회색 */
+  --text-sub: #8b95a1;
+  --border-radius-lg: 24px;
+  --border-radius-md: 16px;
+  --border-radius-sm: 8px;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* 2. 글로벌 리셋 및 PC 환경 제어 */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Pretendard', sans-serif;
+}
+
+body {
+  background-color: var(--bg-color);
+  display: flex;
+  justify-content: center; /* PC에서 접속 시 중앙 정렬 */
+  align-items: flex-start;
+  min-height: 100vh;
+  color: var(--text-main);
+}
+
+/* --- 1. 컨테이너 중앙 정렬 및 너비 강제 --- */
+.app-container {
+    width: 100%;
+    max-width: 480px;
+    min-height: 100vh;
+    margin: 0 auto; /* PC 화면에서 중앙으로 오게 만드는 핵심 */
+    background: #f8f8f8;
+    position: relative;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    overflow-x: hidden;
+}
+
+/* 4. 화면 숨바꼭질 시스템 (Vanilla SPA) */
+.screen {
+  display: none; /* 기본적으로 모두 숨김 */
+  padding: 20px 20px 80px 20px; /* 하단 네비게이션을 위한 여백 확보 */
+  animation: fadeIn 0.3s ease-in-out;
+}
+.screen.active {
+  display: block; /* JS에서 classList.add('active')로 제어 */
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 5. 공통 UI 요소 (토스 감성 적용) */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  margin-bottom: 24px;
+}
+.top-bar h1 {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+/* 카드 UI (달력, 통계 박스 등에 적용) */
+.card {
+  background: #ffffff;
+  border-radius: var(--border-radius-md);
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid #f2f4f6;
+}
+
+/* 2. FAB (작성하기 버튼) 절대 방어 로직 */
+.fab {
+  position: fixed;
+  bottom: 80px; /* 네비게이션 바(60px)보다 살짝 위에 띄움 */
+  left: 50%;
+  transform: translateX(-50%); /* 정확히 정중앙에 위치 */
+  width: 60px; /* 버튼이 너무 크면 이 숫자를 50px로 줄이십시오 */
+  height: 60px;
+  background-color: var(--primary-blue, #3182f6);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 32px;
+  box-shadow: 0 8px 16px rgba(49, 130, 246, 0.3);
+  cursor: pointer;
+  z-index: 100; /* 네비게이션 바보다 항상 위에 노출 */
+}
+
+
+.fab:active {
+  transform: translateX(-50%) scale(0.95);
+  background-color: var(--primary-blue-hover);
+}
+.nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%; /* 모니터 정중앙으로 이동 */
+    transform: translateX(-50%); /* 정확한 센터링 */
+    width: 100%;
+    max-width: 480px; /* 컨테이너 밖으로 절대 안 나감 */
+    height: 70px;
+    background: white;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    z-index: 90; /* 팝업보다 아래 */
+} 
+/* --- 3. 중앙 버튼(+) 절대 방어 --- */
+.nav-center {
+    position: absolute;
+    top: -25px;
+    left: 50%; /* absolute는 flex를 무시하므로 수동으로 중앙 꽂기 */
+    transform: translateX(-50%); /* 정확한 센터링 */
+    width: 65px;
+    height: 65px;
+    background: black;
+    color: white;
+    font-size: 32px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+}
+/* 1. 하단 네비게이션 바 절대 방어 로직 */
+.bottom-nav {
+  position: fixed; /* 스크롤을 내려도 항상 화면 하단에 고정 */
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%); /* 화면 정중앙(앱 컨테이너 위치)으로 강제 이동 */
+  width: 100%;
+  max-width: 480px; /* 컨테이너 밖으로 절대 나가지 못하게 제한 */
+  height: 60px;
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  border-top: 1px solid #f2f4f6;
+  z-index: 90; /* 딤드(dimmer) 배경보다 아래에 위치해야 함 */
+}
+.nav button { 
+    background: none; 
+    color: black; 
+    font-size: 20px; 
+}
+.nav-item {
+  color: var(--text-sub);
+  text-decoration: none;
+  font-size: 20px;
+  transition: color 0.2s ease;
+}
+.nav-item.active, .nav-item:hover {
+  color: var(--text-main);
+}
+/* --- 4. 모달(팝업) 계층 최상위 방어 --- */
+.modal {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(30,30,30,0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: 0.3s;
+    z-index: 999; /* 하단 네비게이션(90)보다 무조건 위에 오도록 덮어버림 */
+}
+/* 8. 글쓰기 화면 전용 (입력 폼) */
+.question-text {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 24px;
+  line-height: 1.4;
+  color: var(--primary-blue); /* 질문을 강조 */
+}
+textarea {
+  width: 100%;
+  height: 200px;
+  border: none;
+  resize: none;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-main);
+  background-color: transparent;
+}
+textarea:focus {
+  outline: none;
+}
+textarea::placeholder {
+  color: var(--text-sub);
+}
+
+/* 홈 화면 레이아웃 */
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    /* body를 스크롤 컨테이너로 사용 */
+    overflow-x: hidden;
+}
+
+.app-container {
+    overflow-x: hidden;
+}
+
+#home {
+    width: 100%;
+    position: relative;
+    padding: 0;
+    padding-top: 100vh; /* 헤더(fixed 100vh) 아래에 리스트가 시작되도록 공간 확보 */
+    box-sizing: border-box;
+}
+
+/* ── 홈 헤더: fixed, JS가 height를 실시간으로 제어 ── */
+.home-header {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 480px;
+    height: 100dvh;
+    z-index: 85;
+    background: #f8f8f8;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    /* 스크롤 시 덜덜거림 방지 */
+    will-change: height, background-color, box-shadow;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.home-header.is-fixed {
+  flex-direction: row;
+    height: 80px !important; /* 최소 높이 강제 고정 */
+    background-color: rgba(248, 248, 248, 0.95);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+    justify-content: center; /* 고정 시 내용 중앙 정렬 */
+}
+
+/* --- 홈 리스트 스크롤 가속도 안정화 --- */
+#home.active {
+    padding-top: 100dvh;
+    scroll-behavior: auto; /* 리스트가 튀는 현상을 막기 위해 수동 계산 시 auto 권장 */
+    -webkit-overflow-scrolling: touch;
+}
+
+/* 텍스트는 부드럽게 전환 */
+.title, .time, .date-display {
+  opacity: 1 !important;
+    transition: font-size 0.15s ease, opacity 0.15s ease;
+    will-change: font-size;
+}
+
+/* ── minimized: JS가 이 클래스를 추가하면 가로 레이아웃으로 전환 ── */
+.home-header.minimized {
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+.home-header.minimized .title        { font-size: 24px; font-weight: 700; }
+.home-header.minimized .time         { font-size: 20px; }
+.home-header.minimized .date-display { display: none; }
+
+/* ── 로그 리스트 ── */
+#logList {
+    position: relative;
+    z-index: 20;
+    background: #f8f8f8;
+    padding: 20px 20px 100px 20px;
+    min-height: 100vh;
+}
+
+/* 날짜 표시용 추가 스타일 */
+.date-display { font-size: 20px; color: #666; }
+
+/*수정사항 추가*/
+
+/* ══════════════════════════════════════════
+   🌙 다크모드
+   ══════════════════════════════════════════ */
+:root {
+  --dm-bg:        #121212;
+  --dm-app-bg:    #1e1e1e;
+  --dm-card-bg:   #2a2a2a;
+  --dm-text:      #e8eaed;
+  --dm-sub:       #9aa0a6;
+  --dm-border:    #3c4043;
+  --dm-nav-bg:    #1e1e1e;
+  --dm-header-bg: #1e1e1e;
+  --dm-input-bg:  #2a2a2a;
+  --dm-blue:      #4ca3f8;
+  --dm-shadow:    rgba(0,0,0,0.4);
+}
+
+/* body 다크모드 */
+body.dark-mode {
+  background-color: #121212 !important;
+  color: var(--dm-text) !important;
+}
+
+/* 앱 컨테이너 */
+body.dark-mode .app-container {
+  background: var(--dm-app-bg) !important;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5) !important;
+}
+
+/* 홈 헤더 */
+body.dark-mode .home-header {
+  background: var(--dm-header-bg) !important;
+}
+body.dark-mode .title,
+body.dark-mode .time,
+body.dark-mode .date-display {
+  color: var(--dm-text) !important;
+}
+body.dark-mode #home {
+  background: var(--dm-app-bg) !important;
+}
+
+/* 카드 */
+body.dark-mode .card {
+  background: var(--dm-card-bg) !important;
+  box-shadow: 0 4px 10px var(--dm-shadow) !important;
+  border-color: var(--dm-border) !important;
+}
+body.dark-mode .card-text { color: #ccc !important; }
+body.dark-mode .card-date { color: var(--dm-sub) !important; }
+body.dark-mode .card-tag  { background: #2d2b4e !important; color: #a5b4fc !important; }
+
+/* 네비 바 */
+body.dark-mode .nav,
+body.dark-mode .bottom-nav {
+  background: var(--dm-nav-bg) !important;
+  border-top-color: var(--dm-border) !important;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.4) !important;
+}
+body.dark-mode .nav button { color: var(--dm-text) !important; }
+body.dark-mode .nav-center {
+  background: #444 !important;
+}
+
+/* 모달 */
+body.dark-mode .modal-content,
+body.dark-mode .detail-content {
+  background: var(--dm-card-bg) !important;
+  color: var(--dm-text) !important;
+}
+body.dark-mode .detail-text  { color: #ccc !important; }
+body.dark-mode .detail-date  { color: var(--dm-sub) !important; }
+body.dark-mode .detail-close { background: #444 !important; }
+body.dark-mode .mood-grid button { background: #333 !important; }
+
+/* 글쓰기 화면 */
+body.dark-mode #write.active { background: var(--dm-app-bg) !important; }
+body.dark-mode .write-back-btn { background: #333 !important; color: var(--dm-text) !important; }
+body.dark-mode .write-header h2 { color: var(--dm-text) !important; }
+body.dark-mode .write-textarea-wrap {
+  background: var(--dm-card-bg) !important;
+  box-shadow: 0 2px 8px var(--dm-shadow) !important;
+}
+body.dark-mode .write-textarea-wrap textarea { color: var(--dm-text) !important; }
+body.dark-mode .write-tag-box {
+  background: var(--dm-card-bg) !important;
+  box-shadow: 0 2px 8px var(--dm-shadow) !important;
+}
+body.dark-mode .write-tag-input-row input {
+  background: var(--dm-input-bg) !important;
+  border-color: #4f46e5 !important;
+  color: var(--dm-text) !important;
+}
+body.dark-mode .write-save-btn { background: #333 !important; }
+
+/* 통계 화면 */
+body.dark-mode #stats { background: var(--dm-app-bg) !important; }
+body.dark-mode .stats-container { background: var(--dm-app-bg) !important; }
+body.dark-mode .stats-back-btn { background: #333 !important; color: var(--dm-text) !important; }
+body.dark-mode .stats-top-title { color: var(--dm-text) !important; }
+body.dark-mode .stats-section-title { color: var(--dm-text) !important; }
+body.dark-mode .metric-card {
+  background: var(--dm-card-bg) !important;
+  box-shadow: 0 2px 8px var(--dm-shadow) !important;
+}
+body.dark-mode .metric-card-label { color: var(--dm-sub) !important; }
+body.dark-mode .chart-wrap {
+  background: var(--dm-card-bg) !important;
+  box-shadow: 0 2px 8px var(--dm-shadow) !important;
+}
+body.dark-mode .chart-title { color: var(--dm-text) !important; }
+body.dark-mode .period-btn {
+  background: #2a2a2a !important;
+  color: var(--dm-sub) !important;
+  border-color: var(--dm-border) !important;
+}
+/* 다크모드 활성 기간 버튼 — 밝게 강조 */
+body.dark-mode .period-btn.active-period {
+  background: #4f46e5 !important;
+  color: #ffffff !important;
+  border-color: #4f46e5 !important;
+  box-shadow: 0 0 0 3px rgba(99,89,255,0.35), 0 2px 8px rgba(79,70,229,0.5) !important;
+}
+
+/* 달력 화면 */
+body.dark-mode #calendar { background: var(--dm-app-bg) !important; }
+body.dark-mode .calendar-sticky-top {
+  background: var(--dm-app-bg) !important;
+  box-shadow: 0 2px 8px var(--dm-shadow) !important;
+}
+body.dark-mode .cal-nav-row h2 { color: var(--dm-text) !important; }
+body.dark-mode .cal-nav-btn { background: #333 !important; color: var(--dm-text) !important; }
+body.dark-mode .day { background: #2a2a2a !important; color: var(--dm-text) !important; }
+body.dark-mode .day:hover { background: #3a3a3a !important; }
+body.dark-mode .weekday  { background: #333 !important; color: var(--dm-sub) !important; }
+body.dark-mode .has-log  { background: #1a3a5c !important; }
+body.dark-mode .day.selected { background: #1e4080 !important; }
+body.dark-mode .day-log-card {
+  background: var(--dm-card-bg) !important;
+  box-shadow: 0 2px 6px var(--dm-shadow) !important;
+}
+body.dark-mode .day-log-text { color: #ccc !important; }
+body.dark-mode .day-log-time { color: var(--dm-sub) !important; }
+body.dark-mode .day-logs-header { color: var(--dm-text) !important; }
+body.dark-mode .tag-search-bar {
+  background: var(--dm-card-bg) !important;
+  border-color: var(--dm-border) !important;
+}
+body.dark-mode .tag-search-input-wrap input {
+  background: var(--dm-input-bg) !important;
+  border-color: var(--dm-border) !important;
+  color: var(--dm-text) !important;
+}
+
+/* 프로필 화면 */
+body.dark-mode #profile { background: var(--dm-app-bg) !important; }
+body.dark-mode #profile h2 { color: var(--dm-text) !important; }
+body.dark-mode .profile-card {
+  background: var(--dm-card-bg) !important;
+  box-shadow: 0 4px 10px var(--dm-shadow) !important;
+}
+body.dark-mode .profile-email { color: var(--dm-text) !important; }
+body.dark-mode .profile-label { color: var(--dm-sub) !important; }
+
+/* 로그인/회원가입/비밀번호 페이지 다크모드 */
+body.dark-mode .app-container {
+  background: var(--dm-app-bg) !important;
+}
+body.dark-mode input[type="email"],
+body.dark-mode input[type="password"],
+body.dark-mode input[type="text"] {
+  background: var(--dm-input-bg) !important;
+  border-color: var(--dm-border) !important;
+  color: var(--dm-text) !important;
+}
+body.dark-mode .back-btn {
+  background: #333 !important;
+  color: var(--dm-text) !important;
+}
+body.dark-mode .form-wrap { background: var(--dm-app-bg) !important; }
+body.dark-mode .logo-title { color: var(--dm-text) !important; }
+body.dark-mode .logo-sub   { color: var(--dm-sub) !important; }
+body.dark-mode .bottom-links { color: var(--dm-sub) !important; }
+body.dark-mode .divider { color: var(--dm-sub) !important; }
+body.dark-mode .divider::before,
+body.dark-mode .divider::after { background: var(--dm-border) !important; }
+
+/* 스크린 배경 */
+body.dark-mode .screen { background: var(--dm-app-bg) !important; }
+
+/* logList 영역 */
+body.dark-mode #logList {
+  background: var(--dm-app-bg) !important;
+}
+
+/* home-header 다크모드 배경 (z-index 낮아도 배경색 맞춰야 함) */
+body.dark-mode .home-header {
+  background: var(--dm-header-bg) !important;
+}
+
+/* ── 다크모드 토글 슬라이더 UI ── */
+/* dark-toggle-row는 profile-menu-item과 동일한 너비/스타일을 공유 */
+.dark-toggle-row {
+  user-select: none;
+}
+body.dark-mode .dark-toggle-row {
+  background: var(--dm-card-bg) !important;
+  box-shadow: 0 2px 8px var(--dm-shadow) !important;
+}
+/* 레거시 호환 — 다른 페이지(settings 등)에서 단독으로 쓸 경우 */
+#notiSettingBtn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: white;
+  border-radius: 14px;
+  margin: 10px 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  cursor: pointer;
+  user-select: none;
+}
+.dark-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #191f28;
+}
+body.dark-mode .dark-toggle-label { color: var(--dm-text) !important; }
+.dark-toggle-icon { font-size: 20px; }
+
+/* 슬라이더 스위치 */
+.toggle-switch {
+  position: relative;
+  width: 52px;
+  height: 28px;
+  flex-shrink: 0;
+}
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: #e5e8eb;
+  border-radius: 28px;
+  transition: background 0.3s;
+  cursor: pointer;
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  left: 3px;
+  top: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.3s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+.toggle-switch input:checked + .toggle-slider {
+  background: #3182f6;
+}
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(24px);
+}
+
+/* style.css 하단에 추가 */
+.settings-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: #fff;
+    border-radius: 16px;
+    margin: 10px 0;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.settings-item:active {
+    background: #f2f4f6;
+}
+
+.settings-item-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.settings-item .icon {
+    font-size: 20px;
+}
+
+.settings-item .label {
+    font-size: 16px;
+    font-weight: 500;
+    color: #191f28;
+}
+
+.settings-item .arrow {
+    color: #b0b8c1;
+    font-weight: bold;
+}
+
+/* ══════════════════════════════════════════
+   배지 상세 팝업 (하단 시트)
+══════════════════════════════════════════ */
+.badge-detail-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 9999;
+}
+.badge-detail-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+.badge-detail-modal {
+    background: white;
+    border-radius: 28px 28px 0 0;
+    padding: 36px 28px 52px;
+    width: 100%;
+    max-width: 480px;
+    text-align: center;
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.badge-detail-overlay.show .badge-detail-modal {
+    transform: translateY(0);
+}
+/* 드래그 핸들 */
+.badge-detail-modal::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 4px;
+    background: #e5e8eb;
+    border-radius: 4px;
+    margin: -20px auto 24px;
+}
+.badge-detail-emoji {
+    font-size: 72px;
+    display: block;
+    margin-bottom: 14px;
+    transition: filter 0.3s, opacity 0.3s;
+    line-height: 1;
+}
+.badge-detail-emoji.locked-emoji {
+    filter: grayscale(1);
+    opacity: 0.4;
+}
+.badge-detail-name {
+    font-size: 22px;
+    font-weight: 900;
+    color: #191f28;
+    margin-bottom: 10px;
+    letter-spacing: -0.4px;
+}
+.badge-detail-desc {
+    font-size: 15px;
+    color: #6b7280;
+    line-height: 1.7;
+    margin-bottom: 18px;
+}
+.badge-detail-status {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 7px 18px;
+    border-radius: 20px;
+    margin-bottom: 28px;
+}
+.badge-detail-status.earned {
+    background: #dcfce7;
+    color: #16a34a;
+}
+.badge-detail-status.locked {
+    background: #f3f4f6;
+    color: #9ca3af;
+}
+.badge-detail-close {
+    width: 100%;
+    padding: 16px;
+    border-radius: 16px;
+    background: #191f28;
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    margin: 0;
+    transition: background 0.15s;
+}
+.badge-detail-close:hover { background: #2d3748; }
+
+/* 다크모드 */
+body.dark-mode .badge-detail-modal  { background: #2a2a2a; }
+body.dark-mode .badge-detail-modal::before { background: #444; }
+body.dark-mode .badge-detail-name   { color: #e8eaed; }
+body.dark-mode .badge-detail-desc   { color: #9aa0a6; }
+body.dark-mode .badge-detail-status.locked { background: #333; color: #6b7280; }
+body.dark-mode .badge-detail-close  { background: #444; }
+body.dark-mode .badge-detail-close:hover { background: #555; }
+
+/* ══════════════════════════════════════════
+   닉네임 수정 모달 (센터 팝업)
+══════════════════════════════════════════ */
+.nickname-edit-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    z-index: 9999;
+    padding: 0 24px;
+    box-sizing: border-box;
+}
+.nickname-edit-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+.nickname-edit-modal {
+    background: white;
+    border-radius: 24px;
+    padding: 28px 24px 24px;
+    width: 100%;
+    max-width: 360px;
+    text-align: center;
+    transform: scale(0.88);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+.nickname-edit-overlay.show .nickname-edit-modal {
+    transform: scale(1);
+}
+.nickname-edit-title {
+    font-size: 18px;
+    font-weight: 900;
+    color: #191f28;
+    margin-bottom: 18px;
+    letter-spacing: -0.3px;
+}
+.nickname-edit-input {
+    width: 100%;
+    padding: 13px 16px;
+    border-radius: 14px;
+    border: 1.5px solid #e5e8eb;
+    font-size: 16px;
+    font-family: 'Pretendard', sans-serif;
+    color: #191f28;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+    margin: 0;
+    background: #fafafa;
+}
+.nickname-edit-input:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+    background: white;
+}
+.nickname-edit-btns {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+}
+.nickname-cancel-btn {
+    flex: 1;
+    padding: 14px;
+    border-radius: 14px;
+    background: #f2f4f6;
+    color: #555;
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    margin: 0;
+    transition: background 0.15s;
+    font-family: 'Pretendard', sans-serif;
+}
+.nickname-cancel-btn:hover { background: #e5e8eb; }
+.nickname-save-btn {
+    flex: 1;
+    padding: 14px;
+    border-radius: 14px;
+    background: #4f46e5;
+    color: white;
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    margin: 0;
+    transition: background 0.15s;
+    font-family: 'Pretendard', sans-serif;
+}
+.nickname-save-btn:hover { background: #3730a3; }
+
+/* 다크모드 */
+body.dark-mode .nickname-edit-modal  { background: #2a2a2a; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+body.dark-mode .nickname-edit-title  { color: #e8eaed; }
+body.dark-mode .nickname-edit-input  { background: #1e1e1e; border-color: #3c4043; color: #e8eaed; }
+body.dark-mode .nickname-edit-input:focus { border-color: #818cf8; background: #252525; }
+body.dark-mode .nickname-cancel-btn  { background: #333; color: #ccc; }
+body.dark-mode .nickname-cancel-btn:hover { background: #3c3c3c; }
+
+/* ══════════════════════════════════════════
+   배지 아이템 — 미수집 시 흑백
+══════════════════════════════════════════ */
+.badge-item {
+    cursor: pointer;
+}
+.badge-item.locked {
+    filter: grayscale(1);
+    opacity: 0.5;
+}
+/* 닉네임 수정 버튼 (프로필 히어로) */
+#editNicknameBtn:hover {
+    background: rgba(255, 255, 255, 0.38) !important;
+}

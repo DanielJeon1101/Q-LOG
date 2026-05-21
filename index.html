@@ -1,0 +1,3802 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Q-Log</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="stylesheet" href="style.css">
+<!-- Chart.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+<style>
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: #f8f8f8;
+    display: flex;
+    justify-content: center;
+}
+.app-container { max-width: 480px; margin: 0 auto; width: 100%; }
+
+.screen { display: none; padding: 20px; text-align: center; }
+.active { display: block; }
+
+/* ── 홈 화면 ── */
+#home.active { padding-top: 0; padding-left: 0; padding-right: 0; padding-bottom: 90px; }
+
+/* ★ 핵심 수정: 홈으로 복귀 시 헤더가 minimized 상태면 padding-top을 헤더 높이만큼으로 */
+#home.active.header-collapsed { padding-top: 92px; }
+
+.title { font-size: 28px; font-weight: bold; margin-top: 30px; }
+.time  { font-size: 40px; margin: 10px 0 5px; }
+.date-display { font-size: 18px; color: #666; }
+
+/* 홈 헤더 */
+.home-header {
+    position: fixed;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 100%; max-width: 480px;
+    height: 100vh;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    background: #f8f8f8;
+    z-index: 10; /* ★ 낮게 유지 — 리스트가 헤더 위로 올라오게 */
+    transition: height 0.1s linear;
+}
+/* ★ 헤더 minimized 상태: 홈 복귀 시 즉시 적용 */
+.home-header.minimized {
+    height: 80px !important;
+    justify-content: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    z-index: 84; /* 최소화 후에는 다시 올려서 그림자가 리스트 위에 보이게 */
+}
+.home-header.minimized .title { font-size: 18px !important; margin-top: 0; }
+.home-header.minimized .time  { font-size: 20px !important; margin: 2px 0; }
+
+/* 홈 헤더 아래에 자연스럽게 리스트가 오도록 하는 스페이서 */
+.home-header-spacer {
+    height: 100vh;
+    width: 100%;
+    flex-shrink: 0;
+    pointer-events: none;
+}
+body.dark-mode .home-header-spacer { background: var(--dm-app-bg); }
+
+/* logList: 헤더(z-index:10) 위로 올라와야 스크롤 시 가려짐 */
+#logList {
+    position: relative;
+    z-index: 20;
+    background: #f8f8f8;
+}
+
+/* 스크롤 힌트 */
+.swipe-hint {
+    position: fixed;
+    bottom: 96px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    pointer-events: none; z-index: 86;
+    animation: hintBounce 2.2s ease-in-out infinite;
+}
+.swipe-hint.hidden { display: none; }
+.swipe-hint-text  { font-size: 13px; color: rgba(140,149,161,0.85); font-weight: 500; }
+.swipe-hint-arrow { font-size: 18px; color: rgba(140,149,161,0.6); line-height: 1; }
+@keyframes hintBounce {
+    0%,100% { transform: translateX(-50%) translateY(0); opacity:.7; }
+    50%      { transform: translateX(-50%) translateY(-8px); opacity:1; }
+}
+
+/* ── 감정 필터 바 ── */
+/* 헤더와 리스트 사이 영역: 항상 보이는 점 + 열리면 이모지 행 */
+/* ── 감정 필터 바 ── */
+.mood-filter-bar {
+    position: sticky;
+    top: 80px;          /* minimized 헤더 높이(80px) 바로 아래 */
+    z-index: 50;
+    background: #f8f8f8;
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    gap: 10px;
+    touch-action: pan-y;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+
+/* 토글 스위치 */
+.mood-toggle {
+    position: relative;
+    width: 54px; height: 30px;
+    flex-shrink: 0;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+.mood-toggle input { display: none; }
+.mood-toggle-track {
+    position: absolute;
+    inset: 0;
+    border-radius: 15px;
+    background: #ccc;
+    transition: background 0.25s;
+}
+.mood-toggle input:checked + .mood-toggle-track { background: #4c79d9; }
+.mood-toggle-thumb {
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+    transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+.mood-toggle input:checked ~ .mood-toggle-thumb { transform: translateX(24px); }
+
+/* 이모지 가로 행 — 토글 OFF일 때만 표시 */
+.mood-emoji-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+    overflow: hidden;
+    max-width: 0;
+    opacity: 0;
+    transition: max-width 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease;
+    touch-action: pan-y;
+}
+.mood-emoji-row.show {
+    max-width: 400px;
+    opacity: 1;
+}
+
+/* 이모지 버튼 */
+.mood-emoji-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.04);
+    border: 2px solid transparent;
+    border-radius: 50%;
+    width: 40px; height: 40px;
+    padding: 0; margin: 0;
+    cursor: pointer;
+    font-size: 22px;
+    flex-shrink: 0;
+    transition: transform 0.15s, border-color 0.15s, background 0.15s;
+    touch-action: manipulation;
+}
+.mood-emoji-btn:hover { transform: scale(1.12); }
+.mood-emoji-btn.active {
+    border-color: #191f28;
+    background: rgba(0,0,0,0.08);
+    transform: scale(1.12);
+}
+
+/* 다크모드 */
+body.dark-mode .mood-filter-bar { background: #1e1e1e; border-bottom-color: rgba(255,255,255,0.06); }
+body.dark-mode .mood-toggle-track { background: #555; }
+body.dark-mode .mood-emoji-btn { background: rgba(255,255,255,0.07); }
+body.dark-mode .mood-emoji-btn.active { border-color: #e8eaed; background: rgba(255,255,255,0.12); }
+
+/* ── 카드 ── */
+.card {
+    background: white; margin: 10px auto; padding: 15px;
+    border-radius: 15px; width: 90%;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    text-align: left; cursor: pointer; transition: box-shadow 0.2s;
+}
+.card:hover { box-shadow: 0 6px 16px rgba(0,0,0,0.1); }
+.card-text {
+    font-size: 15px; color: #333; margin-top: 6px; line-height: 1.6;
+    display: -webkit-box; -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;
+}
+.card-date   { font-size: 12px; color: #aaa; margin-top: 6px; }
+.card-edited { font-size: 11px; color: #b0b8c4; margin-top: 2px; letter-spacing: -0.1px; }
+.card-header { display: flex; justify-content: space-between; align-items: center; }
+.card-tags   { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
+.card-tag {
+    display:inline-block; background:#eef2ff; color:#4f46e5;
+    font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px;
+}
+
+button {
+    margin-top: 10px; padding: 10px 20px;
+    border-radius: 10px; border: none;
+    background: black; color: white; cursor: pointer;
+}
+
+/* ── 네비 ── */
+.nav {
+    position: fixed; bottom: 0;
+    width: 100%; max-width: 480px; height: 70px;
+    background: white;
+    display: flex; justify-content: space-around; align-items: center;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 90;
+}
+.nav button { background: none; color: black; font-size: 20px; margin: 0; padding: 0; }
+.nav-center {
+    position: absolute; top: -25px;
+    width: 65px; height: 65px;
+    background: black; color: white; font-size: 32px;
+    border-radius: 50%;
+    display: flex; justify-content: center; align-items: center;
+    cursor: pointer; box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+}
+
+/* ── 감정 모달 ── */
+.modal {
+    position: fixed; top:0; left:0; width:100%; height:100%;
+    background: rgba(30,30,30,0.6);
+    display:flex; justify-content:center; align-items:center;
+    opacity:0; pointer-events:none; transition:0.3s; z-index: 999;
+}
+.modal.show { opacity:1; pointer-events:auto; }
+.modal-content {
+    background:white; padding:25px; border-radius:20px;
+    width:80%; max-width:300px; text-align:center;
+}
+.mood-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:15px; }
+.mood-grid button { font-size:28px; background:#f2f2f2; margin:0; }
+
+/* ── 상세보기 모달 ── */
+.detail-modal {
+    position: fixed; top:0; left:0; width:100%; height:100%;
+    background: rgba(30,30,30,0.6);
+    display:flex; justify-content:center; align-items:flex-end;
+    opacity:0; pointer-events:none; transition:0.3s; z-index: 999;
+}
+.detail-modal.show { opacity:1; pointer-events:auto; }
+.detail-content {
+    background:white; padding:24px 24px 30px;
+    border-radius:24px 24px 0 0;
+    width:100%; max-width:480px; max-height:85vh; overflow-y:auto; text-align:left;
+}
+.detail-top-row {
+    display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;
+}
+.detail-mood { font-size:36px; }
+.detail-action-btns { display:flex; gap:8px; }
+.detail-edit-btn {
+    padding:7px 14px; border-radius:20px;
+    background:#f0f4ff; border:1.5px solid #c7d2fe;
+    color:#4f46e5; font-size:13px; font-weight:700;
+    cursor:pointer; margin:0; transition:all 0.15s;
+}
+.detail-edit-btn:hover { background:#e0e7ff; }
+.detail-delete-btn {
+    padding:7px 14px; border-radius:20px;
+    background:#fff0f0; border:1.5px solid #fecaca;
+    color:#ef4444; font-size:13px; font-weight:700;
+    cursor:pointer; margin:0; transition:all 0.15s;
+}
+.detail-delete-btn:hover { background:#fee2e2; }
+.detail-date { font-size:12px; color:#aaa; margin-bottom:4px; }
+.detail-edited-date { font-size:12px; color:#8b95a1; margin-bottom:14px; font-style:italic; }
+.detail-text { font-size:16px; line-height:1.8; color:#333; white-space:pre-wrap; }
+
+/* 편집 모드 */
+.detail-edit-area {
+    width:100%; min-height:140px;
+    border:1.5px solid #c7d2fe; border-radius:12px;
+    padding:12px 14px; font-size:16px; line-height:1.8;
+    color:#191f28; font-family:inherit; resize:none; outline:none;
+    display:none;
+}
+.detail-edit-area:focus { border-color:#4f46e5; box-shadow:0 0 0 3px rgba(79,70,229,0.1); }
+.detail-edit-save-row {
+    display:none; gap:8px; margin-top:12px;
+}
+.detail-save-btn {
+    flex:1; padding:12px; border-radius:12px;
+    background:#4f46e5; color:white; font-size:14px; font-weight:700;
+    border:none; cursor:pointer; margin:0; transition:background 0.15s;
+}
+.detail-save-btn:hover { background:#3730a3; }
+.detail-cancel-btn {
+    flex:1; padding:12px; border-radius:12px;
+    background:#f2f4f6; color:#555; font-size:14px; font-weight:700;
+    border:none; cursor:pointer; margin:0; transition:background 0.15s;
+}
+.detail-cancel-btn:hover { background:#e5e8eb; }
+.detail-close {
+    display:block; margin:20px auto 0; padding:12px 30px;
+    background:#191f28; color:white; border:none; border-radius:12px;
+    cursor:pointer; font-size:15px; font-weight:700;
+}
+
+/* 다크모드 상세보기 */
+body.dark-mode .detail-content { background: #2a2a2a !important; }
+body.dark-mode .detail-text    { color: #ccc !important; }
+body.dark-mode .detail-date,
+body.dark-mode .detail-edited-date { color: #9aa0a6 !important; }
+body.dark-mode .detail-close   { background: #444 !important; }
+body.dark-mode .detail-edit-btn {
+    background:#1e2a4a !important; border-color:#4f46e5 !important; color:#a5b4fc !important;
+}
+body.dark-mode .detail-delete-btn {
+    background:#2a1a1a !important; border-color:#ef4444 !important; color:#f87171 !important;
+}
+body.dark-mode .detail-edit-area {
+    background:#1e1e1e !important; border-color:#3c3c6e !important; color:#e8eaed !important;
+}
+body.dark-mode .detail-cancel-btn { background:#333 !important; color:#ccc !important; }
+
+/* 삭제 버튼 */
+.delete-btn { float:right; background:none; color:#aaa; font-size:14px; padding:4px 8px; margin:0; }
+.delete-btn:hover { color:red; }
+
+/* ── 글쓰기 화면 (UX 개선) ── */
+#write.active {
+    display: flex; flex-direction: column;
+    padding: 0 0 40px 0;
+    min-height: 100vh;
+    transition: background 0.5s ease;
+}
+
+/* ── 감정 반응형 테마 ── */
+#write.mood-happy  { background: linear-gradient(160deg, #fff9f0 0%, #fff3e0 100%); }
+#write.mood-good   { background: linear-gradient(160deg, #f0fff4 0%, #e8f5e9 100%); }
+#write.mood-neutral{ background: linear-gradient(160deg, #f8f9ff 0%, #f0f2ff 100%); }
+#write.mood-sad    { background: linear-gradient(160deg, #f0f6ff 0%, #e3eeff 100%); }
+#write.mood-angry  { background: linear-gradient(160deg, #fff5f5 0%, #ffe5e5 100%); }
+#write.mood-tired  { background: linear-gradient(160deg, #f5f3ff 0%, #ede8ff 100%); }
+
+/* 감정별 질문 박스 색상 */
+#write.mood-happy  .write-question-box { background: linear-gradient(135deg, #f97316, #fb923c); }
+#write.mood-good   .write-question-box { background: linear-gradient(135deg, #22c55e, #16a34a); }
+#write.mood-neutral .write-question-box{ background: linear-gradient(135deg, #667eea, #764ba2); }
+#write.mood-sad    .write-question-box { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+#write.mood-angry  .write-question-box { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+#write.mood-tired  .write-question-box { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+
+/* 글쓰기 화면에서 네비바 숨기기 */
+#write.active ~ .nav,
+body:has(#write.active) .nav {
+    display: none !important;
+}
+.write-header {
+    padding: 20px 20px 0;
+    text-align: left;
+}
+.write-header-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.write-back-btn {
+    width: 38px; height: 38px;
+    background: #f2f4f6; border: none; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; cursor: pointer; color: #191f28;
+    flex-shrink: 0; transition: background 0.15s;
+}
+.write-back-btn:hover { background: #e5e8eb; }
+.write-header h2 {
+    font-size: 22px; font-weight: 800;
+    margin: 0; color: #191f28;
+}
+.write-question-box {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 16px;
+    padding: 18px 20px;
+    margin: 0 20px 16px;
+    color: white; text-align: left;
+}
+.write-question-label {
+    font-size: 11px; font-weight: 600; opacity: 0.8; margin-bottom: 6px;
+}
+.write-question-text {
+    font-size: 16px; font-weight: 700; line-height: 1.5;
+}
+.write-textarea-wrap {
+    margin: 0 20px 16px;
+    background: white; border-radius: 16px;
+    padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    flex: 1;
+    display: flex; flex-direction: column;
+}
+.write-textarea-wrap textarea {
+    width: 100%; height: 180px;
+    border: none; outline: none; resize: none;
+    font-size: 16px; line-height: 1.7; color: #191f28;
+    font-family: inherit; background: transparent;
+}
+.write-textarea-wrap textarea::placeholder { color: #c4c9d0; }
+.write-ai-hint {
+    font-size: 13px; color: #8b95a1; margin-top: 8px; text-align: right;
+}
+.write-tag-box {
+    margin: 0 20px 16px;
+    background: white; border-radius: 16px;
+    padding: 14px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    text-align: left;
+}
+.write-tag-label { font-size: 11px; color: #999; font-weight: 700; margin-bottom: 8px; }
+#tagList { display:flex; flex-wrap:wrap; gap:6px; min-height:20px; margin-bottom:10px; }
+.tag-chip {
+    display:inline-flex; align-items:center; gap:4px;
+    background:#eef2ff; color:#4f46e5;
+    font-size:12px; font-weight:700;
+    padding:4px 10px; border-radius:20px;
+}
+.tag-chip button {
+    background:none; border:none; color:#a5b4fc;
+    font-size:14px; cursor:pointer; padding:0; margin:0; line-height:1;
+}
+.tag-chip button:hover { color:#4f46e5; }
+.write-tag-input-row { display:flex; gap:8px; }
+.write-tag-input-row input {
+    flex:1; padding:8px 14px; border-radius:20px;
+    border:1.5px solid #c7d2fe; font-size:13px; outline:none;
+    font-family:inherit;
+}
+.write-tag-input-row input:focus { border-color:#4f46e5; }
+.write-tag-input-row button {
+    padding:8px 14px; border-radius:20px;
+    background:#4f46e5; color:white; font-size:13px; margin:0;
+}
+.write-date-selector { display:flex; gap:8px; margin:0 20px 14px; }
+.write-date-btn { flex:1; padding:9px 0; border-radius:12px; border:1.5px solid #e5e8eb; background:white; color:#8b95a1; font-size:13px; font-weight:600; cursor:pointer; margin:0; transition:all 0.15s; }
+.write-date-btn.active { background:#191f28; color:white; border-color:#191f28; }
+.write-date-label { font-size:11px; color:#6366f1; margin:-8px 20px 10px; text-align:center; min-height:16px; }
+
+.write-save-wrap { padding: 0 20px; }
+.write-save-btn {
+    width: 100%; padding: 16px; border-radius: 16px;
+    background: #191f28; color: white; font-size: 16px;
+    font-weight: 700; border: none; cursor: pointer; margin: 0;
+    transition: background 0.2s;
+}
+.write-save-btn:active { background: #333; }
+
+/* ── Gemini 도움받기 버튼 ── */
+.write-question-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+.write-question-row .write-question-text { flex: 1; }
+
+.ai-help-btn-wrap { position: relative; flex-shrink: 0; }
+
+.ai-help-btn {
+    display: flex; align-items: center; gap: 5px;
+    padding: 6px 12px; border-radius: 20px;
+    background: rgba(255,255,255,0.25);
+    border: 1.5px solid rgba(255,255,255,0.5);
+    color: white; font-size: 12px; font-weight: 700;
+    cursor: pointer; margin: 0;
+    transition: background 0.2s, transform 0.1s;
+    white-space: nowrap;
+}
+.ai-help-btn:hover  { background: rgba(255,255,255,0.35); }
+.ai-help-btn:active { transform: scale(0.95); }
+.ai-help-btn:disabled {
+    opacity: 0.4; cursor: not-allowed;
+}
+.ai-help-btn .ai-icon { font-size: 14px; }
+.ai-help-count {
+    font-size: 10px; opacity: 0.8;
+}
+
+/* 10초 막힘 팝업 */
+.ai-stuck-popup {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    right: 0;
+    background: white;
+    color: #333;
+    font-size: 12px; font-weight: 600;
+    padding: 7px 12px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    white-space: nowrap;
+    cursor: pointer;
+    z-index: 10;
+    animation: popupFadeIn 0.25s ease;
+}
+.ai-stuck-popup::after {
+    content: '';
+    position: absolute;
+    top: 100%; right: 14px;
+    border: 6px solid transparent;
+    border-top-color: white;
+}
+@keyframes popupFadeIn {
+    from { opacity:0; transform: translateY(4px); }
+    to   { opacity:1; transform: translateY(0); }
+}
+
+/* AI 응답 질문 박스 */
+.ai-response-box {
+    margin: 0 20px 12px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    border-radius: 14px; padding: 14px 16px;
+    color: white; text-align: left;
+    animation: popupFadeIn 0.3s ease;
+}
+.ai-response-label { font-size: 11px; font-weight: 600; opacity: 0.85; margin-bottom: 5px; }
+.ai-response-text  { font-size: 15px; font-weight: 700; line-height: 1.5; }
+
+/* AI 로딩 스피너 */
+.ai-loading {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── 통계 화면 ── */
+#stats {
+    display: none;
+    padding: 0;
+    text-align: left;
+    min-height: 100vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+}
+
+#stats.active {
+    display: block;
+    padding-bottom: 110px !important;
+}
+/* 통계 상단 헤더 */
+.stats-top-bar {
+    display: flex; align-items: center;
+    padding: 20px 16px 0; gap: 10px;
+}
+.stats-back-btn {
+    width: 36px; height: 36px;
+    background: #f2f4f6; border: none; border-radius: 50%;
+    font-size: 16px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+    flex-shrink: 0; color: #191f28;
+}
+.stats-back-btn:hover { background: #e5e8eb; }
+.stats-top-title {
+    font-size: 20px; font-weight: 800;
+    letter-spacing: -0.5px; color: #191f28;
+}
+
+/* 기간 버튼 */
+.stats-period-btns {
+    display: flex; gap: 8px;
+    padding: 16px 16px 4px;
+}
+.period-btn {
+    padding: 7px 16px; border-radius: 20px;
+    border: 1.5px solid #e5e8eb;
+    background: white; color: #8b95a1;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; margin: 0;
+    transition: all 0.15s;
+}
+.period-btn:hover { border-color: #4f46e5; color: #4f46e5; }
+.active-period {
+    background: #4f46e5 !important; color: white !important;
+    border-color: #4f46e5 !important;
+    box-shadow: 0 2px 8px rgba(79,70,229,0.35) !important;
+}
+
+/* 추세 섹션 제목 */
+.stats-section-title {
+    font-size: 18px; font-weight: 800;
+    padding: 16px 16px 10px;
+    color: #191f28; letter-spacing: -0.3px;
+}
+
+/* 추세 지표 2×n 그리드 */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 0 16px 4px;
+}
+.metric-card {
+    background: white;
+    border-radius: 16px;
+    padding: 16px 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    display: flex; flex-direction: column; gap: 4px;
+    min-height: 80px;
+}
+.metric-card-label {
+    font-size: 12px; color: #8b95a1; font-weight: 600;
+    display: flex; align-items: center; gap: 5px;
+}
+.metric-trend-icon { font-size: 14px; }
+.metric-trend-up   { color: #ef4444; }
+.metric-trend-down { color: #3b82f6; }
+.metric-trend-mid  { color: #f59e0b; }
+.metric-card-value {
+    font-size: 22px; font-weight: 800;
+    letter-spacing: -0.5px; margin-top: 2px;
+}
+.metric-card-unit {
+    font-size: 12px; font-weight: 500; color: #8b95a1;
+}
+.metrics-empty {
+    grid-column: 1 / -1;
+    text-align: center; padding: 24px;
+    color: #aaa; font-size: 14px;
+}
+
+/* 차트 섹션 */
+.chart-wrap {
+    background: white; border-radius: 16px;
+    padding: 16px; margin: 10px 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.chart-title {
+    font-size: 15px; font-weight: 700;
+    color: #191f28; margin-bottom: 12px;
+}
+.stats-row-list { padding: 0 16px 16px; }
+.stats-mood-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+}
+.stats-mood-bar-wrap {
+    flex: 1; background: #f2f4f6; border-radius: 4px; height: 8px; overflow: hidden;
+}
+.stats-mood-bar { height: 100%; border-radius: 4px; transition: width 0.4s; }
+.stats-mood-count { font-size: 13px; color: #555; min-width: 28px; text-align: right; }
+.stats-empty { text-align: center; padding: 40px 20px; color: #aaa; font-size: 14px; }
+
+/* ── 달력 화면 ── */
+#calendar { 
+    display: none;
+    padding: 20px;
+    text-align: center;
+    
+    /* [핵심 수정] 하단 내비게이션 바 높이(약 70~90px)만큼 여백 확보 */
+    padding-bottom: 120px !important; 
+    
+    /* 내용이 많아질 경우 화면 자체에서 스크롤이 가능하도록 설정 */
+    overflow-y: auto;
+    min-height: 100vh;
+ }
+#calendar.active {
+    display: flex; flex-direction: column;
+    padding-bottom: 90px;
+}
+.calendar-sticky-top {
+    position: sticky; top: 0;
+    background: white; z-index: 10;
+    padding: 16px 16px 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.cal-nav-row {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
+}
+.cal-nav-row h2 { font-size: 20px; font-weight: 800; margin: 0; }
+.cal-nav-btn {
+    width: 36px; height: 36px;
+    border: none; background: #f2f4f6; border-radius: 50%;
+    font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s; margin: 0; padding: 0;
+}
+.cal-nav-btn:hover { background: #e5e8eb; }
+
+.calendar { margin-top: 4px; display:grid; grid-template-columns:repeat(7,1fr); gap:5px; }
+.day { padding:10px; background:white; border-radius:8px; cursor:pointer; font-size:13px; text-align:center; }
+.day:hover { background:#eaeaea; }
+.has-log  { background:#d0ebff; }
+/* 감정별 달력 칸 배경색 */
+.has-log.mood-cal-happy  { background: #fff3cd; }
+.has-log.mood-cal-good   { background: #d1fae5; }
+.has-log.mood-cal-neutral{ background: #e0e7ff; }
+.has-log.mood-cal-sad    { background: #dbeafe; }
+.has-log.mood-cal-angry  { background: #fee2e2; }
+.has-log.mood-cal-tired  { background: #ede9fe; }
+.today    { border:2px solid red; }
+.weekday  { font-weight:bold; background:#eee; }
+.other-month { opacity:0.3; }
+.day.selected { background:#bde0ff; font-weight:bold; }
+
+#dayLogs {
+    margin-top: 20px;
+    /* 리스트가 늘어날 때 레이아웃이 깨지지 않도록 설정 */
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* ── 태그 검색 (다중 태그) ── */
+.tag-search-bar {
+    display: flex; flex-wrap: wrap; align-items: center;
+    gap: 6px; padding: 10px 14px;
+    background: white; border-bottom: 1px solid #f2f4f6;
+}
+.tag-search-chips { display: flex; flex-wrap: wrap; gap: 5px; flex: 1; align-items: center; min-width: 0; }
+.search-chip {
+    display: inline-flex; align-items: center; gap: 3px;
+    background: #4f46e5; color: white;
+    font-size: 12px; font-weight: 700;
+    padding: 3px 10px 3px 8px; border-radius: 20px;
+}
+.search-chip-del {
+    background: none; border: none; color: rgba(255,255,255,0.7);
+    font-size: 14px; cursor: pointer; padding: 0; margin: 0; line-height: 1;
+}
+.search-chip-del:hover { color: white; }
+.tag-search-input-wrap { display: flex; align-items: center; gap: 6px; width: 100%; margin-top: 4px; }
+.tag-search-input-wrap input {
+    flex: 1; height: 36px; padding: 0 12px;
+    border: 1.5px solid #e5e8eb; border-radius: 20px;
+    font-size: 13px; outline: none; font-family: inherit;
+}
+.tag-search-input-wrap input:focus { border-color: #4f46e5; }
+.tag-search-add-btn {
+    padding: 7px 13px; border-radius: 20px;
+    background: #4f46e5; color: white; font-size: 12px;
+    font-weight: 700; border: none; cursor: pointer; margin: 0;
+    white-space: nowrap;
+}
+.tag-search-clear-btn {
+    padding: 7px 11px; border-radius: 20px;
+    background: #f2f4f6; color: #555; font-size: 12px;
+    font-weight: 700; border: none; cursor: pointer; margin: 0;
+}
+.tag-search-hint { font-size: 12px; color: #aaa; padding: 4px 14px; }
+
+#dayLogs { margin-top: 16px; padding: 0 12px; flex: 1; }
+.day-logs-header { font-weight:bold; margin-bottom:10px; text-align:left; padding:0 5px; }
+.no-log-msg { color:#aaa; text-align:center; padding:20px; font-size:14px; }
+.future-quote {
+    text-align:center; padding:20px; color:#555;
+    font-style:italic; font-size:14px; line-height:1.8;
+}
+.search-result-header {
+    font-size: 14px; font-weight: 700; color: #4f46e5; padding: 10px 16px 8px;
+}
+.search-empty { text-align: center; padding: 30px; color: #aaa; font-size: 14px; }
+
+.day-log-card {
+    display:flex; align-items:flex-start; background:white;
+    border-radius:12px; padding:12px; margin-bottom:8px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.06); gap:10px;
+    min-width:0; overflow:hidden;
+}
+.day-log-mood { font-size:24px; flex-shrink:0; }
+.day-log-body { flex:1; min-width:0; overflow:hidden; }
+.day-log-text {
+    font-size:14px; color:#333; line-height:1.5;
+    word-break:break-all; overflow-wrap:break-word; white-space:pre-wrap;
+}
+.day-log-time { font-size:12px; color:#aaa; margin-top:4px; }
+.day-log-delete { background:none; border:none; color:#ccc; font-size:16px; cursor:pointer; padding:4px; margin:0; }
+.day-log-delete:hover { color:red; }
+
+.suggestion { font-size:14px; margin-top:5px; color:#555; }
+
+/* ── 프로필 ── */
+.profile-card {
+    background:white; margin:20px auto; padding:24px;
+    border-radius:16px; width:90%;
+    box-shadow:0 4px 10px rgba(0,0,0,0.05); text-align:left;
+}
+.profile-email { font-size:16px; font-weight:bold; color:#191f28; margin-bottom:4px; }
+.profile-label { font-size:13px; color:#8b95a1; margin-bottom:8px; }
+.logout-btn {
+    width:80%; display:block; margin:10px auto; padding:14px;
+    border-radius:12px; background:red; color:white;
+    font-size:15px; font-weight:bold; border:none; cursor:pointer;
+}
+.login-required { text-align:center; padding:40px 20px; color:#8b95a1; }
+.login-required p { font-size:15px; margin-bottom:16px; }
+
+.stats-container {
+    padding-bottom: 40px;
+    min-height: calc(100vh - 70px);
+}
+</style>
+<style>
+/* ═══════════════════════════════════════════════
+   NEW FEATURES CSS
+   1. 스트릭 배너 (홈화면 헤더)
+   2. 배지 시스템
+   3. 감정 식물 위젯
+   4. 하루 요약 박스 (글쓰기 화면)
+   5. 스트릭 팝업
+═══════════════════════════════════════════════ */
+
+/* ── 홈 헤더 새 기능 배너 ── */
+.home-streak-banner {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(8px);
+    border-radius: 30px;
+    padding: 10px 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    z-index: 5;
+    white-space: nowrap;
+}
+.home-streak-banner:hover {
+    transform: translateX(-50%) scale(1.03);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.15);
+}
+.home-streak-banner.hidden { display: none; }
+.streak-fire { font-size: 22px; animation: fireFlicker 1.5s ease-in-out infinite; }
+@keyframes fireFlicker {
+    0%,100% { transform: scale(1) rotate(-3deg); }
+    50%      { transform: scale(1.1) rotate(3deg); }
+}
+.streak-text { font-size: 14px; font-weight: 700; color: #191f28; }
+.streak-count { font-size: 20px; font-weight: 900; color: #f97316; letter-spacing: -0.5px; }
+.streak-plant-mini { font-size: 18px; margin-left: 4px; }
+
+/* ── 스트릭 팝업 모달 ── */
+.streak-modal {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex; align-items: flex-end; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s; z-index: 9999;
+}
+.streak-modal.show { opacity: 1; pointer-events: auto; }
+.streak-popup {
+    background: white;
+    border-radius: 28px 28px 0 0;
+    padding: 32px 24px 40px;
+    width: 100%; max-width: 480px;
+    text-align: center;
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
+}
+.streak-modal.show .streak-popup { transform: translateY(0); }
+.streak-popup-fire { font-size: 64px; margin-bottom: 8px; animation: fireFlicker 1s infinite; }
+.streak-popup-title {
+    font-size: 26px; font-weight: 900; letter-spacing: -0.5px;
+    color: #191f28; margin-bottom: 6px;
+}
+.streak-popup-sub { font-size: 15px; color: #8b95a1; margin-bottom: 28px; line-height: 1.6; }
+.streak-popup-stats {
+    display: flex; gap: 12px; margin-bottom: 24px;
+}
+.streak-stat-box {
+    flex: 1; background: #f8f9ff; border-radius: 16px; padding: 16px 12px;
+}
+.streak-stat-num { font-size: 28px; font-weight: 900; color: #4f46e5; }
+.streak-stat-label { font-size: 12px; color: #8b95a1; margin-top: 4px; font-weight: 600; }
+.streak-close-btn {
+    width: 100%; padding: 16px; border-radius: 16px;
+    background: #191f28; color: white; font-size: 16px; font-weight: 700;
+    border: none; cursor: pointer; margin: 0;
+}
+
+/* ── 배지 시스템 ── */
+.badge-new-popup {
+    position: fixed;
+    top: 20px; left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    background: linear-gradient(135deg, #f97316, #fb923c);
+    color: white; border-radius: 20px;
+    padding: 14px 22px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 8px 30px rgba(249,115,22,0.45);
+    z-index: 10000; max-width: 360px; width: 90%;
+    transition: transform 0.5s cubic-bezier(0.16,1,0.3,1);
+    pointer-events: none;
+}
+.badge-new-popup.show { transform: translateX(-50%) translateY(0); }
+.badge-new-emoji { font-size: 32px; }
+.badge-new-text { flex: 1; }
+.badge-new-label { font-size: 11px; font-weight: 700; opacity: 0.85; margin-bottom: 2px; }
+.badge-new-name  { font-size: 16px; font-weight: 900; }
+.badge-new-desc  { font-size: 12px; opacity: 0.85; }
+
+/* 배지 그리드 (프로필/통계에서 사용) */
+.badge-section { padding: 0 16px 16px; }
+.badge-section-title {
+    font-size: 18px; font-weight: 800; color: #191f28;
+    margin-bottom: 12px; padding-top: 16px;
+    display: flex; align-items: center; gap: 8px;
+}
+.badge-count-chip {
+    background: #4f46e5; color: white;
+    font-size: 12px; font-weight: 700;
+    padding: 2px 8px; border-radius: 20px;
+}
+.badge-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+.badge-item {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 5px; padding: 12px 6px;
+    background: white; border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transition: transform 0.2s;
+    cursor: pointer;
+}
+.badge-item:hover { transform: scale(1.05); }
+.badge-item.locked { opacity: 0.3; filter: grayscale(1); }
+.badge-emoji { font-size: 26px; }
+.badge-name { font-size: 10px; font-weight: 700; color: #555; text-align: center; line-height: 1.2; }
+
+/* ── 감정 식물 위젯 ── */
+.plant-widget {
+    margin: 12px 16px;
+    background: linear-gradient(135deg, #f0fff4, #dcfce7);
+    border-radius: 20px;
+    padding: 20px;
+    display: flex; align-items: center; gap: 16px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 12px rgba(16,185,129,0.1);
+    position: relative; overflow: hidden;
+}
+.plant-widget::before {
+    content: '';
+    position: absolute; top: 0; right: 0;
+    width: 120px; height: 120px;
+    background: radial-gradient(circle, rgba(16,185,129,0.1), transparent);
+    border-radius: 50%;
+}
+.plant-widget:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16,185,129,0.2); }
+.plant-big-emoji { font-size: 52px; animation: plantSway 3s ease-in-out infinite; flex-shrink: 0; }
+@keyframes plantSway {
+    0%,100% { transform: rotate(-3deg); }
+    50%      { transform: rotate(3deg); }
+}
+.plant-widget.wilting .plant-big-emoji { animation: wilt 2s ease-in-out infinite; }
+@keyframes wilt {
+    0%,100% { transform: rotate(-8deg) translateY(0); }
+    50%      { transform: rotate(-12deg) translateY(3px); opacity: 0.7; }
+}
+.plant-info { flex: 1; min-width: 0; }
+.plant-stage-name { font-size: 16px; font-weight: 800; color: #065f46; margin-bottom: 2px; }
+.plant-stage-desc { font-size: 13px; color: #047857; line-height: 1.4; }
+.plant-bar-wrap { margin-top: 8px; background: rgba(0,0,0,0.1); border-radius: 4px; height: 6px; overflow: hidden; }
+.plant-bar { height: 100%; background: linear-gradient(90deg, #10b981, #059669); border-radius: 4px; transition: width 0.8s cubic-bezier(0.16,1,0.3,1); }
+.plant-trend { font-size: 11px; color: #059669; font-weight: 700; margin-top: 4px; }
+.plant-trend.wilting { color: #dc2626; }
+
+/* 식물 상세 모달 */
+.plant-modal {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: flex; align-items: flex-end; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s; z-index: 9998;
+}
+.plant-modal.show { opacity: 1; pointer-events: auto; }
+.plant-popup {
+    background: white; border-radius: 28px 28px 0 0;
+    padding: 28px 24px 40px;
+    width: 100%; max-width: 480px; text-align: center;
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
+}
+.plant-modal.show .plant-popup { transform: translateY(0); }
+.plant-popup-emoji { font-size: 80px; margin-bottom: 12px; display: block; animation: plantSway 3s ease-in-out infinite; }
+.plant-popup-stage { font-size: 20px; font-weight: 900; color: #065f46; margin-bottom: 6px; }
+.plant-popup-desc { font-size: 15px; color: #555; margin-bottom: 24px; line-height: 1.6; }
+.plant-tip-box {
+    background: #f0fff4; border-radius: 16px;
+    padding: 16px 18px; margin-bottom: 20px; text-align: left;
+}
+.plant-tip-title { font-size: 13px; font-weight: 700; color: #065f46; margin-bottom: 8px; }
+.plant-tip-item { font-size: 13px; color: #047857; line-height: 1.7; }
+.plant-close-btn {
+    width: 100%; padding: 16px; border-radius: 16px;
+    background: #065f46; color: white; font-size: 16px; font-weight: 700;
+    border: none; cursor: pointer; margin: 0;
+}
+/* 식물 단계 타임라인 */
+.plant-stages-row {
+    display: flex; gap: 6px; overflow-x: auto;
+    padding: 4px 0 12px; margin-bottom: 16px;
+    scrollbar-width: none;
+}
+.plant-stages-row::-webkit-scrollbar { display: none; }
+.plant-stage-dot {
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    flex-shrink: 0; padding: 8px 10px;
+    border-radius: 12px; background: #f2f4f6;
+    opacity: 0.4; transition: opacity 0.3s;
+    font-size: 20px;
+}
+.plant-stage-dot.reached { opacity: 1; }
+.plant-stage-dot.current { background: #dcfce7; opacity: 1; }
+.plant-stage-dot span { font-size: 10px; color: #555; }
+
+/* ── 하루 요약 박스 (글쓰기 화면) ── */
+.daily-summary-box {
+    margin: 0 20px 16px;
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border-radius: 16px;
+    padding: 16px 18px;
+    text-align: left;
+    position: relative;
+}
+.daily-summary-label {
+    font-size: 11px; font-weight: 700; color: #92400e; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 5px;
+}
+.daily-summary-input {
+    width: 100%; border: none; outline: none; background: transparent;
+    font-size: 15px; color: #78350f; font-weight: 600;
+    font-family: inherit; line-height: 1.5;
+    placeholder-color: #d97706;
+    resize: none;
+}
+.daily-summary-input::placeholder { color: rgba(120,53,15,0.5); }
+.daily-summary-count {
+    font-size: 11px; color: #b45309; text-align: right; margin-top: 4px;
+}
+
+/* ── 일기 카드에 요약 표시 ── */
+.card-summary {
+    font-size: 13px; color: #b45309; font-weight: 600;
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    padding: 6px 12px; border-radius: 8px; margin-top: 8px;
+    display: flex; gap: 6px; align-items: flex-start;
+}
+.card-summary-icon { flex-shrink: 0; }
+
+/* ── 스트릭 캘린더 히트맵 (통계 화면) ── */
+.streak-heatmap-section {
+    background: white; border-radius: 16px;
+    padding: 16px; margin: 10px 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.heatmap-title { font-size: 15px; font-weight: 700; color: #191f28; margin-bottom: 12px; }
+.heatmap-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+.heatmap-cell {
+    aspect-ratio: 1; border-radius: 4px;
+    background: #f2f4f6;
+    transition: transform 0.15s;
+    cursor: default;
+}
+.heatmap-cell.has-entry { background: #a7f3d0; }
+.heatmap-cell.has-entry.good-mood { background: #6ee7b7; }
+.heatmap-cell.has-entry.great-mood { background: #10b981; }
+.heatmap-cell.has-entry.bad-mood { background: #fca5a5; }
+.heatmap-cell.today-cell { outline: 2px solid #f97316; }
+
+/* ── 프로필 개선 ── */
+.profile-hero {
+    background: linear-gradient(160deg, #4f46e5 0%, #7c3aed 100%);
+    padding: 32px 24px 28px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+.profile-hero::before {
+    content: '';
+    position: absolute; top: -50%; right: -30%;
+    width: 200px; height: 200px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 50%;
+}
+.profile-hero::after {
+    content: '';
+    position: absolute; bottom: -30%; left: -20%;
+    width: 150px; height: 150px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 50%;
+}
+.profile-avatar-wrap {
+    position: relative; display: inline-block; margin-bottom: 14px;
+}
+.profile-avatar-circle {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px; border: 3px solid rgba(255,255,255,0.4);
+    margin: 0 auto;
+}
+.profile-streak-badge {
+    position: absolute; bottom: -4px; right: -4px;
+    background: #f97316; color: white;
+    border-radius: 20px; padding: 2px 8px;
+    font-size: 11px; font-weight: 900;
+    border: 2px solid white; white-space: nowrap;
+}
+.profile-name { font-size: 20px; font-weight: 800; color: white; margin-bottom: 4px; }
+.profile-email-sub { font-size: 13px; color: rgba(255,255,255,0.7); margin-bottom: 16px; }
+.profile-hero-stats {
+    display: flex; gap: 16px; justify-content: center;
+}
+.profile-stat-item { text-align: center; }
+.profile-stat-num { font-size: 22px; font-weight: 900; color: white; }
+.profile-stat-label { font-size: 11px; color: rgba(255,255,255,0.7); font-weight: 600; }
+
+.profile-menu-list {
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 10px;
+}
+.profile-menu-item {
+    display: flex; align-items: center;
+    background: white; border-radius: 16px;
+    padding: 16px 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.15s;
+    text-decoration: none;
+}
+.profile-menu-item:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); transform: translateY(-1px); }
+.profile-menu-icon { font-size: 20px; margin-right: 14px; flex-shrink: 0; }
+.profile-menu-label { flex: 1; font-size: 15px; font-weight: 700; color: #191f28; }
+.profile-menu-sub { font-size: 12px; color: #8b95a1; margin-top: 2px; }
+.profile-menu-arrow { font-size: 16px; color: #c4c9d0; margin-left: 8px; }
+
+.profile-section-gap { height: 8px; background: #f2f4f6; margin: 4px 0; }
+
+/* ── 다크모드 새 기능 ── */
+body.dark-mode .home-streak-banner { background: rgba(40,40,40,0.95); }
+body.dark-mode .streak-text { color: #e8eaed; }
+body.dark-mode .streak-popup { background: #2a2a2a; }
+body.dark-mode .streak-popup-title { color: #e8eaed; }
+body.dark-mode .streak-stat-box { background: #1e1e1e; }
+body.dark-mode .plant-widget { background: linear-gradient(135deg, #1a2e22, #1f3a28); }
+body.dark-mode .plant-stage-name { color: #6ee7b7; }
+body.dark-mode .plant-stage-desc, body.dark-mode .plant-trend { color: #34d399; }
+body.dark-mode .plant-popup { background: #2a2a2a; }
+body.dark-mode .plant-popup-desc { color: #ccc; }
+body.dark-mode .plant-tip-box { background: #1a2e22; }
+body.dark-mode .plant-tip-title { color: #6ee7b7; }
+body.dark-mode .plant-tip-item { color: #34d399; }
+body.dark-mode .badge-item { background: #2a2a2a; }
+body.dark-mode .badge-name { color: #9aa0a6; }
+body.dark-mode .streak-heatmap-section { background: #2a2a2a; }
+body.dark-mode .heatmap-cell { background: #333; }
+body.dark-mode .profile-menu-item { background: #2a2a2a; }
+body.dark-mode .profile-menu-label { color: #e8eaed; }
+body.dark-mode .plant-stage-dot { background: #333; }
+body.dark-mode .plant-stage-dot.current { background: #1a2e22; }
+
+
+/* ── 달력 날짜 + 기분 동시 표시 ── */
+.day.has-log {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    padding: 2px 0;
+}
+.cal-day-num {
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    color: inherit;
+}
+.cal-day-mood {
+    font-size: 16px;
+    line-height: 1;
+}
+/* 기분 없는 날은 기존 스타일 유지 */
+.day:not(.has-log) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ══════════════════════════════════════════════════
+   ★ UPGRADE CSS — 앱 수준 퀄리티
+══════════════════════════════════════════════════ */
+
+/* ── 검색바 ── */
+.home-search-wrap {
+    padding: 10px 16px 0;
+    position: relative;
+}
+.home-search-bar {
+    display: flex; align-items: center;
+    background: white; border-radius: 14px;
+    padding: 10px 14px; gap: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+    border: 1.5px solid transparent;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.home-search-bar:focus-within {
+    border-color: #4f46e5;
+    box-shadow: 0 2px 16px rgba(79,70,229,0.15);
+}
+.home-search-icon { font-size: 16px; color: #aaa; flex-shrink: 0; }
+.home-search-input {
+    flex: 1; border: none; outline: none;
+    font-size: 14px; color: #191f28; background: transparent;
+    font-family: inherit;
+}
+.home-search-input::placeholder { color: #c4c9d0; }
+.home-search-clear {
+    background: none; border: none; padding: 0; margin: 0;
+    color: #aaa; font-size: 18px; cursor: pointer; line-height: 1;
+    display: none;
+}
+.home-search-clear.show { display: block; }
+.search-results-wrap {
+    background: white; border-radius: 16px;
+    margin: 8px 0 0; padding: 8px 0;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    max-height: 320px; overflow-y: auto;
+    display: none;
+}
+.search-results-wrap.show { display: block; }
+.search-result-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 16px; cursor: pointer;
+    transition: background 0.15s;
+}
+.search-result-item:hover { background: #f8f9ff; }
+.search-result-mood { font-size: 22px; flex-shrink: 0; }
+.search-result-body { flex: 1; min-width: 0; }
+.search-result-text {
+    font-size: 14px; color: #333; line-height: 1.4;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.search-result-text mark {
+    background: #fef3c7; color: #92400e; padding: 0 2px;
+    border-radius: 3px;
+}
+.search-result-date { font-size: 12px; color: #aaa; margin-top: 3px; }
+.search-no-result {
+    text-align: center; padding: 24px; color: #aaa; font-size: 14px;
+}
+
+/* ── 날짜별 그룹핑 ── */
+.log-date-group { margin-bottom: 4px; }
+.log-date-header {
+    font-size: 12px; font-weight: 700; color: #8b95a1;
+    padding: 14px 20px 6px;
+    display: flex; align-items: center; gap: 8px;
+}
+.log-date-header::after {
+    content: ''; flex: 1; height: 1px; background: #f2f4f6;
+}
+
+/* ── 카드 업그레이드 ── */
+.card {
+    background: white; margin: 0 16px 10px; padding: 16px;
+    border-radius: 18px; width: auto;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    transition: transform 0.15s, box-shadow 0.2s;
+}
+.card:active { transform: scale(0.98); }
+.card:hover  { box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+.card-header {
+    display: flex; justify-content: space-between;
+    align-items: center; margin-bottom: 8px;
+}
+.card-mood-badge {
+    display: flex; align-items: center; gap: 6px;
+}
+.card-mood-label {
+    font-size: 11px; font-weight: 700; color: #8b95a1;
+    background: #f2f4f6; padding: 2px 8px; border-radius: 10px;
+}
+.card-char-count {
+    font-size: 11px; color: #c4c9d0; font-weight: 600;
+}
+.card-text {
+    font-size: 15px; color: #333; line-height: 1.65;
+    display: -webkit-box; -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical; overflow: hidden;
+    margin-bottom: 10px;
+}
+
+/* ── 감정 타임라인 (홈 위젯) ── */
+.mood-timeline-wrap {
+    margin: 0 16px 12px;
+    background: white; border-radius: 18px;
+    padding: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+}
+.mood-timeline-title {
+    font-size: 13px; font-weight: 700; color: #8b95a1;
+    margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+}
+.mood-timeline-row {
+    display: flex; align-items: flex-end; gap: 6px;
+    height: 56px; justify-content: space-between;
+}
+.mood-timeline-col {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; gap: 4px;
+}
+.mood-timeline-bar-wrap {
+    flex: 1; width: 100%; display: flex; flex-direction: column;
+    justify-content: flex-end; align-items: center;
+}
+.mood-timeline-bar {
+    width: 100%; max-width: 32px; border-radius: 6px 6px 0 0;
+    min-height: 4px;
+    transition: height 0.5s cubic-bezier(0.16,1,0.3,1);
+}
+.mood-timeline-emoji { font-size: 16px; line-height: 1; }
+.mood-timeline-day { font-size: 10px; color: #aaa; font-weight: 600; }
+.mood-timeline-empty {
+    font-size: 13px; color: #c4c9d0; text-align: center;
+    padding: 8px 0; width: 100%;
+}
+
+/* ── 빈 상태 화면 ── */
+.empty-state {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 48px 32px; text-align: center;
+}
+.empty-state-emoji { font-size: 64px; margin-bottom: 16px; animation: float 3s ease-in-out infinite; }
+@keyframes float {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-8px); }
+}
+.empty-state-title {
+    font-size: 18px; font-weight: 800; color: #191f28;
+    margin-bottom: 8px; letter-spacing: -0.3px;
+}
+.empty-state-sub {
+    font-size: 14px; color: #8b95a1; line-height: 1.7;
+    margin-bottom: 24px;
+}
+.empty-state-btn {
+    background: #4f46e5; color: white; border: none;
+    border-radius: 14px; padding: 13px 28px;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+    margin: 0; box-shadow: 0 4px 14px rgba(79,70,229,0.35);
+    transition: transform 0.15s, box-shadow 0.2s;
+}
+.empty-state-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(79,70,229,0.4); }
+.empty-state-btn:active { transform: scale(0.97); }
+
+/* ── 온보딩 ── */
+.onboarding-overlay {
+    position: fixed; inset: 0; z-index: 99999;
+    background: linear-gradient(160deg, #4f46e5, #7c3aed);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-end;
+    padding-bottom: 48px;
+}
+.onboarding-slides {
+    width: 100%; display: flex;
+    transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
+}
+.onboarding-slide {
+    min-width: 100%; padding: 0 32px;
+    text-align: center; flex-shrink: 0;
+}
+.onboarding-emoji { font-size: 80px; margin-bottom: 24px; display: block; }
+.onboarding-title {
+    font-size: 26px; font-weight: 900; color: white;
+    margin-bottom: 12px; letter-spacing: -0.5px; line-height: 1.3;
+}
+.onboarding-sub {
+    font-size: 16px; color: rgba(255,255,255,0.75);
+    line-height: 1.7; margin-bottom: 40px;
+}
+.onboarding-dots {
+    display: flex; gap: 8px; justify-content: center; margin-bottom: 32px;
+}
+.onboarding-dot {
+    width: 8px; height: 8px; border-radius: 4px;
+    background: rgba(255,255,255,0.3);
+    transition: width 0.3s, background 0.3s;
+}
+.onboarding-dot.active { width: 24px; background: white; }
+.onboarding-btn {
+    width: calc(100% - 64px); padding: 18px; border-radius: 18px;
+    background: white; color: #4f46e5;
+    font-size: 17px; font-weight: 900;
+    border: none; cursor: pointer; margin: 0;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    transition: transform 0.15s;
+}
+.onboarding-btn:active { transform: scale(0.97); }
+.onboarding-skip {
+    background: none; border: none; color: rgba(255,255,255,0.5);
+    font-size: 14px; cursor: pointer; margin: 0; padding: 16px;
+    margin-top: 8px;
+}
+
+/* ── 주간 리포트 카드 ── */
+.weekly-report-card {
+    margin: 0 16px 12px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    border-radius: 20px; padding: 20px;
+    color: white; position: relative; overflow: hidden;
+    cursor: pointer; transition: transform 0.15s, box-shadow 0.2s;
+    box-shadow: 0 4px 20px rgba(79,70,229,0.3);
+}
+.weekly-report-card:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(79,70,229,0.4); }
+.weekly-report-card::before {
+    content: ''; position: absolute;
+    top: -30%; right: -10%; width: 160px; height: 160px;
+    background: rgba(255,255,255,0.08); border-radius: 50%;
+}
+.weekly-report-label {
+    font-size: 11px; font-weight: 700; opacity: 0.75; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 5px;
+}
+.weekly-report-title { font-size: 18px; font-weight: 900; margin-bottom: 12px; line-height: 1.4; }
+.weekly-report-row { display: flex; gap: 12px; }
+.weekly-report-stat {
+    background: rgba(255,255,255,0.15); border-radius: 12px;
+    padding: 10px 14px; flex: 1; text-align: center;
+}
+.weekly-report-stat-num { font-size: 22px; font-weight: 900; }
+.weekly-report-stat-label { font-size: 11px; opacity: 0.75; margin-top: 2px; }
+.weekly-report-close {
+    position: absolute; top: 14px; right: 14px;
+    background: rgba(255,255,255,0.2); border: none; color: white;
+    width: 28px; height: 28px; border-radius: 50%; font-size: 14px;
+    cursor: pointer; margin: 0; display: flex; align-items: center; justify-content: center;
+}
+
+/* ── 글쓰기 단어수 표시 ── */
+.write-word-count {
+    font-size: 12px; color: #c4c9d0; font-weight: 600;
+    display: flex; align-items: center; gap: 8px; margin-top: 8px;
+}
+.write-word-count-num { color: #8b95a1; font-weight: 700; }
+.write-char-progress {
+    flex: 1; height: 3px; background: #f2f4f6; border-radius: 2px; overflow: hidden;
+}
+.write-char-progress-bar {
+    height: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, #4f46e5, #7c3aed);
+    transition: width 0.3s;
+}
+
+/* ── 네비바 업그레이드 ── */
+.nav {
+    background: white;
+    box-shadow: 0 -1px 0 rgba(0,0,0,0.06), 0 -4px 20px rgba(0,0,0,0.08);
+}
+.nav button { position: relative; transition: transform 0.15s; }
+.nav button:active { transform: scale(0.85); }
+.nav-label {
+    display: block; font-size: 10px; font-weight: 700;
+    color: #c4c9d0; margin-top: 2px; transition: color 0.2s;
+}
+.nav button.nav-active .nav-label { color: #4f46e5; }
+.nav button.nav-active { color: #4f46e5 !important; }
+.nav-center { background: linear-gradient(135deg, #4f46e5, #7c3aed) !important; }
+
+/* ── 다크모드 업그레이드 ── */
+body.dark-mode .home-search-bar { background: #2a2a2a; border-color: #3c4043; }
+body.dark-mode .home-search-input { color: #e8eaed; }
+body.dark-mode .search-results-wrap { background: #2a2a2a; }
+body.dark-mode .search-result-item:hover { background: #333; }
+body.dark-mode .search-result-text { color: #ccc; }
+body.dark-mode .card { background: #2a2a2a; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+body.dark-mode .card-text { color: #ccc; }
+body.dark-mode .card-mood-label { background: #333; color: #9aa0a6; }
+body.dark-mode .mood-timeline-wrap { background: #2a2a2a; }
+body.dark-mode .log-date-header { color: #6b7280; }
+body.dark-mode .log-date-header::after { background: #333; }
+body.dark-mode .nav { background: #1e1e1e; box-shadow: 0 -1px 0 rgba(255,255,255,0.06); }
+body.dark-mode .nav button { color: #9aa0a6; }
+body.dark-mode .nav button.nav-active { color: #818cf8 !important; }
+body.dark-mode .nav-label { color: #555; }
+body.dark-mode .nav button.nav-active .nav-label { color: #818cf8; }
+body.dark-mode .weekly-report-card { box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+body.dark-mode .empty-state-title { color: #e8eaed; }
+body.dark-mode .streak-popup { background: #2a2a2a; }
+body.dark-mode .streak-popup-title { color: #e8eaed; }
+body.dark-mode .streak-popup-sub { color: #9aa0a6; }
+body.dark-mode .streak-stat-box { background: #1e1e1e; }
+body.dark-mode .streak-stat-label { color: #9aa0a6; }
+body.dark-mode .modal-content { background: #2a2a2a; }
+body.dark-mode .modal-content h3 { color: #e8eaed; }
+body.dark-mode .mood-grid button { background: #333; color: inherit; }
+body.dark-mode .write-textarea-wrap { background: #2a2a2a; }
+body.dark-mode .write-textarea-wrap textarea { color: #e8eaed; }
+body.dark-mode .write-tag-box { background: #2a2a2a; }
+body.dark-mode .write-tag-label { color: #666; }
+body.dark-mode .daily-summary-box { background: linear-gradient(135deg, #2d2200, #3d2e00); }
+body.dark-mode .daily-summary-input { color: #fde68a; }
+body.dark-mode .write-word-count { color: #555; }
+body.dark-mode .write-char-progress { background: #333; }
+body.dark-mode .stats-top-title { color: #e8eaed; }
+body.dark-mode .stats-section-title { color: #e8eaed; }
+body.dark-mode .metric-card { background: #2a2a2a; }
+body.dark-mode .metric-card-label { color: #6b7280; }
+body.dark-mode .chart-wrap { background: #2a2a2a; }
+body.dark-mode .chart-title { color: #e8eaed; }
+body.dark-mode .period-btn { background: #2a2a2a; border-color: #3c4043; color: #9aa0a6; }
+body.dark-mode .period-btn:hover { border-color: #818cf8; color: #818cf8; }
+body.dark-mode .profile-menu-item { background: #2a2a2a; }
+body.dark-mode .dark-toggle-row { background: #2a2a2a !important; }
+
+</style>
+</head>
+
+<body>
+<script>if(localStorage.getItem('qlog_dark')==='1')document.body.classList.add('dark-mode');</script>
+<div class="app-container">
+
+<!-- 홈 -->
+<div id="home" class="screen active">
+    <div class="home-header-spacer" id="homeHeaderSpacer"></div>
+    <div class="home-header" id="homeHeader">
+        <div class="title">Q-Log</div>
+        <div class="time" id="time"></div>
+        <div id="date" class="date-display"></div>
+        <div class="home-streak-banner hidden" id="streakBanner" onclick="window.showStreakPopup()">
+            <span class="streak-fire" id="streakFire">🔥</span>
+            <span class="streak-text"><span class="streak-count" id="streakCount">0</span>일 연속!</span>
+            <span class="streak-plant-mini" id="streakPlantMini">🌱</span>
+        </div>
+    </div>
+    <!-- 이모지 필터 영역 -->
+    <div class="mood-filter-bar" id="moodFilterBar">
+        <!-- 토글 스위치: ON=전체, OFF=필터 선택 모드 -->
+        <label class="mood-toggle" id="moodToggle" title="전체 보기">
+            <input type="checkbox" id="moodToggleInput">
+            <div class="mood-toggle-track"></div>
+            <div class="mood-toggle-thumb"></div>
+        </label>
+        <div class="mood-emoji-row" id="moodEmojiRow">
+            <button class="mood-emoji-btn" data-mood="😀">😀</button>
+            <button class="mood-emoji-btn" data-mood="🙂">🙂</button>
+            <button class="mood-emoji-btn" data-mood="😐">😐</button>
+            <button class="mood-emoji-btn" data-mood="😢">😢</button>
+            <button class="mood-emoji-btn" data-mood="😡">😡</button>
+            <button class="mood-emoji-btn" data-mood="😫">😫</button>
+        </div>
+    </div>
+    <!-- ★ 검색바 -->
+    <div class="home-search-wrap" id="homeSearchWrap">
+        <div class="home-search-bar">
+            <span class="home-search-icon">🔍</span>
+            <input class="home-search-input" id="homeSearchInput" type="text" placeholder="일기 검색..." autocomplete="off">
+            <button class="home-search-clear" id="homeSearchClear">×</button>
+        </div>
+        <div class="search-results-wrap" id="searchResultsWrap"></div>
+    </div>
+
+
+
+    <!-- ★ 주간 리포트 (조건부 표시) -->
+    <div id="weeklyReportCard" style="display:none;"></div>
+
+    <div class="plant-widget" id="plantWidget" onclick="window.showPlantModal()">
+        <div class="plant-big-emoji" id="plantEmoji">🌰</div>
+        <div class="plant-info">
+            <div class="plant-stage-name" id="plantStageName">씨앗</div>
+            <div class="plant-stage-desc" id="plantStageDesc">일기를 써서 식물을 키워보세요!</div>
+            <div class="plant-bar-wrap"><div class="plant-bar" id="plantBar" style="width:5%"></div></div>
+            <div class="plant-trend" id="plantTrend">🌱 첫 일기를 작성해보세요</div>
+        </div>
+    </div>
+    <div id="logList"></div>
+</div>
+
+<!-- 글쓰기 (UX 개선) -->
+<div id="write" class="screen">
+    <div class="write-header">
+        <div class="write-header-top">
+            <button class="write-back-btn" id="writeBackBtn">←</button>
+            <h2>기록하기 <span id="writeMoodDisplay"></span></h2>
+        </div>
+    </div>
+    <div class="write-date-selector">
+        <button class="write-date-btn active" id="dateBtnToday">오늘</button>
+        <button class="write-date-btn" id="dateBtnYesterday">어제</button>
+    </div>
+<div class="write-date-label" id="writeDateLabel"></div>
+    <div class="write-question-box">
+        <div class="write-question-label">오늘의 질문 ✨</div>
+        <div class="write-question-row">
+            <div class="write-question-text" id="questionText"></div>
+            <div class="ai-help-btn-wrap">
+                <!-- 10초 막힘 팝업 (JS로 표시/숨김) -->
+                <div class="ai-stuck-popup" id="aiStuckPopup" style="display:none;">
+                    ✏️ 글쓰기가 막히시나요?
+                </div>
+                <button class="ai-help-btn" id="aiHelpBtn" title="AI 질문 도움받기">
+                    <span class="ai-icon">✦</span>
+                    <span id="aiHelpLabel">도움받기</span>
+                    <span class="ai-help-count" id="aiHelpCount">(2/2)</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- AI 응답 질문 표시 영역 (동적으로 삽입) -->
+    <div id="aiResponseArea"></div>
+    <div class="write-textarea-wrap">
+        <textarea id="text" placeholder="오늘의 이야기를 써보세요..."></textarea>
+        <div class="write-ai-hint" id="aiSuggestion" style="display:none;"></div>
+        <div class="write-word-count">
+            <span class="write-word-count-num" id="writeCharCount">0</span>자
+            <span id="writeWordCount" style="color:#c4c9d0;">· 0단어</span>
+            <div class="write-char-progress">
+                <div class="write-char-progress-bar" id="writeCharBar" style="width:0%"></div>
+            </div>
+        </div>
+    </div>
+    <div class="write-tag-box">
+        <div class="write-tag-label">태그</div>
+        <div id="tagList"></div>
+        <div class="write-tag-input-row">
+            <input id="tagInput" type="text" placeholder="태그 입력 (예: 친구)">
+            <button id="tagAddBtn">+ 추가</button>
+        </div>
+    </div>
+
+    <div class="write-save-wrap">
+        <button class="write-save-btn" id="saveBtn">저장</button>
+    </div>
+</div>
+
+<!-- 통계 -->
+<div id="stats" class="screen">
+    <div class="stats-container">   <!-- ← 이 div를 새로 추가 -->
+
+        <!-- 상단 헤더 -->
+        <div class="stats-top-bar">
+            <button class="stats-back-btn" id="statsBackBtn">←</button>
+            <span class="stats-top-title">나의 작성</span>
+        </div>
+
+        <!-- 기간 선택 -->
+        <div class="stats-period-btns">
+            <button class="period-btn active-period" data-period="7">1주일</button>
+            <button class="period-btn" data-period="30">1개월</button>
+            <button class="period-btn" data-period="90">3개월</button>
+        </div>
+
+        <!-- 추세 섹션 -->
+        <div class="stats-section-title">추세</div>
+        <div class="metrics-grid" id="metricsGrid">
+            <!-- JS로 채워짐 -->
+        </div>
+
+        <!-- 차트/감정 섹션 -->
+        <div id="statsBox"></div>
+        <div class="streak-heatmap-section">
+            <div class="heatmap-title">📅 최근 28일 기록</div>
+            <div class="heatmap-grid" id="heatmapGrid"></div>
+        </div>
+        <div class="badge-section" id="statsBadgeSection" style="display:none;">
+            <div class="badge-section-title">🏆 나의 배지 <span class="badge-count-chip" id="statsBadgeChip">0/14</span></div>
+            <div class="badge-grid" id="statsBadgeGrid"></div>
+        </div>
+    </div>
+</div>
+
+<!-- 달력 -->
+<div id="calendar" class="screen">
+    <div class="calendar-sticky-top">
+        <div class="cal-nav-row">
+            <button class="cal-nav-btn" id="prevMonthBtn">&#9664;</button>
+            <h2 id="calendarTitle"></h2>
+            <button class="cal-nav-btn" id="nextMonthBtn">&#9654;</button>
+        </div>
+        <div class="calendar" id="calendarBox"></div>
+    </div>
+    <!-- 다중 태그 검색 -->
+    <div class="tag-search-bar" id="tagSearchBar">
+        <div class="tag-search-chips" id="searchChips"></div>
+        <div class="tag-search-input-wrap">
+            <input type="text" id="tagSearchInput" placeholder="태그 검색 (예: 운동)">
+            <button class="tag-search-add-btn" id="tagSearchAddBtn">+ 추가</button>
+            <button class="tag-search-clear-btn" id="tagSearchClearBtn">초기화</button>
+        </div>
+    </div>
+    <div class="tag-search-hint" id="tagSearchHint"></div>
+    <div id="dayLogs"></div>
+    <div id="tagSearchResults" style="display:none; padding:0 12px;"></div>
+</div>
+
+<!-- 프로필 -->
+<div id="profile" class="screen" style="padding:0; overflow-y:auto; text-align:left; min-height:100vh;">
+    <!-- 히어로 (로그인 후) -->
+    <div id="profileHero" class="profile-hero" style="display:none;">
+        <div class="profile-avatar-wrap">
+            <div class="profile-avatar-circle">👤</div>
+            <div class="profile-streak-badge" id="profileStreakBadge">🔥 0일</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+            <div class="profile-name" id="profileHeroName">사용자</div>
+            <button id="editNicknameBtn" title="닉네임 수정" style="background:rgba(255,255,255,0.25);border:1.5px solid rgba(255,255,255,0.5);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;padding:0;margin:0;color:white;flex-shrink:0;transition:background 0.2s;">✏️</button>
+        </div>
+        <div class="profile-email-sub" id="profileHeroEmail"></div>
+        <div class="profile-hero-stats">
+            <div class="profile-stat-item">
+                <div class="profile-stat-num" id="profileTotalLogs">0</div>
+                <div class="profile-stat-label">총 일기</div>
+            </div>
+            <div class="profile-stat-item">
+                <div class="profile-stat-num" id="profileLongestStreak">0</div>
+                <div class="profile-stat-label">최장 연속</div>
+            </div>
+            <div class="profile-stat-item">
+                <div class="profile-stat-num" id="profileBadgeCount">0</div>
+                <div class="profile-stat-label">배지</div>
+            </div>
+        </div>
+    </div>
+    <!-- 배지 그리드 (로그인 후) -->
+    <div id="profileBadgeArea" style="display:none; padding:16px 16px 8px;">
+        <div class="badge-section-title">🏆 나의 배지 <span class="badge-count-chip" id="profileBadgeChip">0/14</span></div>
+        <div class="badge-grid" id="profileBadgeGrid"></div>
+    </div>
+    <!-- 비로그인 -->
+    <div id="beforeLogin" style="padding:60px 24px 100px; text-align:center;">
+        <div style="font-size:64px;margin-bottom:16px;">📓</div>
+        <div style="font-size:20px;font-weight:800;color:#191f28;margin-bottom:8px;">Q-Log에 오신 걸 환영해요!</div>
+        <div style="font-size:15px;color:#8b95a1;line-height:1.6;margin-bottom:32px;">로그인하고 나만의 일기를<br>기록해보세요 ✏️</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+            <button onclick="location.href='login.html'" style="width:100%;background:#4f46e5;border-radius:16px;padding:16px;font-size:16px;font-weight:700;border:none;color:white;cursor:pointer;margin:0;">로그인</button>
+            <button onclick="location.href='register.html'" style="width:100%;background:#f2f4f6;border-radius:16px;padding:16px;font-size:16px;font-weight:700;border:none;color:#191f28;cursor:pointer;margin:0;">회원가입</button>
+        </div>
+    </div>
+    <!-- 로그인 후 -->
+    <div id="afterLogin" style="display:none; padding:0 16px 100px;">
+        <label class="dark-toggle-row profile-menu-item" for="darkModeToggle" style="margin-bottom:10px;cursor:pointer;">
+            <span class="profile-menu-icon" id="darkModeIcon">🌙</span>
+            <div style="flex:1;"><div class="profile-menu-label" id="darkModeText">다크모드</div></div>
+            <div class="toggle-switch">
+                <input type="checkbox" id="darkModeToggle">
+                <span class="toggle-slider"></span>
+            </div>
+        </label>
+        <div class="profile-menu-item" onclick="location.href='reset_password.html'" style="margin-bottom:10px;">
+            <span class="profile-menu-icon">🔑</span>
+            <div style="flex:1;"><div class="profile-menu-label">비밀번호 변경</div></div>
+            <span class="profile-menu-arrow">›</span>
+        </div>
+        <div class="profile-menu-item" id="notifSettingCard" onclick="location.href='settings.html'" style="margin-bottom:10px;">
+            <span class="profile-menu-icon">🔔</span>
+            <div style="flex:1;">
+                <div class="profile-menu-label">알림 설정</div>
+                <div style="font-size:12px;color:#8b95a1;" id="notifSettingDesc"></div>
+            </div>
+            <span class="profile-menu-arrow">›</span>
+        </div>
+        <div class="profile-menu-item" onclick="window.go('stats')" style="margin-bottom:20px;">
+            <span class="profile-menu-icon">📊</span>
+            <div style="flex:1;"><div class="profile-menu-label">나의 작성 통계</div></div>
+            <span class="profile-menu-arrow">›</span>
+        </div>
+        <span id="profileEmail" style="display:none;"></span>
+        <button class="logout-btn" id="logoutBtn" style="width:100%;margin:0;">로그아웃</button>
+    </div>
+</div>
+
+<!-- 감정 모달 -->
+<div id="moodModal" class="modal">
+    <div class="modal-content">
+        <h3>오늘 기분은?</h3>
+        <div class="mood-grid">
+            <button onclick="selectMood('😀')">😀</button>
+            <button onclick="selectMood('🙂')">🙂</button>
+            <button onclick="selectMood('😐')">😐</button>
+            <button onclick="selectMood('😢')">😢</button>
+            <button onclick="selectMood('😡')">😡</button>
+            <button onclick="selectMood('😫')">😫</button>
+        </div>
+    </div>
+</div>
+
+<!-- 상세보기 모달 -->
+<div id="detailModal" class="detail-modal">
+    <div class="detail-content">
+        <div class="detail-top-row">
+            <div class="detail-mood" id="detailMood"></div>
+            <div class="detail-action-btns">
+                <button class="detail-edit-btn" id="detailEditBtn">✏️ 수정</button>
+                <button class="detail-delete-btn" id="detailDeleteBtn">🗑 삭제</button>
+            </div>
+        </div>
+        <div class="detail-date" id="detailDate"></div>
+        <div class="detail-edited-date" id="detailEditedDate" style="display:none;"></div>
+        <!-- 보기 모드 -->
+        <div class="detail-text" id="detailText"></div>
+        <div id="detailTags" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;"></div>
+        <!-- 편집 모드 -->
+        <textarea class="detail-edit-area" id="detailEditArea"></textarea>
+        <div class="detail-edit-save-row" id="detailEditSaveRow" style="display:none;">
+            <button class="detail-cancel-btn" id="detailCancelEditBtn">취소</button>
+            <button class="detail-save-btn" id="detailSaveEditBtn">저장</button>
+        </div>
+        <button class="detail-close" id="detailCloseBtn">닫기</button>
+    </div>
+</div>
+
+<!-- 네비 -->
+<div class="nav">
+    <button id="navHome" class="nav-active"><span>🏠</span><span class="nav-label">홈</span></button>
+    <button id="navStats"><span>📊</span><span class="nav-label">통계</span></button>
+    <div class="nav-center" id="fabBtn">+</div>
+    <button id="navCalendar"><span>📅</span><span class="nav-label">달력</span></button>
+    <button id="navProfile"><span>👤</span><span class="nav-label">프로필</span></button>
+</div>
+
+</div>
+
+<script src="qlog-features.js"></script>
+<script type="module">
+import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut, updateProfile }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+    getFirestore, collection, addDoc, getDocs,
+    deleteDoc, doc, updateDoc, query, where, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey:            "AIzaSyCYkG8uZUET5UnW80IHKGxhL7WpNCp7kfQ",
+    authDomain:        "q-log-f6aed.firebaseapp.com",
+    projectId:         "q-log-f6aed",
+    storageBucket:     "q-log-f6aed.firebasestorage.app",
+    messagingSenderId: "373152234648",
+    appId:             "1:373152234648:web:aa2d94664a5674aca9e4ed"
+};
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+let currentUser    = null;
+let logs           = [];
+let selectedMood   = "";
+let currentDate    = new Date();
+let selectedDay    = null;
+let statsPeriod    = 7;      // 기본 1주일
+let moodChartInst  = null;   // Chart.js 인스턴스
+let dailyChartInst = null;
+
+let writeStartTime = null;
+let firstKeyTime   = null;
+let backspaceCount = 0;
+
+// 다중 태그 검색 상태
+let searchTags = [];
+
+// ── 로그인 상태 감지 ─────────────────────────
+onAuthStateChanged(auth, (user) => {
+    currentUser = user;
+    // 현재 로그인 계정 이메일 캐시 (항상 최신으로 덮어씀)
+    if (user && user.email) {
+        const prevUser = localStorage.getItem('qlog_prev_user_email');
+        localStorage.setItem('qlog_user_email', user.email);
+        try {
+            const raw = localStorage.getItem('qlog_notification_settings');
+            const ns  = raw ? JSON.parse(raw) : {};
+            // 알림 수신 이메일이 없거나 다른 계정으로 전환된 경우에만 계정 이메일로 초기화
+            if (!ns.email || (prevUser && prevUser !== user.email)) {
+                ns.email = user.email;
+                localStorage.setItem('qlog_notification_settings', JSON.stringify(ns));
+            }
+        } catch {}
+        localStorage.setItem('qlog_prev_user_email', user.email);
+    } else if (!user) {
+        localStorage.removeItem('qlog_user_email');
+    }
+    renderProfile();
+    if (user) loadLogs();
+    else { logs = []; renderLogs(); }
+});
+
+// ── 화면 전환 ────────────────────────────────
+const MIN_HEADER = 80;
+let homeScrollY        = 0;
+let homeWasMinimized   = false;
+
+window.go = function(id) {
+    const homeEl = document.getElementById('home');
+    const header = document.getElementById('homeHeader');
+    const hint   = document.getElementById('swipeHint');
+    
+    if (homeEl.classList.contains('active')) {
+        homeScrollY      = window.scrollY;
+        homeWasMinimized = document.getElementById('homeHeader').classList.contains('minimized');
+    }
+
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const target = document.getElementById(id);
+    target.classList.add('active');
+
+    // 글쓰기 화면이면 네비바 숨기기, 아니면 보이기
+    const nav = document.querySelector('.nav');
+    if (id === 'write') {
+        nav.style.display = 'none';
+    } else {
+        nav.style.display = '';
+    }
+
+    if (id === 'home') {
+        // 1. 헤더 및 힌트 초기화 (큰 헤더 상태로)
+        header.classList.remove('minimized');
+        header.style.height = '100vh'; // 초기 높이 복구
+        header.style.background = document.body.classList.contains('dark-mode') ? '#1e1e1e' : '';
+        homeEl.classList.remove('header-collapsed');
+        if (hint) hint.classList.remove('hidden');
+
+        // 2. 리스트 목록 새로고침
+        if (typeof renderLogs === 'function') {
+            renderLogs();
+        }
+
+        // 3. 홈 화면 최상단으로 즉시 이동
+        window.scrollTo({ top: 0, behavior: 'instant' });
+    } else {
+        // 홈 외의 화면도 최상단에서 시작
+        window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+
+    if (id === 'stats')    renderStats();
+    if (id === 'calendar') renderCalendar();
+    if (id === 'profile')  renderProfile();
+    if (id === 'write') {
+        writeStartTime = Date.now();
+        firstKeyTime   = null;
+        backspaceCount = 0;
+        // ── Gemini 상태 초기화 ──
+        aiHelpCount = 2;
+        updateAiHelpBtn();
+        document.getElementById('aiResponseArea').innerHTML = '';
+        document.getElementById('aiStuckPopup').style.display = 'none';
+        resetIdleTimer();
+    }
+};
+
+window.addEventListener('load', () => {
+    if (document.getElementById('home').classList.contains('active')) {
+        window.scrollTo(0, 0);
+    }
+});
+
+document.getElementById('navHome').addEventListener('click',     () => window.go('home'));
+document.getElementById('navStats').addEventListener('click',    () => window.go('stats'));
+document.getElementById('navCalendar').addEventListener('click', () => window.go('calendar'));
+document.getElementById('navProfile').addEventListener('click',  () => window.go('profile'));
+
+// ── 시계 ─────────────────────────────────────
+function updateTime() {
+    const now = new Date();
+    document.getElementById('date').innerText =
+        now.toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric', weekday:'short' });
+    document.getElementById('time').innerText = now.toLocaleTimeString();
+}
+setInterval(updateTime, 1000);
+updateTime();
+
+// ── 스크롤 ───────────────────────────────────
+// 기존 updateHeader 함수 또는 스크롤 이벤트 리스너 내부 수정
+function updateHeader() {
+    const scrollTop = window.scrollY;
+    const vh = window.innerHeight;
+    const minHeight = 100;
+
+    let newHeight = Math.max(minHeight, vh - scrollTop);
+    
+    const header = document.querySelector('.home-header');
+    header.style.height = `${newHeight}px`;
+
+    if (newHeight <= minHeight) {
+        header.classList.add('minimized');
+        header.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+        header.style.zIndex = '84'; // 최소화 후엔 리스트 위로 올라와서 그림자가 보여야 함
+    } else {
+        header.classList.remove('minimized');
+        header.style.boxShadow = 'none';
+        header.style.zIndex = '10'; // 스크롤 중엔 리스트가 헤더 위로 — 가려짐 방지
+    }
+
+    const ratio = Math.max(0, (newHeight - minHeight) / (vh - minHeight));
+    const title = document.querySelector('.title');
+    if (title) {
+        title.style.fontSize = `${1.5 + ratio * 1.5}rem`;
+        title.style.opacity = ratio < 0.3 ? 0 : 1;
+    }
+}
+
+// 스크롤 이벤트에 requestAnimationFrame 적용
+let ticking = false;
+window.addEventListener('scroll', () => {
+    if (!ticking) {
+        window.requestAnimationFrame(() => {
+            updateHeader();
+            ticking = false;
+        });
+        ticking = true;
+    }
+});
+
+// 스크롤 스냅 제거 — 사용자가 자유롭게 오르내릴 수 있도록 수동 스크롤만 허용
+
+// ── 이모지 필터 (토글 스위치) ────────────────────
+(function initMoodFilter() {
+    const toggleInput = document.getElementById('moodToggleInput');
+    const emojiRow    = document.getElementById('moodEmojiRow');
+
+    function syncUI() {
+        if (toggleInput.checked) {
+            // ON = 필터 모드: 이모지 표시
+            emojiRow.classList.add('show');
+        } else {
+            // OFF = 전체: 이모지 숨기기
+            emojiRow.classList.remove('show');
+            emojiRow.querySelectorAll('.mood-emoji-btn').forEach(b => b.classList.remove('active'));
+        }
+    }
+
+    // 초기 상태 반영
+    syncUI();
+
+    toggleInput.addEventListener('change', () => {
+        syncUI();
+        if (typeof renderLogs === 'function') renderLogs();
+    });
+
+    emojiRow.querySelectorAll('.mood-emoji-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (btn.classList.contains('active')) {
+                btn.classList.remove('active');
+            } else {
+                emojiRow.querySelectorAll('.mood-emoji-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            }
+            if (typeof renderLogs === 'function') renderLogs();
+        });
+    });
+
+    window.getActiveMoodFilter = () => {
+        if (!toggleInput.checked) return 'all';
+        const active = emojiRow.querySelector('.mood-emoji-btn.active');
+        return active ? active.dataset.mood : 'all';
+    };
+})();
+
+
+
+
+// ── 🌙 다크모드 토글 ───────────────────────────
+(function initDarkMode() {
+    const toggle = document.getElementById('darkModeToggle');
+    const icon   = document.getElementById('darkModeIcon');
+    const label  = document.getElementById('darkModeText');
+
+    function applyDark(isDark) {
+        if (isDark) {
+            document.body.classList.add('dark-mode');
+            icon.textContent  = '☀️';
+            label.textContent = '라이트모드';
+            const hh = document.querySelector('.home-header');
+            if (hh) hh.style.background = '#1e1e1e';
+        } else {
+            document.body.classList.remove('dark-mode');
+            icon.textContent  = '🌙';
+            label.textContent = '다크모드';
+            const hh = document.querySelector('.home-header');
+            if (hh) hh.style.background = '';
+        }
+        toggle.checked = isDark;
+        localStorage.setItem('qlog_dark', isDark ? '1' : '0');
+    }
+
+    // 저장된 설정 불러오기 (페이지 새로고침 시 유지)
+    const saved = localStorage.getItem('qlog_dark');
+    if (saved === '1') applyDark(true);
+
+    toggle.addEventListener('change', () => applyDark(toggle.checked));
+})();
+
+// ── FAB ──────────────────────────────────────
+document.getElementById('fabBtn').addEventListener('click', () => {
+    if (!currentUser) { alert('로그인 후 일기를 작성할 수 있습니다.'); window.go('profile'); return; }
+    document.getElementById('moodModal').classList.add('show');
+});
+function closeMood() { document.getElementById('moodModal').classList.remove('show'); }
+document.getElementById('moodModal').addEventListener('click', e => {
+    if (e.target.id === 'moodModal') closeMood();
+});
+
+// ── 기분별 질문 ───────────────────────────────
+const moodQuestions = {
+    '😀':['오늘 가장 기분 좋았던 순간은 언제였나요?','오늘 나를 웃게 만든 것은 무엇인가요?','오늘 감사했던 것 세 가지를 써볼게요!','오늘 잘한 일 하나를 적어볼까요?'],
+    '🙂':['오늘 소소하게 좋았던 일이 있었나요?','오늘 만난 사람 중 기억에 남는 사람이 있나요?','오늘 가장 집중했던 순간은 언제인가요?'],
+    '😐':['지금 마음이 어떤 상태인가요?','오늘 아쉬웠던 점이 있다면 무엇인가요?','지금 이 순간 가장 필요한 게 뭔가요?'],
+    '😢':['오늘 힘들었던 일을 털어놓아 볼까요?','오늘 나를 위로해 준 것이 있었나요?','내일의 나에게 한마디 남겨볼까요?'],
+    '😡':['오늘 화가 났던 순간을 적어볼까요?','그 감정의 원인이 무엇이었나요?','나 자신에게 어떤 말을 해주고 싶나요?'],
+    '😫':['오늘 왜 이렇게 피곤했나요?','오늘 가장 에너지를 많이 쓴 일은 무엇인가요?','지금 가장 하고 싶은 것은 무엇인가요?']
+};
+
+// ── 태그 상태 ─────────────────────────────────
+let autoTags   = new Set();
+let manualTags = new Set();
+const tagKeywords = {
+    '#운동':['헬스','운동','수영','달리기','조깅','자전거','등산','필라테스','요가','트레이닝','축구','농구','런닝','산책'],
+    '#공부':['공부','수학','영어','독서','책','시험','과제','강의','학원','코딩','개발','복습','토익'],
+    '#요리':['밥','파스타','라면','요리','음식','식사','카페','커피','치킨','피자','먹','식당','맛집'],
+    '#여행':['여행','공항','비행기','호텔','드라이브','나들이','소풍','관광'],
+    '#취미':['게임','영화','드라마','넷플릭스','유튜브','음악','노래','그림','사진'],
+    '#일':['회사','업무','미팅','회의','야근','출근','퇴근','발표'],
+};
+function detectAutoTags(text) {
+    const found = new Set();
+    const lower = text.toLowerCase();
+    for (const [tag, kws] of Object.entries(tagKeywords)) {
+        for (const kw of kws) { if (lower.includes(kw)) { found.add(tag); break; } }
+    }
+    return found;
+}
+function renderTagList() {
+    const list = document.getElementById('tagList');
+    const all  = [...autoTags, ...manualTags];
+    list.innerHTML = all.map(t => `
+        <span class="tag-chip">${t}<button data-tag="${t}">×</button></span>`).join('');
+    list.querySelectorAll('.tag-chip button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            autoTags.delete(btn.dataset.tag); manualTags.delete(btn.dataset.tag);
+            renderTagList();
+        });
+    });
+}
+function addManualTag() {
+    const input = document.getElementById('tagInput');
+    const val   = input.value.trim().replace(/^#+/, '');
+    if (!val) return;
+    manualTags.add('#' + val); autoTags.delete('#' + val);
+    renderTagList(); input.value = '';
+}
+document.getElementById('tagAddBtn').addEventListener('click', addManualTag);
+document.getElementById('tagInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); addManualTag(); }
+});
+
+// 감정 → 테마 클래스 매핑
+const moodThemeMap = {
+    '😀': 'mood-happy',
+    '🙂': 'mood-good',
+    '😐': 'mood-neutral',
+    '😢': 'mood-sad',
+    '😡': 'mood-angry',
+    '😫': 'mood-tired'
+};
+let selectedWriteDate = 'today';
+function updateWriteDateLabel() {
+    const label = document.getElementById('writeDateLabel');
+    if (selectedWriteDate === 'yesterday') {
+        const yd = new Date(); yd.setDate(yd.getDate() - 1);
+        label.innerText = yd.toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'}) + ' 기록';
+    } else { label.innerText = ''; }
+}
+document.getElementById('dateBtnToday').addEventListener('click', () => {
+    selectedWriteDate = 'today';
+    document.getElementById('dateBtnToday').classList.add('active');
+    document.getElementById('dateBtnYesterday').classList.remove('active');
+    updateWriteDateLabel();
+});
+document.getElementById('dateBtnYesterday').addEventListener('click', () => {
+    selectedWriteDate = 'yesterday';
+    document.getElementById('dateBtnYesterday').classList.add('active');
+    document.getElementById('dateBtnToday').classList.remove('active');
+    updateWriteDateLabel();
+});
+
+window.selectMood = function(m) {
+    selectedWriteDate = 'today';
+    document.getElementById('dateBtnToday').classList.add('active');
+    document.getElementById('dateBtnYesterday').classList.remove('active');
+    updateWriteDateLabel();
+    selectedMood = m; closeMood(); window.go('write');
+    document.getElementById('writeMoodDisplay').innerText = m;
+    const qList = moodQuestions[m] || moodQuestions['😐'];
+    document.getElementById('questionText').innerText = qList[Math.floor(Math.random() * qList.length)];
+    document.getElementById('text').value = '';
+    document.getElementById('aiSuggestion').innerHTML = '';
+    document.getElementById('tagInput').value = '';
+    autoTags = new Set(); manualTags = new Set(); renderTagList();
+    _lastAutoKey = '';
+    // 감정 테마 적용
+    const writeEl = document.getElementById('write');
+    writeEl.classList.remove('mood-happy','mood-good','mood-neutral','mood-sad','mood-angry','mood-tired');
+    if (moodThemeMap[m]) writeEl.classList.add(moodThemeMap[m]);
+};
+
+// ── Gemini 상태 ───────────────────────────────
+// ★ 본인의 Google AI Studio API 키를 아래에 직접 입력하세요
+// 발급: https://aistudio.google.com/app/apikey
+
+// 교체 코드
+const GEMINI_API_KEY = window.GEMINI_KEY || '';
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+
+let aiHelpCount  = 2;  // 일기당 최대 2회
+let idleTimer    = null;
+
+function updateAiHelpBtn() {
+    const btn   = document.getElementById('aiHelpBtn');
+    const count = document.getElementById('aiHelpCount');
+    const label = document.getElementById('aiHelpLabel');
+    count.innerText = `(${aiHelpCount}/2)`;
+    if (aiHelpCount <= 0) {
+        btn.disabled = true;
+        label.innerText = '다음 일기에서';
+    } else {
+        btn.disabled = false;
+        label.innerText = '도움받기';
+    }
+}
+
+// 10초 idle 감지 → 팝업 표시
+function resetIdleTimer() {
+    clearTimeout(idleTimer);
+    document.getElementById('aiStuckPopup').style.display = 'none';
+    const text = document.getElementById('text')?.value || '';
+    // 텍스트가 10자 이상 입력된 상태에서만 팝업 표시
+    if (text.trim().length < 10) return;
+    idleTimer = setTimeout(() => {
+        if (aiHelpCount > 0) {
+            document.getElementById('aiStuckPopup').style.display = 'block';
+        }
+    }, 10000); // 10초
+}
+
+// 팝업 클릭 시 닫기
+document.getElementById('aiStuckPopup').addEventListener('click', () => {
+    document.getElementById('aiStuckPopup').style.display = 'none';
+    clearTimeout(idleTimer);
+});
+
+// Gemini API 호출
+async function callGeminiHelp() {
+    const text = document.getElementById('text').value.trim();
+    const mood = selectedMood || '😐';
+    const btn  = document.getElementById('aiHelpBtn');
+
+    if (aiHelpCount <= 0) return;
+    if (!text) { alert('먼저 글을 조금 써보세요 ✏️'); return; }
+
+    // 로딩 상태
+    btn.disabled = true;
+    document.getElementById('aiHelpLabel').innerHTML = '<span class="ai-loading"></span>';
+    document.getElementById('aiStuckPopup').style.display = 'none';
+
+    // ★ 프롬프트: 인간친화적 + 법적 안전장치 포함
+    const prompt = `당신은 따뜻한 일기 글쓰기 코치입니다.
+        사용자의 현재 감정 상태: ${selectedMood || '😐'}
+
+        아래 일기를 읽고, 다음 4가지 전략 중 지금 이 일기에 가장 적합한 전략 하나를 선택하여 질문 한 문장을 만드세요.
+
+        [전략 목록]
+        1. 감정 탐색: 일기에 감정 표현은 있지만 깊이가 부족할 때 → 그 감정을 구체적으로 묻는 질문
+        2. 활동 탐색: 사건이나 행동 위주로만 서술됐을 때 → 구체적인 사실이나 행동을 묻는 질문  
+        3. 심층 후속 질문: 감정의 원인이 불명확하거나 복잡할 때 → 감정의 진짜 이유를 파고드는 질문
+        4. 미래 계획 탐색: 문제나 고민이 명확히 드러났을 때 → 앞으로의 대처나 해결책을 묻는 질문
+
+        [일기 내용]
+        ${text}
+
+        [출력 규칙 - 반드시 지킬 것]
+        - 선택한 전략 번호나 이름은 출력하지 마
+        - 질문 한 문장만 출력
+        - "?"로 끝낼 것
+        - 한국어, 15자~45자
+        - 따뜻하고 비판적이지 않은 어조
+        - 위기 표현(자살, 자해, 죽고싶다)이 있으면 
+        질문 대신 이것만 출력: "지금 괜찮나요? 힘들면 마음이음 1577-0199 💙"
+
+        [각 전략별 좋은 예시]
+        1번: 그 순간 가장 크게 느껴진 감정이 무엇이었나요?
+        2번: 오늘 집에 오자마자 어떤 행동을 했나요?
+        3번: 노력이 안 보인다는 느낌이 언제부터 쌓여온 것 같나요?
+        4번: 다음번에 비슷한 상황이 오면 어떻게 해보고 싶으신가요?`;
+
+    try {
+        const res = await fetch(GEMINI_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    temperature: 0.7,
+                    maxOutputTokens: 300,
+                    thinkingConfig: { thinkingBudget: 0 }
+                },
+                safetySettings: [
+                    { category: 'HARM_CATEGORY_HARASSMENT',        threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+                    { category: 'HARM_CATEGORY_HATE_SPEECH',       threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+                    { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+                    { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' }
+                ]
+            })
+        });
+
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error?.message || `HTTP ${res.status}`);
+        }
+
+        const data     = await res.json();
+        const question = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+        if (!question) throw new Error('응답이 비어있습니다');
+
+        // 응답 표시
+        const area = document.getElementById('aiResponseArea');
+        area.innerHTML = `
+            <div class="ai-response-box">
+                <div class="ai-response-label">✦ AI 추가 질문</div>
+                <div class="ai-response-text">${question}</div>
+            </div>`;
+
+        // 사용 횟수 차감
+        aiHelpCount--;
+        updateAiHelpBtn();
+        resetIdleTimer();
+
+    } catch (err) {
+        console.error('Gemini API 오류:', err);
+
+        let errMsg = '잠시 후 다시 시도해주세요.';
+        let errStyle = 'background:linear-gradient(135deg,#6b7280,#4b5563);';
+
+        // API 키 미설정
+        if (!GEMINI_API_KEY) {
+            errMsg   = 'GEMINI_API_KEY를 index.html에 직접 입력해주세요.';
+            errStyle = 'background:linear-gradient(135deg,#f59e0b,#d97706);';
+        }
+        // API 키 잘못됨 (403 / 400 / invalid key)
+        else if (err.message && (err.message.includes('API_KEY_INVALID') || err.message.includes('400') || err.message.includes('403'))) {
+            errMsg   = 'API 키가 올바르지 않습니다. Google AI Studio에서 키를 재발급하세요.';
+            errStyle = 'background:linear-gradient(135deg,#ef4444,#b91c1c);';
+        }
+        // 모델명 오류 (404)
+        else if (err.message && err.message.includes('404')) {
+            errMsg   = '모델을 찾을 수 없습니다. 모델명을 확인하세요.';
+            errStyle = 'background:linear-gradient(135deg,#f59e0b,#d97706);';
+        }
+
+        document.getElementById('aiResponseArea').innerHTML = `
+            <div class="ai-response-box" style="${errStyle}">
+                <div class="ai-response-label">⚠️ 오류</div>
+                <div class="ai-response-text">${errMsg}</div>
+            </div>`;
+
+        updateAiHelpBtn();
+    }
+}
+
+// 도움받기 버튼 클릭
+document.getElementById('aiHelpBtn').addEventListener('click', callGeminiHelp);
+
+// ── textarea ──────────────────────────────────
+document.getElementById('text').addEventListener('keydown', e => {
+    if (!firstKeyTime) firstKeyTime = Date.now();
+    if (e.key === 'Backspace') backspaceCount++;
+    resetIdleTimer(); // 키 누를 때마다 idle 타이머 리셋
+});
+let _lastAutoKey = '';
+document.getElementById('text').addEventListener('input', function() {
+    // AI 감정 감지 표시 제거됨
+    const detected = detectAutoTags(this.value);
+    const key = [...detected].sort().join(',');
+    if (key !== _lastAutoKey) {
+        _lastAutoKey = key;
+        autoTags = new Set([...detected].filter(t => !manualTags.has(t)));
+        renderTagList();
+    }
+});
+
+// ── 글쓰기 뒤로가기 버튼 ──────────────────────
+document.getElementById('writeBackBtn').addEventListener('click', () => {
+    const text = document.getElementById('text').value.trim();
+    if (text.length > 0) {
+        if (confirm('지금 작성하던 걸 멈추고 정말 뒤로 가시겠습니까?')) {
+            document.getElementById('text').value = '';
+            autoTags = new Set(); manualTags = new Set(); renderTagList();
+            window.go('home');
+        }
+    } else {
+        window.go('home');
+    }
+});
+
+// ── 저장 ─────────────────────────────────────
+document.getElementById('saveBtn').addEventListener('click', async () => {
+    const text = document.getElementById('text').value.trim();
+    if (!text)        return alert("내용을 입력해주세요.");
+    if (!currentUser) return alert("로그인이 필요합니다.");
+
+    const now = Date.now();
+    const timeToFirst    = firstKeyTime ? Math.round((firstKeyTime - writeStartTime) / 1000) : null;
+    const writingDuration= firstKeyTime ? Math.round((now - firstKeyTime) / 1000) : null;
+    const charCount      = text.length;
+    const sentenceCount  = (text.match(/[.!?。]/g) || []).length;
+    const charsPerMinute = (writingDuration && writingDuration > 0)
+                           ? Math.round((charCount / writingDuration) * 60) : null;
+    const hourOfDay      = new Date().getHours();
+
+    try {
+                // 어제 날짜 처리
+        const isBackdate = selectedWriteDate === 'yesterday';
+        let logDate = serverTimestamp();
+        if (isBackdate) {
+            const yd = new Date();
+            yd.setDate(yd.getDate() - 1);
+            // 어제 날짜 + 현재 시각으로 Timestamp 생성
+            const { Timestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+            logDate = Timestamp.fromDate(yd);
+        }
+        
+        await addDoc(collection(db, "logs"), {
+            uid:  currentUser.uid,
+            mood: selectedMood || analyzeEmotion(text),
+            text: text,
+            tags: [...autoTags, ...manualTags],
+            date: logDate,
+            isBackdate: isBackdate,
+            metrics: { timeToFirst, writingDuration, charCount, sentenceCount, charsPerMinute, backspaceCount, hourOfDay }
+        });
+        document.getElementById('text').value = "";
+        autoTags = new Set(); manualTags = new Set(); renderTagList();
+        const _sumEl = document.getElementById('dailySummaryInput');
+        const _sumTxt = _sumEl ? _sumEl.value.trim() : '';
+        if (_sumTxt && currentUser && window.QLogFeatures) {
+            window.QLogFeatures.saveDailySummary(currentUser.uid, _sumTxt, new Date());
+        }
+        if (_sumEl) _sumEl.value = '';
+        const _cntEl = document.getElementById('summaryCharCount');
+        if (_cntEl) _cntEl.textContent = '0';
+        await loadLogs();
+        qlogCheckMilestone();
+        window.go('home');
+    } catch (err) {
+        console.error(err);
+        alert("저장 실패: " + err.message);
+    }
+});
+
+// ── Firestore 불러오기 ────────────────────────
+async function loadLogs() {
+    if (!currentUser) return;
+    try {
+        const q = query(collection(db, "logs"), where("uid", "==", currentUser.uid));
+        const snapshot = await getDocs(q);
+        logs = snapshot.docs.map(d => ({
+            id: d.id, ...d.data(),
+            date:      d.data().date?.toDate()      || new Date(),
+            updatedAt: d.data().updatedAt?.toDate()  || null
+        }));
+        logs.sort((a, b) => b.date - a.date);
+        renderLogs();
+        qlogNewFeatures(logs, currentUser);
+    } catch (err) {
+        console.error("불러오기 실패:", err);
+    }
+}
+
+// ── 일기 목록 렌더링 ─────────────────────────
+function goProfile() { window.go('profile'); }
+function clickFab() { document.getElementById('fabBtn').click(); }
+function renderLogs() {
+    const list = document.getElementById('logList');
+    list.innerHTML = '';
+    if (!currentUser) {
+        list.innerHTML = '<div class="empty-state"><div class="empty-state-emoji">📖</div><div class="empty-state-title">로그인하고 시작해요</div><div class="empty-state-sub">로그인하면 나만의 일기를<br>기록하고 볼 수 있어요</div><button class="empty-state-btn" onclick="goProfile()">로그인하기</button></div>';
+        return;
+    }
+    if (logs.length === 0) {
+        list.innerHTML = '<div class="empty-state"><div class="empty-state-emoji">✏️</div><div class="empty-state-title">첫 일기를 써볼까요?</div><div class="empty-state-sub">오늘의 감정을 기록하면<br>식물이 자라고 배지를 얻어요</div><button class="empty-state-btn" onclick="clickFab()">일기 쓰기</button></div>';
+        return;
+    }
+
+    const activeMood = window.getActiveMoodFilter ? window.getActiveMoodFilter() : 'all';
+    const filtered = (activeMood === 'all' ? [...logs] : logs.filter(l => l.mood === activeMood))
+        .sort((a, b) => {
+            const da = a.date instanceof Date ? a.date : new Date(a.date);
+            const db2 = b.date instanceof Date ? b.date : new Date(b.date);
+            return db2 - da;
+        });
+
+    if (filtered.length === 0) {
+        list.innerHTML = '<div class="empty-state"><div class="empty-state-emoji">🔍</div><div class="empty-state-title">해당 감정 없음</div><div class="empty-state-sub">이 감정으로 쓴 일기가 없어요</div></div>';
+        return;
+    }
+
+    // 날짜별 그룹핑
+    const groups = {};
+    const groupOrder = [];
+    const moodLabels = {'😀':'행복','🙂':'좋음','😐':'보통','😢':'슬픔','😡':'화남','😫':'피곤'};
+    filtered.forEach(l => {
+        const d = l.date instanceof Date ? l.date : new Date(l.date);
+        const today = new Date();
+        const yesterday = new Date(); yesterday.setDate(today.getDate()-1);
+        let gKey;
+        if (d.getFullYear()===today.getFullYear() && d.getMonth()===today.getMonth() && d.getDate()===today.getDate()) {
+            gKey = '오늘';
+        } else if (d.getFullYear()===yesterday.getFullYear() && d.getMonth()===yesterday.getMonth() && d.getDate()===yesterday.getDate()) {
+            gKey = '어제';
+        } else {
+            gKey = d.toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
+        }
+        if (!groups[gKey]) { groups[gKey] = []; groupOrder.push(gKey); }
+        groups[gKey].push(l);
+    });
+
+    groupOrder.forEach(gKey => {
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'log-date-group';
+        const header = document.createElement('div');
+        header.className = 'log-date-header';
+        header.textContent = gKey;
+        groupDiv.appendChild(header);
+
+        groups[gKey].forEach(l => {
+            const div = document.createElement('div');
+            div.className = 'card';
+            const d = l.date instanceof Date ? l.date : new Date(l.date);
+            const timeStr = groups[gKey].length > 1
+                ? d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}) : '';
+            const moodLabel = moodLabels[l.mood] || '';
+            const charCount = l.text ? l.text.length : 0;
+            let summaryHtml = '';
+            try {
+                if (currentUser && window.QLogFeatures) {
+                    const _s = window.QLogFeatures.getDailySummary(currentUser.uid, d);
+                    if (_s && _s.text) summaryHtml = '<div class="card-summary"><span class="card-summary-icon">✨</span><span>' + _s.text + '</span></div>';
+                }
+            } catch(e) {}
+            const tagsHtml = (l.tags && l.tags.length > 0)
+                ? '<div class="card-tags">' + l.tags.map(t => '<span class="card-tag">' + t + '</span>').join('') + '</div>'
+                : '';
+            const editedHtml = l.updatedAt
+                ? '<div class="card-edited">수정됨 · ' + l.updatedAt.toLocaleDateString('ko-KR',{month:'long',day:'numeric'}) + ' ' + l.updatedAt.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}) + '</div>'
+                : '';
+            div.innerHTML =
+                '<div class="card-header">'
+                + '<div class="card-mood-badge"><span style="font-size:24px">' + l.mood + '</span>'
+                + (moodLabel ? '<span class="card-mood-label">' + moodLabel + '</span>' : '')
+                + '</div>'
+                + '<span class="card-char-count">' + charCount + '자' + (timeStr ? ' · ' + timeStr : '') + '</span>'
+                + '</div>'
+                + '<div class="card-text">' + l.text + '</div>'
+                + summaryHtml + tagsHtml
+                + editedHtml;
+            div.addEventListener('click', function() { openDetail(l); });
+            groupDiv.appendChild(div);
+        });
+        list.appendChild(groupDiv);
+    });
+}
+
+// ── 상세보기 & 편집 ──────────────────────────
+let currentDetailLog = null; // 현재 열린 일기 참조
+
+function openDetail(log) {
+    currentDetailLog = log;
+
+    // 보기 모드로 초기화
+    setDetailViewMode();
+
+    document.getElementById('detailMood').innerText = log.mood;
+
+    // 작성 날짜
+    const dateStr = log.date instanceof Date
+        ? log.date.toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric', weekday:'short' })
+          + ' ' + log.date.toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit' })
+        : '';
+    document.getElementById('detailDate').innerText = '✏️ 작성: ' + dateStr;
+
+    // 최종 수정 날짜
+    const editedEl = document.getElementById('detailEditedDate');
+    if (log.updatedAt instanceof Date) {
+        const editedStr = log.updatedAt.toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric', weekday:'short' })
+            + ' ' + log.updatedAt.toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit' });
+        editedEl.innerText = '🔄 최종수정: ' + editedStr;
+        editedEl.style.display = 'block';
+    } else {
+        editedEl.style.display = 'none';
+    }
+
+    document.getElementById('detailText').innerText = log.text;
+
+    const dt = document.getElementById('detailTags');
+    if (log.tags && log.tags.length > 0) {
+        dt.innerHTML = log.tags.map(t=>`<span class="card-tag">${t}</span>`).join('');
+        dt.style.display = 'flex';
+    } else { dt.innerHTML = ''; dt.style.display = 'none'; }
+
+    document.getElementById('detailModal').classList.add('show');
+}
+
+function setDetailViewMode() {
+    document.getElementById('detailText').style.display = 'block';
+    document.getElementById('detailTags').style.display = '';
+    document.getElementById('detailEditArea').style.display = 'none';
+    document.getElementById('detailEditSaveRow').style.display = 'none';
+    document.getElementById('detailCloseBtn').style.display = 'block';
+    document.getElementById('detailEditBtn').style.display = '';
+    document.getElementById('detailDeleteBtn').style.display = '';
+}
+
+function setDetailEditMode() {
+    const log = currentDetailLog;
+    document.getElementById('detailEditArea').value = log.text;
+    document.getElementById('detailText').style.display = 'none';
+    document.getElementById('detailTags').style.display = 'none';
+    document.getElementById('detailEditArea').style.display = 'block';
+    document.getElementById('detailEditSaveRow').style.display = 'flex';
+    document.getElementById('detailCloseBtn').style.display = 'none';
+    document.getElementById('detailEditBtn').style.display = 'none';
+    document.getElementById('detailDeleteBtn').style.display = 'none';
+}
+
+// 수정 버튼
+document.getElementById('detailEditBtn').addEventListener('click', () => setDetailEditMode());
+
+// 취소 버튼
+document.getElementById('detailCancelEditBtn').addEventListener('click', () => setDetailViewMode());
+
+// 저장 버튼
+document.getElementById('detailSaveEditBtn').addEventListener('click', async () => {
+    const newText = document.getElementById('detailEditArea').value.trim();
+    if (!newText) { alert('내용을 입력해주세요.'); return; }
+    if (!currentDetailLog) return;
+
+    const saveBtn = document.getElementById('detailSaveEditBtn');
+    saveBtn.disabled = true; saveBtn.textContent = '저장 중...';
+
+    try {
+        const now = new Date();
+        await updateDoc(doc(db, "logs", currentDetailLog.id), {
+            text: newText,
+            updatedAt: serverTimestamp()
+        });
+
+        // 로컬 상태도 즉시 업데이트
+        currentDetailLog.text = newText;
+        currentDetailLog.updatedAt = now;
+
+        // 최종수정 날짜 즉시 반영
+        const editedStr = now.toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric', weekday:'short' })
+            + ' ' + now.toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit' });
+        const editedEl = document.getElementById('detailEditedDate');
+        editedEl.innerText = '🔄 최종수정: ' + editedStr;
+        editedEl.style.display = 'block';
+
+        document.getElementById('detailText').innerText = newText;
+        setDetailViewMode();
+
+        await loadLogs(); // 카드 목록도 새로고침
+    } catch (err) {
+        alert('수정 실패: ' + err.message);
+    } finally {
+        saveBtn.disabled = false; saveBtn.textContent = '저장';
+    }
+});
+
+// 삭제 버튼
+document.getElementById('detailDeleteBtn').addEventListener('click', async () => {
+    if (!currentDetailLog) return;
+    if (!confirm('이 일기를 삭제하시겠습니까?')) return;
+    try {
+        await deleteDoc(doc(db, "logs", currentDetailLog.id));
+        document.getElementById('detailModal').classList.remove('show');
+        currentDetailLog = null;
+        await loadLogs();
+    } catch (err) { alert('삭제 실패: ' + err.message); }
+});
+
+// 닫기 버튼
+document.getElementById('detailCloseBtn').addEventListener('click', () => {
+    document.getElementById('detailModal').classList.remove('show');
+    currentDetailLog = null;
+});
+document.getElementById('detailModal').addEventListener('click', e => {
+    if (e.target.id === 'detailModal') {
+        document.getElementById('detailModal').classList.remove('show');
+        currentDetailLog = null;
+    }
+});
+
+function analyzeEmotion(text) {
+    if (text.includes('좋') || text.includes('행복')) return '😀';
+    if (text.includes('짜증') || text.includes('힘들')) return '😢';
+    return '😐';
+}
+
+// ── 프로필 ───────────────────────────────────
+function renderProfile() {
+    const before = document.getElementById('beforeLogin');
+    const after  = document.getElementById('afterLogin');
+    if (!before || !after) return;
+    if (currentUser) {
+        before.style.display = 'none'; after.style.display = 'block';
+        const _pEmail = document.getElementById('profileEmail');
+        if (_pEmail) _pEmail.innerText = currentUser.email;
+        const _hero = document.getElementById('profileHero');
+        const _badgeArea = document.getElementById('profileBadgeArea');
+        if (_hero) _hero.style.display = 'block';
+        if (_badgeArea) _badgeArea.style.display = 'block';
+        qlogUpdateProfileHero(currentUser, logs);
+    } else {
+        before.style.display = 'block'; after.style.display = 'none';
+        const _hero = document.getElementById('profileHero');
+        const _badgeArea = document.getElementById('profileBadgeArea');
+        if (_hero) _hero.style.display = 'none';
+        if (_badgeArea) _badgeArea.style.display = 'none';
+    }
+}
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await signOut(auth); alert('로그아웃 되었습니다.'); window.go('home');
+});
+
+// ── 닉네임 수정 ──────────────────────────────────
+(function initNicknameEdit() {
+    const btn = document.getElementById('editNicknameBtn');
+    if (!btn) return;
+    btn.addEventListener('click', function() {
+        if (!currentUser) return;
+        const current = currentUser.displayName || currentUser.email.split('@')[0] || '';
+        const input = document.getElementById('nicknameInput');
+        if (input) input.value = current;
+        const overlay = document.getElementById('nicknameEditOverlay');
+        if (overlay) overlay.classList.add('show');
+        setTimeout(function() { if (input) input.focus(); }, 300);
+    });
+})();
+
+function closeNicknameEdit() {
+    const overlay = document.getElementById('nicknameEditOverlay');
+    if (overlay) overlay.classList.remove('show');
+}
+window.closeNicknameEdit = closeNicknameEdit;
+
+async function saveNickname() {
+    if (!currentUser) return;
+    const input = document.getElementById('nicknameInput');
+    const newName = input ? input.value.trim() : '';
+    if (!newName) { alert('닉네임을 입력해주세요.'); return; }
+    try {
+        await updateProfile(currentUser, { displayName: newName });
+        const nameEl = document.getElementById('profileHeroName');
+        if (nameEl) nameEl.textContent = newName;
+        closeNicknameEdit();
+        // 간단 토스트
+        const t = document.createElement('div');
+        t.textContent = '닉네임이 변경되었습니다. 🎉';
+        t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#191f28;color:white;padding:12px 20px;border-radius:14px;font-size:14px;font-weight:700;z-index:99999;pointer-events:none;';
+        document.body.appendChild(t);
+        setTimeout(function() { t.remove(); }, 2500);
+    } catch (err) {
+        alert('저장 중 오류: ' + err.message);
+    }
+}
+window.saveNickname = saveNickname;
+
+// ── 통계 뒤로가기 ─────────────────────────────
+document.getElementById('statsBackBtn').addEventListener('click', () => window.go('home'));
+
+// ── 통계 (기간 필터 + 추세 + 차트) ──────────────────
+document.querySelectorAll('.period-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active-period'));
+        btn.classList.add('active-period');
+        statsPeriod = parseInt(btn.dataset.period);
+        renderStats();
+    });
+});
+
+function getFilteredLogs(days) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    return logs.filter(l => l.date instanceof Date && l.date >= cutoff);
+}
+function getMetricsLogs(days) {
+    return getFilteredLogs(days).filter(l => !l.isBackdate);
+}
+
+function renderStats() {
+    const box      = document.getElementById('statsBox');
+    const grid     = document.getElementById('metricsGrid');
+    const filtered = getFilteredLogs(statsPeriod);
+    box.innerHTML  = '';
+
+    // ── 추세(나의 작성능력) 카드 그리드 ──────────
+    const validLogs = filtered.filter(l => l.metrics);
+    if (!validLogs.length) {
+        grid.innerHTML = `<div class="metrics-empty">📭 해당 기간에 작성된 일기가 없어요.<br>일기를 작성하면 추세가 쌓여요!</div>`;
+    } else {
+        const avg = key => {
+            const vals = validLogs.map(l => l.metrics[key]).filter(v => v != null);
+            return vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : null;
+        };
+        const avgChar  = avg('charCount');
+        const avgFirst = avg('timeToFirst');
+        const avgDur   = avg('writingDuration');
+        const avgCpm   = avg('charsPerMinute');
+        const avgSent  = avg('sentenceCount');
+        const fmt = (v, unit) => v !== null ? `<span class="metric-card-value">${v}</span><span class="metric-card-unit">${unit}</span>` : '-';
+
+        grid.innerHTML = `
+            <div class="metric-card">
+                <div class="metric-card-label">
+                    <span class="metric-trend-icon metric-trend-up">↑</span> 평균 글자 수
+                </div>
+                ${fmt(avgChar, '자/일')}
+            </div>
+            <div class="metric-card">
+                <div class="metric-card-label">
+                    <span class="metric-trend-icon metric-trend-up">↑</span> 평균 첫 문장까지
+                </div>
+                ${fmt(avgFirst, '초')}
+            </div>
+            <div class="metric-card">
+                <div class="metric-card-label">
+                    <span class="metric-trend-icon metric-trend-down">↓</span> 평균 집필 시간
+                </div>
+                ${fmt(avgDur !== null ? Math.round(avgDur / 60 * 10) / 10 : null, '시간/일')}
+            </div>
+            <div class="metric-card">
+                <div class="metric-card-label">
+                    <span class="metric-trend-icon metric-trend-down">↓</span> 평균 글쓰기 속도
+                </div>
+                ${fmt(avgCpm, '타/일')}
+            </div>
+            <div class="metric-card" style="grid-column:1/-1;">
+                <div class="metric-card-label">
+                    <span class="metric-trend-icon metric-trend-mid">→</span> 평균 문장 수
+                </div>
+                ${fmt(avgSent, '분/시간')}
+            </div>
+        `;
+    }
+
+    if (!filtered.length) {
+        box.innerHTML = `<div class="stats-empty">📭 해당 기간에 작성된 일기가 없어요.</div>`;
+        moodChartInst  && moodChartInst.destroy();
+        dailyChartInst && dailyChartInst.destroy();
+        return;
+    }
+
+    // ① 감정 도넛 차트
+    const moodCount = {};
+    filtered.forEach(l => { moodCount[l.mood] = (moodCount[l.mood] || 0) + 1; });
+    const moodEntries = Object.entries(moodCount).sort((a,b) => b[1]-a[1]);
+    const chartColors = ['#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4444'];
+
+    const donutWrap = document.createElement('div');
+    donutWrap.className = 'chart-wrap';
+    donutWrap.innerHTML = `<div class="chart-title">😊 감정 분포</div><canvas id="moodChart" height="200"></canvas>`;
+    box.appendChild(donutWrap);
+
+    if (moodChartInst) moodChartInst.destroy();
+    const moodCtx = document.getElementById('moodChart').getContext('2d');
+    moodChartInst = new Chart(moodCtx, {
+        type: 'doughnut',
+        data: {
+            labels: moodEntries.map(([m]) => m),
+            datasets: [{ data: moodEntries.map(([,c]) => c), backgroundColor: chartColors, borderWidth: 2 }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom', labels: { font: { size: 13 }, padding: 12 } },
+                tooltip: { callbacks: { label: ctx => ` ${ctx.label} : ${ctx.parsed}회` } }
+            }
+        }
+    });
+
+    // ② 일별 작성 횟수 바 차트
+    const dayMap = {};
+    for (let i = statsPeriod - 1; i >= 0; i--) {
+        const d = new Date(); d.setDate(d.getDate() - i);
+        const k = `${d.getMonth()+1}/${d.getDate()}`;
+        dayMap[k] = 0;
+    }
+    filtered.forEach(l => {
+        const k = `${l.date.getMonth()+1}/${l.date.getDate()}`;
+        if (k in dayMap) dayMap[k]++;
+    });
+
+    const lineWrap = document.createElement('div');
+    lineWrap.className = 'chart-wrap';
+    lineWrap.innerHTML = `<div class="chart-title">📝 일별 기록 횟수</div><canvas id="dailyChart" height="160"></canvas>`;
+    box.appendChild(lineWrap);
+
+    if (dailyChartInst) dailyChartInst.destroy();
+    const lineCtx = document.getElementById('dailyChart').getContext('2d');
+    dailyChartInst = new Chart(lineCtx, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(dayMap),
+            datasets: [{
+                label: '기록 수',
+                data: Object.values(dayMap),
+                backgroundColor: '#6366f1', borderRadius: 6, borderSkipped: false
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: { ticks: { maxTicksLimit: statsPeriod <= 7 ? 7 : 10, font: { size: 11 } }, grid: { display: false } },
+                y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } }, grid: { color: '#f2f4f6' } }
+            },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    // ③ 감정별 카운트 막대
+    qlogRenderHeatmap(logs);
+    qlogRenderStatsBadges(logs);
+    const rowList = document.createElement('div');
+    rowList.className = 'stats-row-list';
+    const total = moodEntries.reduce((s,[,c]) => s+c, 0);
+    moodEntries.forEach(([m,c], i) => {
+        const pct = Math.round((c/total)*100);
+        rowList.innerHTML += `
+            <div class="stats-mood-row">
+                <span style="font-size:20px">${m}</span>
+                <div class="stats-mood-bar-wrap">
+                    <div class="stats-mood-bar" style="width:${pct}%; background:${chartColors[i % chartColors.length]};"></div>
+                </div>
+                <span class="stats-mood-count">${c}회</span>
+            </div>`;
+    });
+    box.appendChild(rowList);
+}
+
+// ── 달력 ─────────────────────────────────────
+document.getElementById('prevMonthBtn').addEventListener('click', () => {
+    currentDate.setMonth(currentDate.getMonth() - 1); selectedDay = null; renderCalendar();
+});
+document.getElementById('nextMonthBtn').addEventListener('click', () => {
+    currentDate.setMonth(currentDate.getMonth() + 1); selectedDay = null; renderCalendar();
+});
+
+function renderCalendar() {
+    const box     = document.getElementById('calendarBox');
+    const title   = document.getElementById('calendarTitle');
+    const dayLogs = document.getElementById('dayLogs');
+    box.innerHTML = ''; dayLogs.innerHTML = ''; selectedDay = null;
+
+    const year  = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    title.innerText = `${year}년 ${month+1}월`;
+
+    ['일','월','화','수','목','금','토'].forEach(w => {
+        const d = document.createElement('div'); d.innerText = w; d.className = 'weekday'; box.appendChild(d);
+    });
+    const firstDay = new Date(year, month, 1).getDay();
+    const lastDate = new Date(year, month+1, 0).getDate();
+    const prevLast = new Date(year, month, 0).getDate();
+    const today    = new Date();
+
+    for (let i = firstDay-1; i >= 0; i--) {
+        const d = document.createElement('div'); d.className = 'day other-month';
+        d.innerText = prevLast - i; box.appendChild(d);
+    }
+
+    let todayEl = null;
+    for (let i = 1; i <= lastDate; i++) {
+        const d = document.createElement('div'); d.className = 'day';
+        const isToday = today.getFullYear()===year && today.getMonth()===month && today.getDate()===i;
+        if (isToday) { d.classList.add('today'); todayEl = d; }
+        const dayLog = logs.find(l => {
+            const ld = new Date(l.date);
+            return ld.getFullYear()===year && ld.getMonth()===month && ld.getDate()===i;
+        });
+        if (dayLog) {
+            d.innerHTML = '<span class="cal-day-num">' + i + '</span><span class="cal-day-mood">' + dayLog.mood + '</span>';
+            d.classList.add('has-log');
+            const calClass = moodThemeMap[dayLog.mood];
+            if (calClass) d.classList.add('mood-cal-' + calClass.replace('mood-',''));
+        } else {
+            d.innerText = i;
+        }
+        const day = i;
+        d.addEventListener('click', () => {
+            box.querySelectorAll('.day.selected').forEach(el => el.classList.remove('selected'));
+            d.classList.add('selected'); selectedDay = { year, month, day };
+            showDayLogs(year, month, day);
+        });
+        box.appendChild(d);
+    }
+    if (todayEl) {
+        todayEl.classList.add('selected'); selectedDay = { year, month, day: today.getDate() };
+        showDayLogs(year, month, today.getDate());
+    }
+    initMultiTagSearch();
+}
+
+// ── 알림 설정 상태 요약 표시 ──────────────────
+function renderNotifDesc() {
+    const desc = document.getElementById('notifSettingDesc');
+    if (!desc) return;
+    try {
+        const raw = localStorage.getItem('qlog_notification_settings');
+        if (!raw) { desc.textContent = '알림 꺼짐'; return; }
+        const s = JSON.parse(raw);
+        if (!s.enabled || !s.days || s.days.length === 0) { desc.textContent = '알림 꺼짐'; return; }
+        const dayNames = ['일','월','화','수','목','금','토'];
+        const daysStr  = [...s.days].sort((a,b)=>a-b).map(d=>dayNames[d]).join(', ');
+        const h = s.hour ?? 21;
+        const m = s.minute ?? 0;
+        const ampm = h < 12 ? '오전' : '오후';
+        const h12  = h % 12 === 0 ? 12 : h % 12;
+        desc.textContent = `${daysStr} · ${ampm} ${h12}:${String(m).padStart(2,'0')}`;
+    } catch { desc.textContent = '알림 꺼짐'; }
+}
+// 프로필 탭 진입 시마다 새로고침
+const _origGo = window.go;
+window.go = function(id) {
+    _origGo(id);
+    if (id === 'profile') renderNotifDesc();
+};
+renderNotifDesc();
+
+// ── 다중 태그 검색
+
+
+// ════════════════════════════════════════════════════
+//  ★★★ UPGRADE FEATURES ★★★
+// ════════════════════════════════════════════════════
+
+// ── 온보딩 ────────────────────────────────────────
+(function initOnboarding() {
+    if (localStorage.getItem('qlog_onboarded') === '1') return;
+    const overlay  = document.getElementById('onboardingOverlay');
+    const slides   = document.getElementById('onboardingSlides');
+    const dots     = document.getElementById('onboardingDots').children;
+    const btn      = document.getElementById('onboardingBtn');
+    const skipBtn  = document.getElementById('onboardingSkip');
+    if (!overlay) return;
+    overlay.style.display = 'flex';
+    let cur = 0;
+    const total = 4;
+    function goTo(i) {
+        cur = i;
+        slides.style.transform = 'translateX(-' + (i * 100) + '%)';
+        for (let j = 0; j < dots.length; j++) dots[j].classList.toggle('active', j === i);
+        btn.textContent = i === total - 1 ? '시작하기' : '다음';
+    }
+    btn.addEventListener('click', function() {
+        if (cur < total - 1) { goTo(cur + 1); }
+        else { overlay.style.display = 'none'; localStorage.setItem('qlog_onboarded', '1'); }
+    });
+    skipBtn.addEventListener('click', function() {
+        overlay.style.display = 'none'; localStorage.setItem('qlog_onboarded', '1');
+    });
+    // 스와이프
+    let startX = 0;
+    slides.addEventListener('touchstart', function(e) { startX = e.touches[0].clientX; }, {passive:true});
+    slides.addEventListener('touchend', function(e) {
+        const diff = startX - e.changedTouches[0].clientX;
+        if (diff > 40 && cur < total-1) goTo(cur+1);
+        if (diff < -40 && cur > 0) goTo(cur-1);
+    });
+})();
+
+// ── 네비 활성화 ───────────────────────────────────
+(function initNavActive() {
+    const navMap = { home:'navHome', stats:'navStats', calendar:'navCalendar', profile:'navProfile' };
+    const orig = window.go;
+    window.go = function(id) {
+        orig(id);
+        Object.values(navMap).forEach(function(navId) {
+            const el = document.getElementById(navId);
+            if (el) el.classList.remove('nav-active');
+        });
+        if (navMap[id]) {
+            const el = document.getElementById(navMap[id]);
+            if (el) el.classList.add('nav-active');
+        }
+    };
+})();
+
+// ── 글쓰기 단어수 실시간 표시 ─────────────────────
+(function initWordCount() {
+    const textarea = document.getElementById('text');
+    const charEl   = document.getElementById('writeCharCount');
+    const wordEl   = document.getElementById('writeWordCount');
+    const barEl    = document.getElementById('writeCharBar');
+    if (!textarea) return;
+    const MAX_CHARS = 1000;
+    function update() {
+        const txt = textarea.value;
+        const chars = txt.length;
+        const words = txt.trim() ? txt.trim().split(/\s+/).length : 0;
+        if (charEl) charEl.textContent = chars;
+        if (wordEl) wordEl.textContent = '· ' + words + '단어';
+        if (barEl) {
+            const pct = Math.min(100, Math.round((chars / MAX_CHARS) * 100));
+            barEl.style.width = pct + '%';
+            barEl.style.background = chars >= MAX_CHARS
+                ? 'linear-gradient(90deg,#ef4444,#b91c1c)'
+                : 'linear-gradient(90deg,#4f46e5,#7c3aed)';
+        }
+    }
+    textarea.addEventListener('input', update);
+})();
+
+// ── 홈 검색 ──────────────────────────────────────
+(function initHomeSearch() {
+    const input    = document.getElementById('homeSearchInput');
+    const clearBtn = document.getElementById('homeSearchClear');
+    const wrap     = document.getElementById('searchResultsWrap');
+    if (!input) return;
+
+    function highlight(text, query) {
+        if (!query) return text;
+        const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return text.replace(new RegExp('(' + escaped + ')', 'gi'), '<mark>$1</mark>');
+    }
+
+    function doSearch(q) {
+        wrap.innerHTML = '';
+        if (!q || !window._qLogs || !window._qLogs.length) {
+            wrap.classList.remove('show'); return;
+        }
+        const lower = q.toLowerCase();
+        const results = window._qLogs.filter(function(l) {
+            return (l.text && l.text.toLowerCase().includes(lower))
+                || (l.tags && l.tags.some(function(t) { return t.toLowerCase().includes(lower); }));
+        }).slice(0, 10);
+
+        wrap.classList.add('show');
+        if (!results.length) {
+            wrap.innerHTML = '<div class="search-no-result">🔍 검색 결과가 없어요</div>'; return;
+        }
+        results.forEach(function(l) {
+            const item = document.createElement('div');
+            item.className = 'search-result-item';
+            const d = l.date instanceof Date ? l.date : new Date(l.date);
+            const dateStr = d.toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
+            const snippet = l.text.length > 60 ? l.text.slice(0,60) + '...' : l.text;
+            item.innerHTML = '<div class="search-result-mood">' + l.mood + '</div>'
+                + '<div class="search-result-body">'
+                + '<div class="search-result-text">' + highlight(snippet, q) + '</div>'
+                + '<div class="search-result-date">' + dateStr + '</div>'
+                + '</div>';
+            item.addEventListener('click', function() {
+                input.value = ''; wrap.classList.remove('show');
+                clearBtn.classList.remove('show');
+                openDetail(l);
+            });
+            wrap.appendChild(item);
+        });
+    }
+
+    let searchTimer;
+    input.addEventListener('input', function() {
+        const q = input.value.trim();
+        clearBtn.classList.toggle('show', q.length > 0);
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(function() { doSearch(q); }, 200);
+    });
+    clearBtn.addEventListener('click', function() {
+        input.value = ''; clearBtn.classList.remove('show');
+        wrap.classList.remove('show');
+    });
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#homeSearchWrap')) wrap.classList.remove('show');
+    });
+})();
+
+// ── 감정 타임라인 ─────────────────────────────────
+function renderMoodTimeline(logList) {
+    const row = document.getElementById('moodTimelineRow');
+    if (!row) return;
+
+    const moodColors = {'😀':'#fbbf24','🙂':'#34d399','😐':'#a78bfa','😢':'#60a5fa','😡':'#f87171','😫':'#c084fc'};
+    const moodScoreMap = {'😀':6,'🙂':5,'😐':4,'😢':2,'😡':1,'😫':2};
+    const today = new Date();
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date(today); d.setDate(today.getDate() - i);
+        days.push(d);
+    }
+    const dayLabels = ['일','월','화','수','목','금','토'];
+    let hasAny = false;
+    const cols = days.map(function(d) {
+        const key = d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+        const dayLogs = logList.filter(function(l) {
+            const ld = l.date instanceof Date ? l.date : new Date(l.date);
+            return ld.getFullYear() + '-' + ld.getMonth() + '-' + ld.getDate() === key;
+        });
+        const isToday = d.getDate() === today.getDate() && d.getMonth() === today.getMonth();
+        if (dayLogs.length) hasAny = true;
+        const topMood = dayLogs.length
+            ? dayLogs.reduce(function(best, l) {
+                return (moodScoreMap[l.mood]||0) > (moodScoreMap[best.mood]||0) ? l : best;
+              }).mood
+            : null;
+        const score = topMood ? moodScoreMap[topMood] || 4 : 0;
+        const color = topMood ? (moodColors[topMood] || '#e5e7eb') : '#f2f4f6';
+        const heightPx = dayLogs.length ? Math.max(8, score * 6) : 4;
+        return { label: dayLabels[d.getDay()], emoji: topMood, color, heightPx, isToday, count: dayLogs.length };
+    });
+
+    if (!hasAny) {
+        row.innerHTML = '<div class="mood-timeline-empty">일기를 쓰면 감정 흐름이 표시돼요</div>'; return;
+    }
+    row.innerHTML = cols.map(function(c) {
+        return '<div class="mood-timeline-col">'
+            + '<div class="mood-timeline-bar-wrap">'
+            + '<div class="mood-timeline-bar" style="height:' + c.heightPx + 'px; background:' + c.color + '; width:' + (c.isToday ? '28px' : '20px') + '; border:' + (c.isToday ? '2px solid #f97316' : 'none') + ';"></div>'
+            + '</div>'
+            + '<div class="mood-timeline-emoji">' + (c.emoji || '') + '</div>'
+            + '<div class="mood-timeline-day" style="color:' + (c.isToday ? '#f97316' : '#aaa') + '; font-weight:' + (c.isToday ? '900' : '600') + ';">' + c.label + '</div>'
+            + '</div>';
+    }).join('');
+}
+
+// ── 주간 리포트 ──────────────────────────────────────────────
+function dismissWeeklyReport() {
+    var c = document.getElementById('weeklyReportCard');
+    if (c) c.style.display = 'none';
+    var t = new Date(); var d = t.getDay();
+    localStorage.setItem('qlog_report_shown', t.getFullYear()+'-'+t.getMonth()+'-'+(t.getDate()-d));
+}
+function renderWeeklyReport(logList) {
+    const card = document.getElementById('weeklyReportCard');
+    if (!card) return;
+    const today = new Date(); const dow = today.getDay();
+    const thisWeek = today.getFullYear()+'-'+today.getMonth()+'-'+(today.getDate()-dow);
+    if (localStorage.getItem('qlog_report_shown') === thisWeek || dow !== 1) { card.style.display='none'; return; }
+    const ws = new Date(today); ws.setDate(today.getDate()-dow-7);
+    const we = new Date(today); we.setDate(today.getDate()-dow);
+    const wl = logList.filter(function(l){return l.date>=ws && l.date<we;});
+    if (!wl.length) { card.style.display='none'; return; }
+    const mc={};
+    wl.forEach(function(l){mc[l.mood]=(mc[l.mood]||0)+1;});
+    const top = Object.entries(mc).sort(function(a,b){return b[1]-a[1];})[0];
+    const tc  = wl.reduce(function(s,l){return s+(l.text?l.text.length:0);},0);
+    card.style.display='block';
+    const wrap=document.createElement('div'); wrap.className='weekly-report-card';
+    const cb=document.createElement('button'); cb.className='weekly-report-close'; cb.textContent='×';
+    cb.addEventListener('click', dismissWeeklyReport);
+    wrap.appendChild(cb);
+    const body=document.createElement('div');
+    body.innerHTML='<div class="weekly-report-label">📋 지난주 리포트</div>'
+        +'<div class="weekly-report-title">지난주엔 '+(top?top[0]:'')+' 감정이<br>가장 많았어요</div>'
+        +'<div class="weekly-report-row">'
+        +'<div class="weekly-report-stat"><div class="weekly-report-stat-num">'+wl.length+'</div><div class="weekly-report-stat-label">일기 수</div></div>'
+        +'<div class="weekly-report-stat"><div class="weekly-report-stat-num">'+tc+'</div><div class="weekly-report-stat-label">총 글자</div></div>'
+        +'<div class="weekly-report-stat"><div class="weekly-report-stat-num">'+Object.keys(mc).length+'</div><div class="weekly-report-stat-label">감정 종류</div></div>'
+        +'</div>';
+    wrap.appendChild(body);
+    card.innerHTML=''; card.appendChild(wrap);
+}
+
+
+// ════════════════════════════════════════════════════
+//  ★ 새 기능 함수들 (모듈 스코프)
+// ════════════════════════════════════════════════════
+
+// ── 전체 업데이트 ─────────────────────────────────
+function qlogNewFeatures(logList, user) {
+    if (!window.QLogFeatures) return;
+    const F = window.QLogFeatures;
+    const streak = F.calcStreak(logList);
+    const plant  = F.calcPlant(logList);
+
+    // 스트릭 저장
+    window._qStreak = streak;
+    window._qLogs   = logList;
+    window._qUser   = user;
+
+    // 배너 업데이트
+    const banner = document.getElementById('streakBanner');
+    if (banner) {
+        if (streak.current >= 1) {
+            banner.classList.remove('hidden');
+            const cnt = document.getElementById('streakCount');
+            const fire = document.getElementById('streakFire');
+            if (cnt) cnt.textContent = streak.current;
+            if (fire) fire.textContent = streak.current >= 30 ? '🔥🔥🔥' : streak.current >= 7 ? '🔥🔥' : '🔥';
+        } else {
+            banner.classList.add('hidden');
+        }
+    }
+    const mini = document.getElementById('streakPlantMini');
+    if (mini) mini.textContent = plant.stage.emoji;
+
+    // 식물 위젯
+    const eEl = document.getElementById('plantEmoji');
+    const nEl = document.getElementById('plantStageName');
+    const dEl = document.getElementById('plantStageDesc');
+    const bEl = document.getElementById('plantBar');
+    const tEl = document.getElementById('plantTrend');
+    const wEl = document.getElementById('plantWidget');
+    if (eEl) eEl.textContent = plant.stage.emoji;
+    if (nEl) nEl.textContent = plant.stage.name;
+    if (dEl) dEl.textContent = plant.stage.desc;
+    if (bEl) bEl.style.width = Math.max(5, plant.score) + '%';
+    if (tEl) {
+        if (plant.trend === 'growing') {
+            tEl.className = 'plant-trend';
+            tEl.textContent = '🌱 기분 좋은 일들로 쑥쑥 자라고 있어요!';
+            if (wEl) { wEl.className = 'plant-widget'; wEl.style.background = ''; }
+        } else if (plant.trend === 'wilting') {
+            tEl.className = 'plant-trend wilting';
+            tEl.textContent = '💧 힘든 시간이군요. 그래도 괜찮아요';
+            if (wEl) { wEl.className = 'plant-widget wilting'; wEl.style.background = 'linear-gradient(135deg,#fff1f2,#ffe4e6)'; }
+        } else {
+            tEl.className = 'plant-trend';
+            tEl.textContent = '✨ 일기를 쓰면 식물이 자라요!';
+        }
+    }
+
+    // 배지 확인
+    if (user) {
+        const newBadges = F.getNewBadges(logList, streak, user.uid);
+        if (newBadges.length > 0) setTimeout(() => qlogBadgePopup(newBadges[0]), 900);
+    }
+
+    // 히트맵
+    qlogRenderHeatmap(logList);
+
+    // ★ 타임라인 + 주간리포트
+    renderMoodTimeline(logList);
+    renderWeeklyReport(logList);
+}
+
+// ── 스트릭 팝업 ──────────────────────────────────
+window.showStreakPopup = function() {
+    const streak = window._qStreak || { current: 0, longest: 0, todayDone: false };
+    const total  = (window._qLogs || []).length;
+    const modal  = document.getElementById('streakModal');
+    if (!modal) return;
+    const c = document.getElementById('streakPopupCurrent');
+    const l = document.getElementById('streakPopupLongest');
+    const t = document.getElementById('streakPopupTotal');
+    const f = document.getElementById('streakPopupFire');
+    const ti = document.getElementById('streakPopupTitle');
+    const su = document.getElementById('streakPopupSub');
+    if (c) c.textContent = streak.current;
+    if (l) l.textContent = streak.longest;
+    if (t) t.textContent = total;
+    if (f) f.textContent = streak.current >= 30 ? '🏆' : streak.current >= 7 ? '🔥🔥' : '🔥';
+    if (streak.current === 0) {
+        if (ti) ti.textContent = '오늘 일기를 써보세요!';
+        if (su) su.textContent = '오늘 일기를 쓰면 연속 기록이 시작돼요! 작은 습관이 큰 변화를 만들어요 💪';
+    } else if (streak.todayDone) {
+        if (ti) ti.textContent = streak.current + '일 연속 달성! 🎉';
+        if (su) su.textContent = '오늘도 일기를 썼어요! 내일도 계속해보세요. 당신이 멋져요!';
+    } else {
+        if (ti) ti.textContent = streak.current + '일 연속 진행 중!';
+        if (su) su.textContent = '아직 오늘 일기를 쓰지 않았어요. 기록을 이어가 봐요 💪';
+    }
+    modal.classList.add('show');
+};
+window.closeStreakModal = function() {
+    const m = document.getElementById('streakModal');
+    if (m) m.classList.remove('show');
+};
+
+// ── 식물 팝업 ────────────────────────────────────
+window.showPlantModal = function() {
+    if (!window.QLogFeatures) return;
+    const F = window.QLogFeatures;
+    const plant = F.calcPlant(window._qLogs || []);
+    const modal = document.getElementById('plantModal');
+    if (!modal) return;
+    const e = document.getElementById('plantPopupEmoji');
+    const s = document.getElementById('plantPopupStage');
+    const d = document.getElementById('plantPopupDesc');
+    if (e) e.textContent = plant.stage.emoji;
+    if (s) s.textContent = plant.stage.name + ' 단계';
+    if (d) d.textContent = plant.stage.desc;
+    const row = document.getElementById('plantStagesRow');
+    if (row) {
+        let rowHtml = '';
+        F.PLANT_STAGES.forEach(function(st, i) {
+            let cls = 'plant-stage-dot';
+            if (i <= plant.stage.level) cls += ' reached';
+            if (i === plant.stage.level) cls += ' current';
+            rowHtml += '<div class="' + cls + '"><span>' + st.emoji + '</span><span>' + st.name + '</span></div>';
+        });
+        row.innerHTML = rowHtml;
+    }
+    modal.classList.add('show');
+};
+window.closePlantModal = function() {
+    const m = document.getElementById('plantModal');
+    if (m) m.classList.remove('show');
+};
+
+// ── 배지 팝업 ────────────────────────────────────
+function qlogBadgePopup(badge) {
+    const popup = document.getElementById('badgeNewPopup');
+    if (!popup) return;
+    const e = document.getElementById('badgeNewEmoji');
+    const n = document.getElementById('badgeNewName');
+    const d = document.getElementById('badgeNewDesc');
+    if (e) e.textContent = badge.emoji;
+    if (n) n.textContent = badge.name;
+    if (d) d.textContent = badge.desc;
+    popup.classList.add('show');
+    setTimeout(function() { popup.classList.remove('show'); }, 4000);
+}
+
+// ── 배지 그리드 ──────────────────────────────────
+function qlogBadgeGrid(containerId, logList, streak) {
+    const el = document.getElementById(containerId);
+    if (!el || !window.QLogFeatures) return;
+    const F = window.QLogFeatures;
+    const earned = new Set(F.getEarnedBadges(logList, streak).map(function(b) { return b.id; }));
+    el.innerHTML = '';
+    F.BADGES.forEach(function(b) {
+        const isEarned = earned.has(b.id);
+        const item = document.createElement('div');
+        item.className = 'badge-item' + (isEarned ? '' : ' locked');
+        item.innerHTML = '<span class="badge-emoji">' + b.emoji + '</span>'
+                       + '<span class="badge-name">' + b.name + '</span>';
+        item.addEventListener('click', function() {
+            openBadgeDetail(b, isEarned);
+        });
+        el.appendChild(item);
+    });
+}
+
+// ── 배지 상세 팝업 ───────────────────────────────
+function openBadgeDetail(badge, isEarned) {
+    const overlay = document.getElementById('badgeDetailOverlay');
+    const emojiEl = document.getElementById('badgeDetailEmoji');
+    const nameEl  = document.getElementById('badgeDetailName');
+    const descEl  = document.getElementById('badgeDetailDesc');
+    const statEl  = document.getElementById('badgeDetailStatus');
+    if (!overlay) return;
+    emojiEl.textContent = badge.emoji;
+    emojiEl.className   = 'badge-detail-emoji' + (isEarned ? '' : ' locked-emoji');
+    nameEl.textContent  = badge.name;
+    descEl.textContent  = badge.desc;
+    statEl.textContent  = isEarned ? '✅ 획득 완료' : '🔒 아직 획득하지 못한 배지예요';
+    statEl.className    = 'badge-detail-status ' + (isEarned ? 'earned' : 'locked');
+    overlay.classList.add('show');
+}
+function closeBadgeDetail() {
+    const overlay = document.getElementById('badgeDetailOverlay');
+    if (overlay) overlay.classList.remove('show');
+}
+window.closeBadgeDetail = closeBadgeDetail;
+
+// ── 프로필 히어로 ─────────────────────────────────
+function qlogUpdateProfileHero(user, logList) {
+    if (!user || !window.QLogFeatures) return;
+    const F = window.QLogFeatures;
+    const streak = F.calcStreak(logList);
+    const earned = F.getEarnedBadges(logList, streak);
+    const name = user.displayName || user.email.split('@')[0] || '사용자';
+    const setTxt = function(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; };
+    setTxt('profileHeroName', name);
+    setTxt('profileHeroEmail', user.email);
+    setTxt('profileStreakBadge', '🔥 ' + streak.current + '일');
+    setTxt('profileTotalLogs', logList.length);
+    setTxt('profileLongestStreak', streak.longest);
+    setTxt('profileBadgeCount', earned.length);
+    setTxt('profileBadgeChip', earned.length + '/' + F.BADGES.length);
+    qlogBadgeGrid('profileBadgeGrid', logList, streak);
+}
+
+// ── 히트맵 ───────────────────────────────────────
+function qlogRenderHeatmap(logList) {
+    const grid = document.getElementById('heatmapGrid');
+    if (!grid) return;
+    const moodScore = { '😀': 2, '🙂': 1, '😐': 0, '😢': -1, '😡': -1, '😫': -1 };
+    const today = new Date();
+    let cells = '';
+    for (let i = 27; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        const dKey = d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+        const dayLogs = logList.filter(function(l) {
+            const ld = l.date instanceof Date ? l.date : new Date(l.date);
+            return ld.getFullYear() + '-' + ld.getMonth() + '-' + ld.getDate() === dKey;
+        });
+        let cls = 'heatmap-cell';
+        if (i === 0) cls += ' today-cell';
+        if (dayLogs.length > 0) {
+            cls += ' has-entry';
+            const avg = dayLogs.reduce(function(s, l) { return s + (moodScore[l.mood] || 0); }, 0) / dayLogs.length;
+            if (avg >= 1.5) cls += ' great-mood';
+            else if (avg >= 0.5) cls += ' good-mood';
+            else if (avg < -0.5) cls += ' bad-mood';
+        }
+        const label = (d.getMonth()+1) + '/' + d.getDate() + (dayLogs.length > 0 ? ' ' + dayLogs.length + '건' : ' 기록없음');
+        cells += '<div class="' + cls + '" title="' + label + '"></div>';
+    }
+    grid.innerHTML = cells;
+}
+
+// ── 통계 배지 ─────────────────────────────────────
+function qlogRenderStatsBadges(logList) {
+    const sec = document.getElementById('statsBadgeSection');
+    if (!sec || !window.QLogFeatures) return;
+    sec.style.display = 'block';
+    const streak = window.QLogFeatures.calcStreak(logList);
+    const earned = window.QLogFeatures.getEarnedBadges(logList, streak);
+    const chip = document.getElementById('statsBadgeChip');
+    if (chip) chip.textContent = earned.length + '/' + window.QLogFeatures.BADGES.length;
+    qlogBadgeGrid('statsBadgeGrid', logList, streak);
+}
+
+// ── 마일스톤 체크 ─────────────────────────────────
+function qlogCheckMilestone() {
+    const streak = window._qStreak;
+    if (!streak) return;
+    const milestones = [3, 7, 14, 30, 60, 100];
+    if (milestones.includes(streak.current) && streak.todayDone) {
+        setTimeout(function() { window.showStreakPopup && window.showStreakPopup(); }, 700);
+    }
+}
+
+// ── 요약 글자수 ───────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+    const inp = document.getElementById('dailySummaryInput');
+    const cnt = document.getElementById('summaryCharCount');
+    if (inp && cnt) inp.addEventListener('input', function() { cnt.textContent = inp.value.length; });
+});
+
+// ────────────────────────────
+function initMultiTagSearch() {
+    if (document.getElementById('tagSearchInput')._bound) return;
+    document.getElementById('tagSearchInput')._bound = true;
+
+    const input    = document.getElementById('tagSearchInput');
+    const addBtn   = document.getElementById('tagSearchAddBtn');
+    const clearBtn = document.getElementById('tagSearchClearBtn');
+    const hint     = document.getElementById('tagSearchHint');
+    const results  = document.getElementById('tagSearchResults');
+    const dayLogs  = document.getElementById('dayLogs');
+
+    function addSearchTag() {
+        const val = input.value.trim().replace(/^#+/, '');
+        if (!val) return;
+        if (!searchTags.includes('#' + val)) searchTags.push('#' + val);
+        input.value = '';
+        renderSearchChips();
+        runTagSearch();
+    }
+    function renderSearchChips() {
+        const chips = document.getElementById('searchChips');
+        chips.innerHTML = searchTags.map((t, i) => `
+            <span class="search-chip">${t}
+                <button class="search-chip-del" data-i="${i}">×</button>
+            </span>`).join('');
+        chips.querySelectorAll('.search-chip-del').forEach(b => {
+            b.addEventListener('click', () => {
+                searchTags.splice(parseInt(b.dataset.i), 1);
+                renderSearchChips(); runTagSearch();
+            });
+        });
+        if (searchTags.length > 0) {
+            hint.innerText = `선택된 태그: ${searchTags.join(', ')} — AND 조건으로 검색됩니다`;
+            dayLogs.style.display  = 'none';
+            results.style.display  = '';
+        } else {
+            hint.innerText = '';
+            dayLogs.style.display  = '';
+            results.style.display  = 'none';
+        }
+    }
+    function runTagSearch() {
+        results.innerHTML = '';
+        if (!searchTags.length) return;
+        const matched = logs.filter(l =>
+            searchTags.every(st => {
+                if (l.tags && l.tags.some(t => t.toLowerCase().includes(st.slice(1).toLowerCase()))) return true;
+                if (l.text && l.text.toLowerCase().includes(st.toLowerCase())) return true;
+                return false;
+            })
+        );
+        const hdr = document.createElement('div');
+        hdr.className = 'search-result-header';
+        hdr.innerHTML = `검색 결과 <span style="color:#aaa;font-weight:400;">(${matched.length}건)</span>`;
+        results.appendChild(hdr);
+        if (!matched.length) {
+            results.innerHTML += `<div class="search-empty">📭 해당 태그의 일기가 없습니다.</div>`; return;
+        }
+        matched.forEach(entry => {
+            const card = document.createElement('div');
+            card.className = 'day-log-card'; card.style.cursor = 'pointer';
+            const dateStr = entry.date instanceof Date
+                ? entry.date.toLocaleDateString('ko-KR', { month:'long', day:'numeric' }) : '';
+            const tagsHtml = (entry.tags || []).map(t => {
+                const isMatch = searchTags.some(st => t.toLowerCase().includes(st.slice(1).toLowerCase()));
+                return `<span class="card-tag" style="${isMatch ? 'background:#ede9fe;color:#5b21b6;' : ''}">${t}</span>`;
+            }).join(' ');
+            card.innerHTML = `
+                <div class="day-log-mood">${entry.mood||'📝'}</div>
+                <div class="day-log-body">
+                    <div class="day-log-text" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${entry.text}</div>
+                    ${tagsHtml ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">${tagsHtml}</div>` : ''}
+                    <div class="day-log-time">${dateStr}</div>
+                </div>`;
+            card.addEventListener('click', () => openDetail(entry));
+            results.appendChild(card);
+        });
+    }
+
+    addBtn.addEventListener('click', addSearchTag);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addSearchTag(); } });
+    clearBtn.addEventListener('click', () => {
+        searchTags = []; input.value = '';
+        renderSearchChips(); results.innerHTML = '';
+    });
+}
+
+function showDayLogs(year, month, day) {
+    const container = document.getElementById('dayLogs');
+    container.innerHTML = '';
+    const header = document.createElement('div');
+    header.className = 'day-logs-header';
+    container.appendChild(header);
+
+    const today    = new Date();
+    const todayD   = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const selected = new Date(year, month, day);
+
+    if (selected > todayD) {
+        header.innerText = `${month+1}월 ${day}일`;
+        const quote = document.createElement('div');
+        quote.className = 'future-quote';
+        quote.innerHTML = `"미래를 예측하는 가장 좋은 방법은 그것을 창조하는 것이다."<br><span style="font-size:12px;color:#aaa">— 에이브러햄 링컨</span>`;
+        container.appendChild(quote); return;
+    }
+
+    const entries = logs.filter(l => {
+        const ld = new Date(l.date);
+        return ld.getFullYear()===year && ld.getMonth()===month && ld.getDate()===day;
+    });
+    header.innerText = `${month+1}월 ${day}일의 기록 (${entries.length}건)`;
+
+    if (!entries.length) {
+        const msg = document.createElement('div'); msg.className = 'no-log-msg';
+        msg.innerHTML = '📭 이날의 기록이 없습니다.'; container.appendChild(msg); return;
+    }
+
+    entries.forEach(entry => {
+        const card = document.createElement('div'); card.className = 'day-log-card';
+        const timeStr = new Date(entry.date).toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit' });
+        card.innerHTML = `
+            <div class="day-log-mood">${entry.mood||'📝'}</div>
+            <div class="day-log-body">
+                <div class="day-log-text">${entry.text}</div>
+                <div class="day-log-time">${timeStr}</div>
+            </div>
+            <button class="day-log-delete" title="삭제">🗑</button>`;
+        card.querySelector('.day-log-delete').addEventListener('click', async () => {
+            if (!confirm('삭제하시겠습니까?')) return;
+            try {
+                await deleteDoc(doc(db, "logs", entry.id));
+                await loadLogs(); renderCalendar();
+                if (selectedDay) showDayLogs(selectedDay.year, selectedDay.month, selectedDay.day);
+            } catch (err) { alert("삭제 실패: " + err.message); }
+        });
+        card.addEventListener('click', e => { if (!e.target.classList.contains('day-log-delete')) openDetail(entry); });
+        container.appendChild(card);
+    });
+}
+</script>
+<script src="gemini-config.js"></script>
+
+<!-- 스트릭 팝업 -->
+<div class="streak-modal" id="streakModal" onclick="if(event.target===this)window.closeStreakModal()">
+    <div class="streak-popup">
+        <div class="streak-popup-fire" id="streakPopupFire">🔥</div>
+        <div class="streak-popup-title" id="streakPopupTitle">연속 기록 현황</div>
+        <div class="streak-popup-sub" id="streakPopupSub">매일 일기를 쓰면 연속 기록이 올라가요!</div>
+        <div class="streak-popup-stats">
+            <div class="streak-stat-box"><div class="streak-stat-num" id="streakPopupCurrent">0</div><div class="streak-stat-label">현재 연속</div></div>
+            <div class="streak-stat-box"><div class="streak-stat-num" id="streakPopupLongest">0</div><div class="streak-stat-label">최장 기록</div></div>
+            <div class="streak-stat-box"><div class="streak-stat-num" id="streakPopupTotal">0</div><div class="streak-stat-label">총 일기</div></div>
+        </div>
+        <button class="streak-close-btn" onclick="window.closeStreakModal()">닫기</button>
+    </div>
+</div>
+<!-- 식물 팝업 -->
+<div class="plant-modal" id="plantModal" onclick="if(event.target===this)window.closePlantModal()">
+    <div class="plant-popup">
+        <span class="plant-popup-emoji" id="plantPopupEmoji">🌰</span>
+        <div class="plant-popup-stage" id="plantPopupStage">씨앗 단계</div>
+        <div class="plant-popup-desc" id="plantPopupDesc">일기를 쓰면 식물이 자라요!</div>
+        <div class="plant-stages-row" id="plantStagesRow"></div>
+        <div class="plant-tip-box">
+            <div class="plant-tip-title">🌱 식물 키우는 방법</div>
+            <div class="plant-tip-item">😀🙂 좋은 기분 일기를 쓰면 쑥쑥 자라요<br>📝 매일 써서 연속 보너스를 받아요<br>✍️ 500자 이상 긴 일기는 특별 성장!</div>
+        </div>
+        <button class="plant-close-btn" onclick="window.closePlantModal()">알겠어요!</button>
+    </div>
+</div>
+<!-- 배지 획득 팝업 -->
+<div class="badge-new-popup" id="badgeNewPopup">
+    <div class="badge-new-emoji" id="badgeNewEmoji">🏆</div>
+    <div class="badge-new-text">
+        <div class="badge-new-label">🎉 새 배지 획득!</div>
+        <div class="badge-new-name" id="badgeNewName"></div>
+        <div class="badge-new-desc" id="badgeNewDesc"></div>
+    </div>
+</div>
+
+<!-- 배지 상세 팝업 -->
+<div class="badge-detail-overlay" id="badgeDetailOverlay" onclick="if(event.target===this)closeBadgeDetail()">
+    <div class="badge-detail-modal">
+        <div class="badge-detail-emoji" id="badgeDetailEmoji">🏆</div>
+        <div class="badge-detail-name" id="badgeDetailName"></div>
+        <div class="badge-detail-desc" id="badgeDetailDesc"></div>
+        <div class="badge-detail-status" id="badgeDetailStatus"></div>
+        <button class="badge-detail-close" onclick="closeBadgeDetail()">닫기</button>
+    </div>
+</div>
+
+<!-- 닉네임 수정 모달 -->
+<div class="nickname-edit-overlay" id="nicknameEditOverlay" onclick="if(event.target===this)closeNicknameEdit()">
+    <div class="nickname-edit-modal">
+        <div class="nickname-edit-title">닉네임 수정</div>
+        <input type="text" id="nicknameInput" class="nickname-edit-input" placeholder="새 닉네임을 입력하세요" maxlength="20">
+        <div class="nickname-edit-btns">
+            <button class="nickname-cancel-btn" onclick="closeNicknameEdit()">취소</button>
+            <button class="nickname-save-btn" onclick="saveNickname()">저장</button>
+        </div>
+    </div>
+</div>
+
+<!-- ★ 온보딩 오버레이 -->
+<div class="onboarding-overlay" id="onboardingOverlay" style="display:none;">
+    <div style="flex:1; display:flex; align-items:center; width:100%;">
+        <div class="onboarding-slides" id="onboardingSlides">
+            <div class="onboarding-slide">
+                <span class="onboarding-emoji">📓</span>
+                <div class="onboarding-title">나만의 AI 일기장,<br>Q-Log에 오신 걸 환영해요</div>
+                <div class="onboarding-sub">매일의 감정을 기록하고<br>나를 더 깊이 이해해 보세요</div>
+            </div>
+            <div class="onboarding-slide">
+                <span class="onboarding-emoji">✦</span>
+                <div class="onboarding-title">AI가 질문을<br>대신 만들어줘요</div>
+                <div class="onboarding-sub">글이 막힐 때 AI 도움받기를 누르면<br>딱 맞는 질문이 나타나요</div>
+            </div>
+            <div class="onboarding-slide">
+                <span class="onboarding-emoji">🌱</span>
+                <div class="onboarding-title">매일 쓸수록<br>식물이 자라요</div>
+                <div class="onboarding-sub">기분 좋은 일기를 쓸수록 식물이 성장해요<br>배지도 모아 나만의 프로필을 꾸며보세요</div>
+            </div>
+            <div class="onboarding-slide">
+                <span class="onboarding-emoji">🔥</span>
+                <div class="onboarding-title">연속 기록으로<br>습관을 만들어요</div>
+                <div class="onboarding-sub">매일 꾸준히 쓰면 연속 기록이 쌓여요<br>작은 습관이 큰 변화를 만들어요</div>
+            </div>
+        </div>
+    </div>
+    <div class="onboarding-dots" id="onboardingDots">
+        <div class="onboarding-dot active"></div>
+        <div class="onboarding-dot"></div>
+        <div class="onboarding-dot"></div>
+        <div class="onboarding-dot"></div>
+    </div>
+    <button class="onboarding-btn" id="onboardingBtn">다음</button>
+    <button class="onboarding-skip" id="onboardingSkip">건너뛰기</button>
+</div>
+
+</body>
+</html    if (!currentUser) {
+        var _es1=document.createElement('div'); _es1.className='empty-state';
+        _es1.innerHTML='<div class="empty-state-emoji">📖</div><div class="empty-state-title">로그인하고 시작해요</div><div class="empty-state-sub">로그인하면 나만의 일기를<br>기록하고 볼 수 있어요</div>';
+        var _b1=document.createElement('button'); _b1.className='empty-state-btn'; _b1.textContent='로그인하기';
+        _b1.onclick=function(){window.go('profile');}; _es1.appendChild(_b1); list.appendChild(_es1); return;
+    }    if (logs.length === 0) {
+        var _es2=document.createElement('div'); _es2.className='empty-state';
+        _es2.innerHTML='<div class="empty-state-emoji">✏️</div><div class="empty-state-title">첫 일기를 써볼까요?</div><div class="empty-state-sub">오늘의 감정을 기록하면<br>식물이 자라고 배지를 얻어요</div>';
+        var _b2=document.createElement('button'); _b2.className='empty-state-btn'; _b2.textContent='일기 쓰기';
+        _b2.onclick=function(){document.getElementById('fabBtn').click();}; _es2.appendChild(_b2); list.appendChild(_es2); return;
+    }>

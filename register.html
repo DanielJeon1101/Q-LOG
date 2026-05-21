@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Q-Log | 회원가입</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: #f8f8f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .join-container {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            width: 85%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+        h2 { text-align: center; margin-bottom: 25px; }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; font-size: 14px; margin-bottom: 5px; color: #555; }
+        input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            border-radius: 10px;
+            border: none;
+            background: black;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #888;
+            text-decoration: none;
+        }
+        /* --- 약관 동의 UI 스타일 --- */
+        .terms-group {
+            margin: 20px 0;
+            text-align: left;
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid #e5e8eb;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .checkbox-container:last-child {
+            margin-bottom: 0;
+        }
+
+        .checkbox-container input {
+            width: auto;
+            margin: 2px 10px 0 0;
+            cursor: pointer;
+            accent-color: black; /* 체크박스 색상 통일 */
+        }
+
+        .terms-highlight {
+            font-weight: bold;
+            color: #e53e3e; /* [필수] 강조 */
+        }
+
+        .terms-optional {
+            font-weight: bold;
+            color: #3182f6; /* [선택] 강조 */
+        }
+
+        .terms-desc {
+            display: block;
+            font-size: 12px;
+            color: #8b95a1;
+            margin-top: 4px;
+            margin-left: 24px;
+            line-height: 1.4;
+        }
+        /* 약관 그룹 컨테이너 */
+.terms-container {
+    margin: 24px 0;
+    text-align: left;
+}
+
+.term-item {
+    margin-bottom: 12px;
+    border-bottom: 1px solid #f2f4f6;
+    padding-bottom: 8px;
+}
+
+.term-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.term-header label {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    cursor: pointer;
+    flex-grow: 1;
+}
+
+.term-header input {
+    width: 18px;
+    height: 18px;
+    margin-right: 10px;
+    accent-color: #3182f6; /* 토스 블루 */
+}
+
+/* 상세보기 버튼 */
+.view-detail {
+    font-size: 12px;
+    color: #8b95a1;
+    text-decoration: underline;
+    background: none;
+    border: none;
+    padding: 5px;
+}
+
+/* 접혀있는 상세 내용 */
+.term-content {
+    display: none; /* 기본은 숨김 */
+    font-size: 12px;
+    color: #4e5968;
+    background: #f9fafb;
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 8px;
+    line-height: 1.6;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.term-content.show {
+    display: block;
+}
+
+.required-tag { color: #f04452; font-weight: bold; margin-right: 4px; }
+.optional-tag { color: #3182f6; font-weight: bold; margin-right: 4px; }
+    </style>
+    <style>
+        /* 🌙 다크모드 */
+        body.dark-mode { background: #121212 !important; }
+        body.dark-mode .join-container {
+            background: #1e1e1e !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4) !important;
+        }
+        body.dark-mode h2 { color: #e8eaed !important; }
+        body.dark-mode .input-group label { color: #9aa0a6 !important; }
+        body.dark-mode input {
+            background: #2a2a2a !important;
+            border-color: #3c4043 !important;
+            color: #e8eaed !important;
+        }
+        body.dark-mode .back-link { color: #9aa0a6 !important; }
+    </style>
+</head>
+<body class="">
+<script>if(localStorage.getItem('qlog_dark')==='1')document.body.classList.add('dark-mode');</script>
+
+<div class="join-container">
+    <h2>회원가입</h2>
+        
+        <div class="input-group">
+            <label>이메일</label>
+            <input type="email" placeholder="example@mail.com" id="email" >
+        </div>
+        <div class="input-group">
+            <label>비밀번호</label>
+            <input type="password" placeholder="비밀번호를 입력하세요" id="password" >
+        </div>
+        <div>
+            <div class="terms-group">
+    <label class="checkbox-container">
+        <input type="checkbox" id="term-required" required>
+        <span><span class="terms-highlight">[필수]</span> Q-log 서비스 이용약관 및 개인정보 처리방침 동의</span>
+    </label>
+    
+    <label class="checkbox-container">
+        <input type="checkbox" id="term-optional">
+        <div>
+            <span class="terms-optional">[피]</span> 연구 목적의 일기 데이터 제공 동의
+            <span class="terms-desc">
+                ※ 2학기 캡스톤 연구 목적을 위해, 작성하신 일기의 '텍스트'가 익명화 처리되어 외부 언어 분석 API(ETRI)로 전송될 수 있습니다.
+            </span>
+        </div>
+    </label>
+</div>
+        <button type="button" id="submit">가입완료</button>
+    </form>
+    <a href="index.html" class="back-link">돌아가기</a>
+</div>  
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCYkG8uZUET5UnW80IHKGxhL7WpNCp7kfQ",
+  authDomain: "q-log-f6aed.firebaseapp.com",
+  projectId: "q-log-f6aed",
+  storageBucket: "q-log-f6aed.firebasestorage.app",
+  messagingSenderId: "373152234648",
+  appId: "1:373152234648:web:aa2d94664a5674aca9e4ed"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+const passwordInput = document.getElementById('password');
+const pwHint = document.createElement('div');
+pwHint.id = 'pw-hint';
+pwHint.style.cssText = 'font-size:12px; margin-top:5px; color:#aaa; transition:color 0.2s;';
+pwHint.textContent = '비밀번호는 8자리 이상이어야 합니다.';
+passwordInput.parentNode.appendChild(pwHint);
+
+passwordInput.addEventListener('input', () => {
+  const len = passwordInput.value.length;
+  if (len === 0) {
+    pwHint.style.color = '#aaa';
+    pwHint.textContent = '비밀번호는 8자리 이상이어야 합니다.';
+  } else if (len < 8) {
+    pwHint.style.color = '#e53e3e';
+    pwHint.textContent = `비밀번호는 8자리 이상이어야 합니다. (현재 ${len}자리)`;
+  } else {
+    pwHint.style.color = '#38a169';
+    pwHint.textContent = `✓ 사용 가능한 비밀번호입니다.`;
+  }
+});
+
+document.getElementById('submit').addEventListener('click', function(event) {
+  event.preventDefault();
+  const email = document.getElementById('email').value;
+  const password = passwordInput.value;
+
+  if (password.length < 8) {
+    pwHint.style.color = '#e53e3e';
+    pwHint.textContent = `비밀번호는 8자리 이상이어야 합니다. (현재 ${password.length}자리)`;
+    passwordInput.focus();
+    return;
+  }
+
+  if (!document.getElementById('term-required').checked) {
+    alert('필수 약관에 동의해주세요.');
+    return;
+  }
+
+  createUserWithEmailAndPassword(auth, email, password)
+    .then((userCredential) => {
+      alert('가입이 완료되었습니다!');
+      location.href = 'index.html';
+    })
+    .catch((error) => {
+      alert('오류: ' + error.message);
+    });
+});
+</script>
+</body>
+</html>

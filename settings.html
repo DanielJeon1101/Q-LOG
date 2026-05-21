@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>알림 설정 – Q-Log</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="stylesheet" href="style.css">
+
+<style>
+/* ── 알림 설정 페이지 전용 ─────────────────────────────────────────── */
+body {
+  background: var(--bg-color, #f2f4f6);
+  margin: 0; display: flex; justify-content: center;
+  align-items: flex-start; min-height: 100vh;
+}
+.settings-container {
+  width: 100%; max-width: 480px; min-height: 100vh;
+  background: #f2f4f6;
+  box-shadow: 0 0 20px rgba(0,0,0,0.1);
+  padding-bottom: 48px;
+}
+
+/* 헤더 */
+.settings-top-bar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 20px 20px 16px; background: #f2f4f6;
+  position: sticky; top: 0; z-index: 10;
+}
+.settings-back-btn {
+  width: 38px; height: 38px; background: white;
+  border: none; border-radius: 50%; font-size: 18px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; color: #191f28;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08); transition: background 0.15s;
+}
+.settings-back-btn:hover { background: #e5e8eb; }
+.settings-top-title { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; color: #191f28; }
+
+/* 마스터 토글 카드 */
+.notif-master-card {
+  background: white; border-radius: 20px; margin: 0 16px 12px;
+  padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+}
+.notif-master-left { display: flex; align-items: center; gap: 14px; }
+.notif-icon-circle {
+  width: 46px; height: 46px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 14px; display: flex; align-items: center;
+  justify-content: center; font-size: 22px; flex-shrink: 0;
+}
+.notif-master-title { font-size: 16px; font-weight: 700; color: #191f28; margin-bottom: 2px; }
+.notif-master-sub   { font-size: 13px; color: #8b95a1; }
+#toggleStatusText   { font-size: 13px; font-weight: 700; color: #3182f6; }
+.notif-master-card .toggle-switch { flex-shrink: 0; }
+
+/* 세부 설정 영역 */
+.settings-body { transition: opacity 0.3s ease; }
+.settings-body.disabled { opacity: 0.38; pointer-events: none; }
+
+/* 섹션 카드 */
+.settings-section {
+  background: white; border-radius: 20px; margin: 0 16px 12px;
+  padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.section-label {
+  font-size: 12px; font-weight: 700; color: #8b95a1;
+  letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 14px;
+}
+
+/* 요일 */
+.days-grid { display: flex; gap: 8px; justify-content: space-between; }
+.day-btn {
+  flex: 1; height: 42px; border: 2px solid #e5e8eb; background: white;
+  border-radius: 12px; font-size: 13px; font-weight: 700; color: #8b95a1;
+  cursor: pointer; transition: all 0.15s; padding: 0; margin: 0;
+}
+.day-btn:hover { border-color: #a5b4fc; color: #4f46e5; }
+.day-btn.active { background: #4f46e5; border-color: #4f46e5; color: white; }
+.day-btn[data-day="0"], .day-btn[data-day="6"] { color: #ef4444; border-color: #fecaca; }
+.day-btn[data-day="0"].active, .day-btn[data-day="6"].active {
+  background: #ef4444; border-color: #ef4444; color: white;
+}
+.days-quick-row { display: flex; gap: 8px; margin-top: 12px; }
+.quick-btn {
+  flex: 1; padding: 8px 0; border: 1.5px solid #e5e8eb;
+  background: #f8f9fb; border-radius: 10px; font-size: 12px;
+  font-weight: 700; color: #555; cursor: pointer; transition: all 0.15s; margin: 0;
+}
+.quick-btn:hover { background: #eef2ff; border-color: #a5b4fc; color: #4f46e5; }
+
+/* 시간 선택 */
+.time-row { display: flex; align-items: center; gap: 10px; }
+.time-select-wrap { flex: 1; position: relative; }
+.time-select-wrap::after {
+  content: '▾'; position: absolute; right: 14px; top: 50%;
+  transform: translateY(-50%); font-size: 12px; color: #aaa; pointer-events: none;
+}
+/* 직접 입력 모드에서는 화살표 숨김 */
+.time-select-wrap:has(.minute-direct-input)::after { display: none; }
+
+.time-select {
+  width: 100%; padding: 12px 36px 12px 16px;
+  border: 2px solid #e5e8eb; border-radius: 14px;
+  background: #f8f9fb; font-size: 16px; font-weight: 700; color: #191f28;
+  appearance: none; -webkit-appearance: none;
+  outline: none; cursor: pointer; transition: border-color 0.15s;
+  font-family: inherit;
+}
+.time-select:focus { border-color: #4f46e5; }
+
+/* 직접 입력 input */
+.minute-direct-input {
+  border-color: #4f46e5 !important;
+  background: #eef2ff !important;
+  cursor: text !important;
+  text-align: center;
+  padding: 12px 16px !important;
+  letter-spacing: 2px;
+  caret-color: #4f46e5;
+}
+.minute-direct-hint {
+  font-size: 11px; color: #4f46e5; font-weight: 600;
+  margin-top: 6px; text-align: center;
+  animation: fadeInUp 0.2s ease;
+}
+
+/* 분 힌트 버튼 */
+.minute-hint-btn {
+  display: flex; align-items: center; gap: 5px;
+  margin-top: 10px; padding: 7px 12px;
+  background: #f0f0f0; border: 1.5px solid #e5e8eb; border-radius: 10px;
+  font-size: 12px; font-weight: 600; color: #555;
+  cursor: pointer; transition: all 0.15s; width: fit-content;
+}
+.minute-hint-btn:hover { background: #eef2ff; border-color: #a5b4fc; color: #4f46e5; }
+.minute-hint-icon { font-size: 13px; }
+
+.time-colon { font-size: 20px; font-weight: 800; color: #191f28; }
+.time-preview-row { margin-top: 12px; display: flex; align-items: center; gap: 8px; }
+.time-preview-label { font-size: 13px; color: #8b95a1; font-weight: 600; }
+#timePreview { font-size: 14px; font-weight: 800; color: #4f46e5; }
+
+/* ── 이메일 수신 주소 ── */
+.email-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 14px; background: #f8f9fb;
+  border-radius: 14px; border: 1.5px solid #e5e8eb;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  flex-wrap: wrap;
+}
+.email-row:hover { border-color: #a5b4fc; background: #f5f3ff; }
+.email-icon { font-size: 18px; flex-shrink: 0; }
+.email-info { flex: 1; min-width: 0; }
+.email-label-row { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+.email-label { font-size: 11px; font-weight: 700; color: #8b95a1; }
+.email-diff-badge {
+  display: inline-flex; align-items: center;
+  background: #fef3c7; color: #92400e;
+  font-size: 10px; font-weight: 700;
+  padding: 2px 7px; border-radius: 20px;
+  border: 1px solid #fde68a;
+}
+.email-address {
+  font-size: 14px; font-weight: 700; color: #191f28;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.email-edit-icon-btn {
+  background: none; border: none; font-size: 16px;
+  cursor: pointer; padding: 4px; margin: 0;
+  flex-shrink: 0; opacity: 0.5;
+  transition: opacity 0.15s, transform 0.15s;
+}
+.email-edit-icon-btn:hover { opacity: 1; transform: scale(1.15); }
+
+/* 직접 입력 필드 */
+.email-direct-input {
+  width: 100%; padding: 10px 14px;
+  border: 2px solid #4f46e5; border-radius: 10px;
+  background: #eef2ff; font-size: 14px; font-weight: 600;
+  color: #191f28; outline: none; font-family: inherit;
+  margin-top: 4px;
+  animation: fadeInUp 0.18s ease;
+}
+.email-reset-btn {
+  margin: 6px 0 0; padding: 6px 12px;
+  background: #f0f0f0; border: 1.5px solid #e5e8eb;
+  border-radius: 8px; font-size: 12px; font-weight: 700;
+  color: #555; cursor: pointer; transition: all 0.15s;
+}
+.email-reset-btn:hover { background: #eef2ff; border-color: #a5b4fc; color: #4f46e5; }
+.email-edit-hint {
+  font-size: 11px; color: #8b95a1; margin-top: 4px;
+}
+.email-edit-guide {
+  font-size: 12px; color: #8b95a1; line-height: 1.6;
+  margin: 0 0 12px; padding: 0;
+}
+.test-email-btn {
+  display: block; width: 100%; padding: 11px 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white; font-size: 14px; font-weight: 700;
+  border: none; cursor: pointer; margin: 0 0 14px;
+  transition: opacity 0.2s, transform 0.1s;
+}
+.test-email-btn:hover   { opacity: 0.88; }
+.test-email-btn:active  { transform: scale(0.98); }
+.test-email-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* EmailJS 안내 */
+.emailjs-guide {
+  background: #fffbeb; border-radius: 12px; border: 1.5px solid #fde68a;
+  padding: 12px 14px; display: flex; gap: 8px; align-items: flex-start;
+}
+.emailjs-guide-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.emailjs-guide-text { font-size: 12px; color: #92400e; line-height: 1.7; }
+.emailjs-guide-text a { color: #d97706; font-weight: 700; }
+.emailjs-guide-text code { background: #fef9c3; padding: 1px 4px; border-radius: 4px; font-size: 11px; }
+
+/* 다크모드 이메일 */
+body.dark-mode .email-row   { background: #2a2a2a !important; border-color: var(--dm-border) !important; }
+body.dark-mode .email-row:hover { border-color: #4f46e5 !important; background: #2d2b4e !important; }
+body.dark-mode .email-address { color: var(--dm-text) !important; }
+body.dark-mode .email-direct-input { background: #2d2b4e !important; color: var(--dm-text) !important; }
+body.dark-mode .email-reset-btn { background: #2a2a2a !important; border-color: var(--dm-border) !important; color: var(--dm-sub) !important; }
+body.dark-mode .emailjs-guide { background: #2a1f0a !important; border-color: #78350f !important; }
+body.dark-mode .emailjs-guide-text { color: #fcd34d !important; }
+body.dark-mode .emailjs-guide-text a { color: #fbbf24 !important; }
+body.dark-mode .emailjs-guide-text code { background: #3a2e0a !important; color: #fde68a !important; }
+
+/* 안내 박스 */
+.notif-info-card {
+  background: #eff6ff; border-radius: 14px; margin: 0 16px 16px;
+  padding: 14px 16px; display: flex; gap: 10px; align-items: flex-start;
+}
+.notif-info-icon { font-size: 18px; flex-shrink: 0; }
+.notif-info-text { font-size: 13px; color: #1e40af; line-height: 1.6; }
+
+/* 저장 버튼 */
+.save-btn-wrap { padding: 8px 16px 24px; }
+.settings-save-btn {
+  width: 100%; padding: 16px; border-radius: 16px;
+  background: #191f28; color: white; font-size: 16px; font-weight: 700;
+  border: none; cursor: pointer; margin: 0;
+  transition: background 0.2s, transform 0.1s; letter-spacing: -0.3px;
+}
+.settings-save-btn:hover  { background: #2d3748; }
+.settings-save-btn:active { transform: scale(0.98); }
+
+/* 토스트 */
+.settings-toast {
+  position: fixed; bottom: 40px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #191f28; color: white;
+  padding: 12px 20px; border-radius: 24px;
+  font-size: 14px; font-weight: 600;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s, transform 0.3s;
+  white-space: nowrap; z-index: 9999;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+}
+.settings-toast.error   { background: #ef4444; }
+.settings-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@keyframes fadeInUp {
+  from { opacity:0; transform: translateY(4px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
+/* ── 다크모드 ─────────────────────────────────────────────────────── */
+body.dark-mode .settings-container { background: var(--dm-app-bg) !important; }
+body.dark-mode .settings-top-bar   { background: var(--dm-app-bg) !important; }
+body.dark-mode .settings-top-title { color: var(--dm-text) !important; }
+body.dark-mode .settings-back-btn  { background: var(--dm-card-bg) !important; color: var(--dm-text) !important; }
+body.dark-mode .notif-master-card,
+body.dark-mode .settings-section   { background: var(--dm-card-bg) !important; }
+body.dark-mode .notif-master-title { color: var(--dm-text) !important; }
+body.dark-mode .day-btn            { background: var(--dm-card-bg) !important; border-color: var(--dm-border) !important; color: var(--dm-sub) !important; }
+body.dark-mode .day-btn.active     { background: #4f46e5 !important; color: white !important; }
+body.dark-mode .day-btn[data-day="0"],
+body.dark-mode .day-btn[data-day="6"] { color: #f87171 !important; }
+body.dark-mode .day-btn[data-day="0"].active,
+body.dark-mode .day-btn[data-day="6"].active { background: #ef4444 !important; color: white !important; }
+body.dark-mode .quick-btn  { background: #2a2a2a !important; border-color: var(--dm-border) !important; color: var(--dm-sub) !important; }
+body.dark-mode .time-select { background: #2a2a2a !important; border-color: var(--dm-border) !important; color: var(--dm-text) !important; }
+body.dark-mode .time-colon  { color: var(--dm-text) !important; }
+body.dark-mode .minute-hint-btn { background: #2a2a2a !important; border-color: var(--dm-border) !important; color: var(--dm-sub) !important; }
+body.dark-mode .notif-info-card  { background: #1e2d4a !important; }
+body.dark-mode .notif-info-text  { color: #93c5fd !important; }
+body.dark-mode .settings-save-btn { background: #444 !important; }
+</style>
+</head>
+
+<body>
+<script>
+  if (localStorage.getItem('qlog_dark') === '1') document.body.classList.add('dark-mode');
+</script>
+
+<div class="settings-container">
+
+  <!-- 헤더 -->
+  <div class="settings-top-bar">
+    <button class="settings-back-btn" id="backBtn">←</button>
+    <span class="settings-top-title">알림 설정</span>
+  </div>
+
+  <!-- 마스터 토글 -->
+  <div class="notif-master-card">
+    <div class="notif-master-left">
+      <div class="notif-icon-circle">🔔</div>
+      <div>
+        <div class="notif-master-title">일기 작성 알림</div>
+        <div class="notif-master-sub">상태: <span id="toggleStatusText">꺼짐</span></div>
+      </div>
+    </div>
+    <label class="toggle-switch" for="notifToggle">
+      <input type="checkbox" id="notifToggle">
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+
+  <!-- 세부 설정 -->
+  <div class="settings-body disabled" id="settingsBody">
+
+    <!-- 요일 선택 -->
+    <div class="settings-section">
+      <div class="section-label">알림 요일</div>
+      <div class="days-grid">
+        <button class="day-btn" data-day="0">일</button>
+        <button class="day-btn" data-day="1">월</button>
+        <button class="day-btn" data-day="2">화</button>
+        <button class="day-btn" data-day="3">수</button>
+        <button class="day-btn" data-day="4">목</button>
+        <button class="day-btn" data-day="5">금</button>
+        <button class="day-btn" data-day="6">토</button>
+      </div>
+      <div class="days-quick-row">
+        <button class="quick-btn" id="quickAll">매일</button>
+        <button class="quick-btn" id="quickWeekday">평일</button>
+        <button class="quick-btn" id="quickWeekend">주말</button>
+        <button class="quick-btn" id="quickClear">초기화</button>
+      </div>
+    </div>
+
+    <!-- 시간 선택 -->
+    <div class="settings-section">
+      <div class="section-label">알림 시간</div>
+      <div class="time-row">
+        <!-- 시 -->
+        <div class="time-select-wrap">
+          <select class="time-select" id="hourSelect"></select>
+        </div>
+        <span class="time-colon">:</span>
+        <!-- 분 (더블클릭/더블탭으로 직접 입력 모드) -->
+        <div class="time-select-wrap" id="minuteSelectWrap">
+          <select class="time-select" id="minuteSelect"></select>
+        </div>
+      </div>
+      <!-- 분 직접 입력 유도 버튼 -->
+      <button class="minute-hint-btn" id="minuteHintBtn" type="button">
+        <span class="minute-hint-icon">✏️</span>
+        분 직접 입력 (더블탭도 가능)
+      </button>
+      <div class="time-preview-row">
+        <span class="time-preview-label">선택한 시간</span>
+        <span id="timePreview">—</span>
+      </div>
+    </div>
+
+    <!-- 이메일 알림 -->
+    <div class="settings-section">
+      <div class="section-label">이메일 알림</div>
+
+      <!-- 수신 주소 행 (더블클릭/더블탭으로 편집) -->
+      <div class="email-row" id="emailEditWrap">
+        <span class="email-icon">📧</span>
+        <div class="email-info">
+          <div class="email-label-row">
+            <span class="email-label">알림 수신 주소</span>
+            <!-- 계정 이메일과 다를 때만 표시 -->
+            <span class="email-diff-badge" id="emailDiffBadge" style="display:none;">계정과 다름</span>
+          </div>
+          <div class="email-address" id="notifEmailDisplay">로그인 후 자동 설정</div>
+        </div>
+        <button class="email-edit-icon-btn" id="emailEditBtn" type="button" title="이메일 편집">✏️</button>
+      </div>
+      <p class="email-edit-guide">더블탭 또는 ✏️ 버튼으로 수신 주소를 변경할 수 있습니다.<br>계정 로그인 이메일은 변경되지 않습니다.</p>
+
+      <!-- 테스트 발송 -->
+      <button class="test-email-btn" id="testEmailBtn" type="button">테스트 발송</button>
+
+      
+    </div>
+
+    <!-- 안내 문구 -->
+    <div class="notif-info-card">
+      <span class="notif-info-icon">ℹ️</span>
+      <div class="notif-info-text">
+        설정된 요일·시간에 가입된 이메일로 일기 작성 알림이 발송됩니다.
+        브라우저 탭이 열려 있을 때 스케줄이 실행됩니다.
+      </div>
+    </div>
+
+  </div><!-- /settingsBody -->
+
+  <!-- 저장 -->
+  <div class="save-btn-wrap">
+    <button class="settings-save-btn" id="saveBtn">설정 저장</button>
+  </div>
+
+</div>
+
+<script src="settings.js"></script>
+<script>
+  // ── 빠른 요일 선택 ────────────────────────────────────────────────
+  function setDays(indices) {
+    document.querySelectorAll('.day-btn').forEach(btn => {
+      btn.classList.toggle('active', indices.includes(parseInt(btn.dataset.day, 10)));
+    });
+    try {
+      const raw  = localStorage.getItem('qlog_notification_settings');
+      const curr = raw ? JSON.parse(raw) : {};
+      curr.days  = indices;
+      localStorage.setItem('qlog_notification_settings', JSON.stringify(curr));
+    } catch {}
+  }
+  document.getElementById('quickAll').addEventListener('click',     () => setDays([0,1,2,3,4,5,6]));
+  document.getElementById('quickWeekday').addEventListener('click', () => setDays([1,2,3,4,5]));
+  document.getElementById('quickWeekend').addEventListener('click', () => setDays([0,6]));
+  document.getElementById('quickClear').addEventListener('click',   () => setDays([]));
+</script>
+</body>
+</html>

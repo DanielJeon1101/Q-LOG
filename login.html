@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Q-Log | 로그인</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+    <style>
+        :root {
+            --blue: #3182f6; --blue-hover: #1b64da;
+            --bg: #f2f4f6; --white: #ffffff;
+            --text: #191f28; --sub: #8b95a1;
+            --border: #e5e8eb; --radius: 12px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', 'Segoe UI', sans-serif; }
+        body {
+            background: var(--bg); min-height: 100vh;
+            display: flex; justify-content: center; align-items: flex-start; color: var(--text);
+        }
+        .app-container {
+            width: 100%; max-width: 480px; min-height: 100vh;
+            background: var(--white); box-shadow: 0 0 20px rgba(0,0,0,0.08);
+            display: flex; flex-direction: column;
+        }
+        .top-bar {
+            display: flex; align-items: center;
+            padding: 20px 20px 0; gap: 12px;
+        }
+        .back-btn {
+            width: 38px; height: 38px; background: var(--bg);
+            border: none; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 16px; color: var(--text);
+            flex-shrink: 0; transition: background 0.15s;
+        }
+        .back-btn:hover { background: #e5e8eb; }
+        .top-title { font-size: 18px; font-weight: 800; letter-spacing: -0.4px; }
+        .form-wrap { flex: 1; padding: 36px 24px 40px; display: flex; flex-direction: column; }
+        .logo-section { text-align: center; margin-bottom: 36px; }
+        .logo-badge {
+            width: 64px; height: 64px; background: var(--blue);
+            border-radius: 18px; display: inline-flex;
+            align-items: center; justify-content: center; font-size: 30px;
+            box-shadow: 0 6px 20px rgba(49,130,246,0.3); margin-bottom: 12px;
+        }
+        .logo-title { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+        .logo-sub   { font-size: 13px; color: var(--sub); margin-top: 4px; }
+        .field { margin-bottom: 14px; }
+        .field label { display: block; font-size: 12px; font-weight: 700; color: var(--sub); margin-bottom: 7px; letter-spacing: 0.3px; text-transform: uppercase; }
+        .field-wrap { position: relative; display: flex; align-items: center; }
+        .field-icon { position: absolute; left: 14px; color: var(--sub); font-size: 15px; pointer-events: none; transition: color 0.2s; }
+        .field-wrap:focus-within .field-icon { color: var(--blue); }
+        input[type="email"], input[type="password"] {
+            width: 100%; height: 50px;
+            padding: 0 48px 0 42px;
+            border: 1.5px solid var(--border); border-radius: var(--radius);
+            font-size: 15px; color: var(--text); background: white;
+            outline: none; transition: border-color 0.2s, box-shadow 0.2s; font-family: inherit;
+        }
+        input::placeholder { color: var(--sub); }
+        input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(49,130,246,0.12); }
+        .toggle-pw {
+            position: absolute; right: 12px;
+            background: none; border: none; cursor: pointer;
+            color: var(--sub); font-size: 15px; padding: 4px; transition: color 0.2s;
+        }
+        .toggle-pw:hover { color: var(--text); }
+        .pw-row { display: flex; justify-content: flex-end; margin: -4px 0 20px; }
+        .forgot-link { font-size: 13px; color: var(--blue); text-decoration: none; font-weight: 600; }
+        .forgot-link:hover { text-decoration: underline; }
+        .btn-primary {
+            width: 100%; height: 50px;
+            background: var(--blue); color: white;
+            border: none; border-radius: var(--radius);
+            font-size: 16px; font-weight: 700;
+            cursor: pointer; font-family: inherit;
+            box-shadow: 0 4px 14px rgba(49,130,246,0.28);
+            transition: background 0.2s, transform 0.15s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            margin-bottom: 16px;
+        }
+        .btn-primary:hover  { background: var(--blue-hover); }
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-primary:disabled { background: #b0c4e8; box-shadow: none; cursor: not-allowed; }
+        .spinner {
+            width: 18px; height: 18px;
+            border: 2px solid rgba(255,255,255,0.4); border-top-color: white;
+            border-radius: 50%; animation: spin 0.7s linear infinite; display: none;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .divider { display: flex; align-items: center; gap: 12px; margin: 4px 0 16px; color: var(--sub); font-size: 12px; }
+        .divider::before, .divider::after { content:''; flex:1; height:1px; background: var(--border); }
+        .bottom-links { text-align: center; font-size: 14px; color: var(--sub); }
+        .bottom-links a { color: var(--blue); font-weight: 700; text-decoration: none; }
+        .bottom-links a:hover { text-decoration: underline; }
+        .toast {
+            position: fixed; bottom: 28px; left: 50%;
+            transform: translateX(-50%) translateY(16px);
+            background: var(--text); color: white;
+            padding: 12px 20px; border-radius: 12px;
+            font-size: 14px; font-weight: 500;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s, transform 0.3s;
+            white-space: nowrap; z-index: 9999;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        /* 🌙 다크모드 */
+        body.dark-mode { background: #121212 !important; }
+        body.dark-mode .app-container { background: #1e1e1e !important; }
+        body.dark-mode .top-title { color: #e8eaed !important; }
+        body.dark-mode .back-btn { background: #333 !important; color: #e8eaed !important; }
+        body.dark-mode .logo-title { color: #e8eaed !important; }
+        body.dark-mode .logo-sub { color: #9aa0a6 !important; }
+        body.dark-mode .field label { color: #9aa0a6 !important; }
+        body.dark-mode input[type="email"],
+        body.dark-mode input[type="password"] {
+            background: #2a2a2a !important;
+            border-color: #3c4043 !important;
+            color: #e8eaed !important;
+        }
+        body.dark-mode .toggle-pw { color: #9aa0a6 !important; }
+        body.dark-mode .bottom-links { color: #9aa0a6 !important; }
+        body.dark-mode .divider { color: #9aa0a6 !important; }
+        body.dark-mode .divider::before,
+        body.dark-mode .divider::after { background: #3c4043 !important; }
+        body.dark-mode .form-wrap { background: #1e1e1e !important; }
+    </style>
+<script>
+// 다크모드 자동 적용
+if (localStorage.getItem('qlog_dark') === '1') document.documentElement.classList.add('dark-mode-pending');
+</script>
+<style>
+.dark-mode-pending body, html.dark-mode-pending body { background: #121212 !important; }
+</style>
+</head>
+<body class="">
+<script>if(localStorage.getItem('qlog_dark')==='1')document.body.classList.add('dark-mode');</script>
+
+<div class="app-container">
+    <div class="top-bar">
+        <button class="back-btn" onclick="history.length>1 ? history.back() : location.href='index.html'">←</button>
+        <span class="top-title">로그인</span>
+    </div>
+
+    <div class="form-wrap">
+        <div class="logo-section">
+            <div class="logo-badge">📓</div>
+            <div class="logo-title">Q-Log</div>
+            <div class="logo-sub">나의 이야기를 기록하세요</div>
+        </div>
+
+        <div class="field">
+            <label>이메일</label>
+            <div class="field-wrap">
+                <input type="email" id="email" placeholder="example@mail.com" autocomplete="email">
+                <span class="field-icon">✉</span>
+            </div>
+        </div>
+
+        <div class="field">
+            <label>비밀번호</label>
+            <div class="field-wrap">
+                <input type="password" id="password" placeholder="비밀번호를 입력하세요" autocomplete="current-password">
+                <span class="field-icon">🔒</span>
+                <button class="toggle-pw" id="togglePwBtn" type="button">👁</button>
+            </div>
+        </div>
+
+        <!-- ★ 비밀번호 찾기 링크 -->
+        <div class="pw-row">
+            <a href="forgot-password.html" class="forgot-link">비밀번호를 잊으셨나요?</a>
+        </div>
+
+        <button class="btn-primary" id="mainBtn" type="button">
+            <span id="btnLabel">로그인</span>
+            <div class="spinner" id="btnSpinner"></div>
+        </button>
+
+        <div class="divider">또는</div>
+
+        <div class="bottom-links">
+            계정이 없으신가요? <a href="register.html">회원가입</a>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+document.getElementById('togglePwBtn').addEventListener('click', function() {
+    const pw = document.getElementById('password');
+    if (pw.type === 'password') { pw.type = 'text'; this.textContent = '🙈'; }
+    else                        { pw.type = 'password'; this.textContent = '👁'; }
+});
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+}
+document.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('mainBtn').click(); });
+</script>
+<script type="module" src="Login.js"></script>
+</body>
+</html>
