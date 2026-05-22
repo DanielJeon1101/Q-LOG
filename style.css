@@ -820,6 +820,11 @@ body.dark-mode .nickname-edit-input  { background: #1e1e1e; border-color: #3c404
 body.dark-mode .nickname-edit-input:focus { border-color: #818cf8; background: #252525; }
 body.dark-mode .nickname-cancel-btn  { background: #333; color: #ccc; }
 body.dark-mode .nickname-cancel-btn:hover { background: #3c3c3c; }
+body.dark-mode .profile-section h3,
+body.dark-mode .badge-section-title,
+body.dark-mode .profile-container h3 { 
+    color: #e8eaed; 
+}
 
 /* ══════════════════════════════════════════
    배지 아이템 — 미수집 시 흑백

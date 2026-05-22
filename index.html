@@ -1116,6 +1116,19 @@ body:has(#write.active) .nav {
     font-size: 11px; font-weight: 900;
     border: 2px solid white; white-space: nowrap;
 }
+.profile-avatar-edit-btn {
+    position: absolute; top: -2px; right: -2px;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: white; border: 2px solid rgba(255,255,255,0.9);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+    line-height: 1;
+}
+.profile-avatar-img {
+    width: 80px; height: 80px; border-radius: 50%;
+    object-fit: cover; border: 3px solid rgba(255,255,255,0.4);
+    display: block; margin: 0 auto;
+}
 .profile-name { font-size: 20px; font-weight: 800; color: white; margin-bottom: 4px; }
 .profile-email-sub { font-size: 13px; color: rgba(255,255,255,0.7); margin-bottom: 16px; }
 .profile-hero-stats {
@@ -1671,10 +1684,6 @@ body.dark-mode .dark-toggle-row { background: #2a2a2a !important; }
             <div class="heatmap-title">📅 최근 28일 기록</div>
             <div class="heatmap-grid" id="heatmapGrid"></div>
         </div>
-        <div class="badge-section" id="statsBadgeSection" style="display:none;">
-            <div class="badge-section-title">🏆 나의 배지 <span class="badge-count-chip" id="statsBadgeChip">0/14</span></div>
-            <div class="badge-grid" id="statsBadgeGrid"></div>
-        </div>
     </div>
 </div>
 
@@ -1707,7 +1716,9 @@ body.dark-mode .dark-toggle-row { background: #2a2a2a !important; }
     <!-- 히어로 (로그인 후) -->
     <div id="profileHero" class="profile-hero" style="display:none;">
         <div class="profile-avatar-wrap">
-            <div class="profile-avatar-circle">👤</div>
+            <div class="profile-avatar-circle" id="profileAvatarCircle">👤</div>
+            <label for="profileAvatarInput" class="profile-avatar-edit-btn" title="사진 변경">📷</label>
+            <input type="file" id="profileAvatarInput" accept="image/*" style="display:none;">
             <div class="profile-streak-badge" id="profileStreakBadge">🔥 0일</div>
         </div>
         <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
@@ -1732,7 +1743,7 @@ body.dark-mode .dark-toggle-row { background: #2a2a2a !important; }
     </div>
     <!-- 배지 그리드 (로그인 후) -->
     <div id="profileBadgeArea" style="display:none; padding:16px 16px 8px;">
-        <div class="badge-section-title">🏆 나의 배지 <span class="badge-count-chip" id="profileBadgeChip">0/14</span></div>
+        <div class="badge-section-title">🏆 나의 배지 <span class="badge-count-chip" id="profileBadgeChip">0/13</span></div>
         <div class="badge-grid" id="profileBadgeGrid"></div>
     </div>
     <!-- 비로그인 -->
@@ -3487,6 +3498,41 @@ function qlogUpdateProfileHero(user, logList) {
     setTxt('profileBadgeCount', earned.length);
     setTxt('profileBadgeChip', earned.length + '/' + F.BADGES.length);
     qlogBadgeGrid('profileBadgeGrid', logList, streak);
+
+    // ── 아바타 렌더링 ──
+    const avatarCircle = document.getElementById('profileAvatarCircle');
+    if (avatarCircle) {
+        const savedPhoto = localStorage.getItem('qlog_avatar_' + user.uid);
+        const photoSrc = savedPhoto || user.photoURL || null;
+        if (photoSrc) {
+            avatarCircle.innerHTML = '<img src="' + photoSrc + '" class="profile-avatar-img" alt="프로필 사진">';
+        } else {
+            avatarCircle.innerHTML = '👤';
+        }
+    }
+
+    // ── 아바타 파일 업로드 (한 번만 등록) ──
+    const fileInput = document.getElementById('profileAvatarInput');
+    if (fileInput && !fileInput._bound) {
+        fileInput._bound = true;
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                const dataUrl = ev.target.result;
+                try {
+                    localStorage.setItem('qlog_avatar_' + user.uid, dataUrl);
+                    const circle = document.getElementById('profileAvatarCircle');
+                    if (circle) circle.innerHTML = '<img src="' + dataUrl + '" class="profile-avatar-img" alt="프로필 사진">';
+                } catch(err) {
+                    alert('이미지가 너무 큽니다. 더 작은 이미지를 사용해주세요.');
+                }
+                fileInput.value = '';
+            };
+            reader.readAsDataURL(file);
+        });
+    }
 }
 
 // ── 히트맵 ───────────────────────────────────────
