@@ -1531,8 +1531,89 @@ body.dark-mode .chart-wrap { background: #2a2a2a; }
 body.dark-mode .chart-title { color: #e8eaed; }
 body.dark-mode .period-btn { background: #2a2a2a; border-color: #3c4043; color: #9aa0a6; }
 body.dark-mode .period-btn:hover { border-color: #818cf8; color: #818cf8; }
-body.dark-mode .profile-menu-item { background: #2a2a2a; }
-body.dark-mode .dark-toggle-row { background: #2a2a2a !important; }
+/* ── 통계 리포트 카드 ── */
+.stats-report-box {
+    margin: 0 16px 10px;
+    background: linear-gradient(135deg, #f0f4ff, #e8edff);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 2px 12px rgba(79,70,229,0.1);
+}
+.stats-report-title {
+    font-size: 15px; font-weight: 800; color: #4f46e5; margin-bottom: 14px;
+    display: flex; align-items: center; gap: 6px;
+}
+.stats-report-summary {
+    font-size: 14px; color: #374151; line-height: 1.7; margin-bottom: 16px;
+    background: white; border-radius: 12px; padding: 14px 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.stats-report-row {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px; margin-bottom: 14px;
+}
+.stats-report-stat {
+    background: white; border-radius: 14px; padding: 12px 8px;
+    text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.stats-report-stat-num {
+    font-size: 20px; font-weight: 900; color: #4f46e5; letter-spacing: -0.5px;
+}
+.stats-report-stat-label {
+    font-size: 11px; color: #8b95a1; font-weight: 600; margin-top: 2px;
+}
+.stats-report-mood-row {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px;
+}
+.stats-report-mood-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: white; border-radius: 20px; padding: 5px 12px;
+    font-size: 13px; font-weight: 700; color: #374151;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+.stats-report-insight {
+    font-size: 13px; color: #6366f1; font-weight: 700;
+    background: rgba(99,102,241,0.1); border-radius: 10px; padding: 10px 14px;
+    margin-top: 4px; line-height: 1.5;
+}
+.stats-report-empty {
+    text-align: center; padding: 30px 20px; color: #aaa; font-size: 14px;
+}
+
+/* 글쓰기 분석 카드 */
+.writing-analysis-card {
+    background: white; border-radius: 16px; padding: 16px 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    display: flex; flex-direction: column; gap: 6px;
+}
+.writing-analysis-label {
+    font-size: 12px; color: #8b95a1; font-weight: 600;
+    display: flex; align-items: center; gap: 5px;
+}
+.writing-analysis-value {
+    font-size: 24px; font-weight: 900; letter-spacing: -0.5px; color: #191f28;
+}
+.writing-analysis-unit { font-size: 12px; font-weight: 500; color: #8b95a1; }
+.writing-analysis-bar-wrap {
+    background: #f2f4f6; border-radius: 4px; height: 6px; overflow: hidden; margin-top: 4px;
+}
+.writing-analysis-bar {
+    height: 100%; border-radius: 4px; transition: width 0.6s cubic-bezier(0.16,1,0.3,1);
+}
+.writing-analysis-desc {
+    font-size: 11px; color: #9aa0a6; margin-top: 2px; line-height: 1.4;
+}
+
+body.dark-mode .stats-report-box { background: linear-gradient(135deg, #1e1e3a, #252545); }
+body.dark-mode .stats-report-summary { background: #2a2a2a; color: #ccc; }
+body.dark-mode .stats-report-stat { background: #2a2a2a; }
+body.dark-mode .stats-report-stat-label { color: #6b7280; }
+body.dark-mode .stats-report-mood-chip { background: #2a2a2a; color: #ccc; }
+body.dark-mode .stats-report-insight { background: rgba(99,102,241,0.15); }
+body.dark-mode .writing-analysis-card { background: #2a2a2a; }
+body.dark-mode .writing-analysis-label { color: #6b7280; }
+body.dark-mode .writing-analysis-value { color: #e8eaed; }
+body.dark-mode .writing-analysis-bar-wrap { background: #333; }
 
 </style>
 </head>
@@ -1586,7 +1667,7 @@ body.dark-mode .dark-toggle-row { background: #2a2a2a !important; }
     <!-- ★ 주간 리포트 (조건부 표시) -->
     <div id="weeklyReportCard" style="display:none;"></div>
 
-    <div class="plant-widget" id="plantWidget" onclick="window.showPlantModal()">
+    <div class="plant-widget" id="plantWidget" onclick="window.showPlantModal()" style="display:none;">
         <div class="plant-big-emoji" id="plantEmoji">🌰</div>
         <div class="plant-info">
             <div class="plant-stage-name" id="plantStageName">씨앗</div>
@@ -1672,9 +1753,15 @@ body.dark-mode .dark-toggle-row { background: #2a2a2a !important; }
             <button class="period-btn" data-period="90">3개월</button>
         </div>
 
-        <!-- 추세 섹션 -->
-        <div class="stats-section-title">추세</div>
-        <div class="metrics-grid" id="metricsGrid">
+        <!-- 📋 간단 리포트 -->
+        <div class="stats-section-title">📋 리포트</div>
+        <div id="statsReportBox" class="stats-report-box">
+            <!-- JS로 채워짐 -->
+        </div>
+
+        <!-- 🔤 단어 중복율 + ⏸ 공백 시간 -->
+        <div class="stats-section-title">✍️ 글쓰기 분석</div>
+        <div class="metrics-grid" id="writingAnalysisGrid">
             <!-- JS로 채워짐 -->
         </div>
 
@@ -1899,8 +1986,17 @@ onAuthStateChanged(auth, (user) => {
         localStorage.removeItem('qlog_user_email');
     }
     renderProfile();
-    if (user) loadLogs();
-    else { logs = []; renderLogs(); }
+    if (user) {
+        loadLogs();
+        // 로그인 시 식물 위젯 표시
+        const pw = document.getElementById('plantWidget');
+        if (pw) pw.style.display = '';
+    } else {
+        logs = []; renderLogs();
+        // 로그아웃 시 식물 위젯 숨기기
+        const pw = document.getElementById('plantWidget');
+        if (pw) pw.style.display = 'none';
+    }
 });
 
 // ── 화면 전환 ────────────────────────────────
@@ -2502,7 +2598,7 @@ function renderLogs() {
     const list = document.getElementById('logList');
     list.innerHTML = '';
     if (!currentUser) {
-        list.innerHTML = '<div class="empty-state"><div class="empty-state-emoji">📖</div><div class="empty-state-title">로그인하고 시작해요</div><div class="empty-state-sub">로그인하면 나만의 일기를<br>기록하고 볼 수 있어요</div><button class="empty-state-btn" onclick="goProfile()">로그인하기</button></div>';
+        list.innerHTML = '<div class="empty-state"><div class="empty-state-emoji">📖</div><div class="empty-state-title">로그인하고 시작해요</div><div class="empty-state-sub">로그인하면 나만의 일기를<br>기록하고 볼 수 있어요</div><button class="empty-state-btn" onclick="location.href=\'login.html\'">로그인하기</button></div>';
         return;
     }
     if (logs.length === 0) {
@@ -2818,58 +2914,130 @@ function getMetricsLogs(days) {
 
 function renderStats() {
     const box      = document.getElementById('statsBox');
-    const grid     = document.getElementById('metricsGrid');
     const filtered = getFilteredLogs(statsPeriod);
     box.innerHTML  = '';
 
-    // ── 추세(나의 작성능력) 카드 그리드 ──────────
-    const validLogs = filtered.filter(l => l.metrics);
-    if (!validLogs.length) {
-        grid.innerHTML = `<div class="metrics-empty">📭 해당 기간에 작성된 일기가 없어요.<br>일기를 작성하면 추세가 쌓여요!</div>`;
-    } else {
-        const avg = key => {
-            const vals = validLogs.map(l => l.metrics[key]).filter(v => v != null);
-            return vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : null;
-        };
-        const avgChar  = avg('charCount');
-        const avgFirst = avg('timeToFirst');
-        const avgDur   = avg('writingDuration');
-        const avgCpm   = avg('charsPerMinute');
-        const avgSent  = avg('sentenceCount');
-        const fmt = (v, unit) => v !== null ? `<span class="metric-card-value">${v}</span><span class="metric-card-unit">${unit}</span>` : '-';
+    // ── 📋 간단 리포트 ──────────────────────────────────
+    const reportBox = document.getElementById('statsReportBox');
+    if (reportBox) {
+        if (!filtered.length) {
+            reportBox.innerHTML = '<div class="stats-report-empty">📭 해당 기간에 작성된 일기가 없어요.<br>일기를 작성하면 리포트가 생성돼요!</div>';
+        } else {
+            // 기본 수치
+            const totalCount = filtered.length;
+            const totalChars = filtered.reduce((s,l) => s + (l.text ? l.text.length : 0), 0);
+            const avgChars   = Math.round(totalChars / totalCount);
+            // 가장 많은 감정
+            const moodCount  = {};
+            filtered.forEach(l => { moodCount[l.mood] = (moodCount[l.mood]||0)+1; });
+            const topMoods   = Object.entries(moodCount).sort((a,b)=>b[1]-a[1]);
+            const topMood    = topMoods[0];
+            // 작성 요일 분포
+            const dowCount   = [0,0,0,0,0,0,0];
+            const dowNames   = ['일','월','화','수','목','금','토'];
+            filtered.forEach(l => { const d = l.date instanceof Date ? l.date : new Date(l.date); dowCount[d.getDay()]++; });
+            const topDow     = dowCount.indexOf(Math.max(...dowCount));
+            // 연속 스트릭
+            const streak     = window._qStreak || (window.QLogFeatures ? window.QLogFeatures.calcStreak(filtered) : { current:0, longest:0 });
+            // 인사이트 메시지
+            let insight = '';
+            const moodLabels = {'😀':'행복','🙂':'좋음','😐':'보통','😢':'슬픔','😡':'화남','😫':'피곤'};
+            if (totalCount >= 5 && topMood) {
+                insight = `최근 ${statsPeriod}일 동안 <strong>${topMood[0]} ${moodLabels[topMood[0]]||''}</strong> 감정이 가장 많았고, <strong>${dowNames[topDow]}요일</strong>에 가장 자주 일기를 썼어요.`;
+            } else if (totalCount > 0) {
+                insight = `이 기간에 총 <strong>${totalCount}개</strong>의 일기를 작성했어요. 꾸준히 기록해 나가면 더 많은 인사이트를 볼 수 있어요!`;
+            }
+            const periodLabel = statsPeriod === 7 ? '1주일' : statsPeriod === 30 ? '1개월' : '3개월';
+            reportBox.innerHTML = `
+                <div class="stats-report-title">📋 최근 ${periodLabel} 리포트</div>
+                <div class="stats-report-row">
+                    <div class="stats-report-stat">
+                        <div class="stats-report-stat-num">${totalCount}</div>
+                        <div class="stats-report-stat-label">총 일기</div>
+                    </div>
+                    <div class="stats-report-stat">
+                        <div class="stats-report-stat-num">${avgChars}</div>
+                        <div class="stats-report-stat-label">평균 글자</div>
+                    </div>
+                    <div class="stats-report-stat">
+                        <div class="stats-report-stat-num">${streak.current}</div>
+                        <div class="stats-report-stat-label">현재 연속</div>
+                    </div>
+                </div>
+                ${topMoods.length ? `<div class="stats-report-mood-row">
+                    ${topMoods.slice(0,4).map(([m,c]) => `<div class="stats-report-mood-chip"><span>${m}</span><span>${c}회</span></div>`).join('')}
+                </div>` : ''}
+                ${insight ? `<div class="stats-report-insight">${insight}</div>` : ''}
+            `;
+        }
+    }
 
-        grid.innerHTML = `
-            <div class="metric-card">
-                <div class="metric-card-label">
-                    <span class="metric-trend-icon metric-trend-up">↑</span> 평균 글자 수
+    // ── ✍️ 글쓰기 분석: 단어 중복율 + 공백 시간 ─────────────────
+    const analysisGrid = document.getElementById('writingAnalysisGrid');
+    if (analysisGrid) {
+        if (!filtered.length) {
+            analysisGrid.innerHTML = '<div class="metrics-empty">📭 해당 기간에 작성된 일기가 없어요.</div>';
+        } else {
+            // 단어 중복율 계산
+            let totalDupRate = 0;
+            let dupCount = 0;
+            filtered.forEach(l => {
+                if (!l.text || l.text.trim().length < 10) return;
+                const words = l.text.trim().split(/\s+/).map(w => w.replace(/[^가-힣a-zA-Z0-9]/g,'').toLowerCase()).filter(w => w.length > 1);
+                if (words.length < 3) return;
+                const unique = new Set(words).size;
+                const dupRate = Math.round((1 - unique / words.length) * 100);
+                totalDupRate += dupRate;
+                dupCount++;
+            });
+            const avgDupRate = dupCount > 0 ? Math.round(totalDupRate / dupCount) : null;
+            const dupColor = avgDupRate === null ? '#9aa0a6' : avgDupRate > 50 ? '#ef4444' : avgDupRate > 30 ? '#f59e0b' : '#10b981';
+            const dupDesc = avgDupRate === null ? '-' : avgDupRate > 50 ? '같은 단어가 자주 반복돼요' : avgDupRate > 30 ? '적당한 다양성이에요' : '다양한 어휘를 쓰고 있어요!';
+
+            // 공백(머뭇거림) 시간 계산 — metrics.pauseTime 있으면 사용, 없으면 추정
+            let totalPauseMs = 0;
+            let pauseCount = 0;
+            filtered.forEach(l => {
+                if (l.metrics && l.metrics.pauseTime != null) {
+                    totalPauseMs += l.metrics.pauseTime;
+                    pauseCount++;
+                } else if (l.metrics && l.metrics.writingDuration != null && l.metrics.charCount != null && l.metrics.charCount > 10) {
+                    // 추정: 전체 시간의 약 (1 - 타이핑속도/표준속도) 비율을 공백으로 가정
+                    const typingTime = l.metrics.charsPerMinute ? (l.metrics.charCount / l.metrics.charsPerMinute) * 60 * 1000 : 0;
+                    const estimated = Math.max(0, l.metrics.writingDuration * 1000 - typingTime);
+                    if (estimated > 0) { totalPauseMs += estimated; pauseCount++; }
+                }
+            });
+            const avgPauseSec = pauseCount > 0 ? Math.round(totalPauseMs / pauseCount / 1000) : null;
+            const pauseDisplay = avgPauseSec === null ? null : avgPauseSec >= 60 ? Math.round(avgPauseSec / 60) : avgPauseSec;
+            const pauseUnit = avgPauseSec === null ? '' : avgPauseSec >= 60 ? '분/일기' : '초/일기';
+            const pauseDesc = avgPauseSec === null ? '데이터가 쌓이면 표시돼요' : avgPauseSec > 120 ? '글감을 떠올리는 데 시간이 필요해요' : avgPauseSec > 30 ? '적당히 생각하며 써요' : '막힘 없이 술술 써요!';
+
+            analysisGrid.innerHTML = `
+                <div class="writing-analysis-card">
+                    <div class="writing-analysis-label">🔤 단어 중복율</div>
+                    <div>
+                        <span class="writing-analysis-value" style="color:${dupColor}">${avgDupRate !== null ? avgDupRate : '-'}</span>
+                        ${avgDupRate !== null ? '<span class="writing-analysis-unit">%</span>' : ''}
+                    </div>
+                    ${avgDupRate !== null ? `<div class="writing-analysis-bar-wrap">
+                        <div class="writing-analysis-bar" style="width:${Math.min(avgDupRate,100)}%; background:${dupColor};"></div>
+                    </div>` : ''}
+                    <div class="writing-analysis-desc">${dupDesc}</div>
                 </div>
-                ${fmt(avgChar, '자/일')}
-            </div>
-            <div class="metric-card">
-                <div class="metric-card-label">
-                    <span class="metric-trend-icon metric-trend-up">↑</span> 평균 첫 문장까지
+                <div class="writing-analysis-card">
+                    <div class="writing-analysis-label">⏸ 평균 공백 시간</div>
+                    <div>
+                        <span class="writing-analysis-value">${pauseDisplay !== null ? pauseDisplay : '-'}</span>
+                        ${pauseUnit ? `<span class="writing-analysis-unit">${pauseUnit}</span>` : ''}
+                    </div>
+                    ${avgPauseSec !== null ? `<div class="writing-analysis-bar-wrap">
+                        <div class="writing-analysis-bar" style="width:${Math.min(Math.round(avgPauseSec/180*100),100)}%; background:linear-gradient(90deg,#6366f1,#8b5cf6);"></div>
+                    </div>` : ''}
+                    <div class="writing-analysis-desc">${pauseDesc}</div>
                 </div>
-                ${fmt(avgFirst, '초')}
-            </div>
-            <div class="metric-card">
-                <div class="metric-card-label">
-                    <span class="metric-trend-icon metric-trend-down">↓</span> 평균 집필 시간
-                </div>
-                ${fmt(avgDur !== null ? Math.round(avgDur / 60 * 10) / 10 : null, '시간/일')}
-            </div>
-            <div class="metric-card">
-                <div class="metric-card-label">
-                    <span class="metric-trend-icon metric-trend-down">↓</span> 평균 글쓰기 속도
-                </div>
-                ${fmt(avgCpm, '타/일')}
-            </div>
-            <div class="metric-card" style="grid-column:1/-1;">
-                <div class="metric-card-label">
-                    <span class="metric-trend-icon metric-trend-mid">→</span> 평균 문장 수
-                </div>
-                ${fmt(avgSent, '분/시간')}
-            </div>
-        `;
+            `;
+        }
     }
 
     if (!filtered.length) {
@@ -3835,14 +4003,4 @@ function showDayLogs(year, month, day) {
 </div>
 
 </body>
-</html    if (!currentUser) {
-        var _es1=document.createElement('div'); _es1.className='empty-state';
-        _es1.innerHTML='<div class="empty-state-emoji">📖</div><div class="empty-state-title">로그인하고 시작해요</div><div class="empty-state-sub">로그인하면 나만의 일기를<br>기록하고 볼 수 있어요</div>';
-        var _b1=document.createElement('button'); _b1.className='empty-state-btn'; _b1.textContent='로그인하기';
-        _b1.onclick=function(){window.go('profile');}; _es1.appendChild(_b1); list.appendChild(_es1); return;
-    }    if (logs.length === 0) {
-        var _es2=document.createElement('div'); _es2.className='empty-state';
-        _es2.innerHTML='<div class="empty-state-emoji">✏️</div><div class="empty-state-title">첫 일기를 써볼까요?</div><div class="empty-state-sub">오늘의 감정을 기록하면<br>식물이 자라고 배지를 얻어요</div>';
-        var _b2=document.createElement('button'); _b2.className='empty-state-btn'; _b2.textContent='일기 쓰기';
-        _b2.onclick=function(){document.getElementById('fabBtn').click();}; _es2.appendChild(_b2); list.appendChild(_es2); return;
-    }>
+</html>
