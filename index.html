@@ -1759,9 +1759,9 @@ body.dark-mode .writing-analysis-bar-wrap { background: #333; }
             <!-- JS로 채워짐 -->
         </div>
 
-        <!-- 🔤 단어 중복율 + ⏸ 공백 시간 -->
+        <!-- 🔤 글쓰기 분석 (수정 버스트 / 유창성 / 어휘력) -->
         <div class="stats-section-title">✍️ 글쓰기 분석</div>
-        <div class="metrics-grid" id="writingAnalysisGrid">
+        <div class="metrics-grid" id="writingAnalysisGrid" style="grid-template-columns:1fr 1fr;">
             <!-- JS로 채워짐 -->
         </div>
 
@@ -1960,7 +1960,36 @@ let dailyChartInst = null;
 
 let writeStartTime = null;
 let firstKeyTime   = null;
-let backspaceCount = 0;
+
+// ═══════════════════════════════════════════════════════════════════
+// [수정 버스트 & 휴지기 분석] ← 여기를 수정하세요
+// Backspace 후 다음 키 입력까지의 pause 시간을 측정합니다.
+// - shortCorrectionBursts: pause < SHORT_CORRECTION_THRESHOLD_MS → 단순 오타 수정
+// - longCorrectionBursts:  pause ≥ SHORT_CORRECTION_THRESHOLD_MS → 단어/문장 고민 후 수정
+// ───────────────────────────────────────────────────────────────────
+const SHORT_CORRECTION_THRESHOLD_MS = 1000; // ← 이 값(ms)을 조절해 "짧은/긴 휴지기" 기준 변경
+
+let _lastBackspaceTime  = null;  // 마지막 Backspace 누른 시각
+let _inCorrectionMode   = false; // Backspace 직후 상태 여부
+let shortCorrectionBursts = 0;   // 짧은 휴지기(오타 수정) 횟수
+let longCorrectionBursts  = 0;   // 긴 휴지기(고민 후 수정) 횟수
+let correctionPauseTimes  = [];  // 개별 pause 시간(ms) 배열 — 나중에 평균 계산용
+// ═══════════════════════════════════════════════════════════════════
+
+
+// ═══════════════════════════════════════════════════════════════════
+// [유창성 & 인지 부하 — 키스트로크 다이나믹스] ← 여기를 수정하세요
+// 키 입력 간격(IKI)과 버스트/휴지기를 측정합니다.
+// ───────────────────────────────────────────────────────────────────
+const BURST_GAP_THRESHOLD_MS = 700;   // ← 이 값(ms) 이상이면 "단어 사이 멈춤"으로 분류
+const LONG_PAUSE_THRESHOLD_MS = 3000; // ← 이 값(ms) 이상이면 "장기 휴지기"로 기록
+
+let _lastKeystrokeTime   = null;      // 직전 키 입력 시각
+let _lastCharBeforePause = '';        // 장기 휴지기 직전 마지막 글자 (문장 끝 여부 판단)
+let interKeystrokeIntervals = [];     // 모든 키 간격(ms) 배열
+let wordBoundaryPauses   = [];        // Spacebar 전후 멈춤 시간(ms) 배열
+let longPauseEvents      = [];        // { pauseMs, afterSentenceEnd: bool } 배열
+// ═══════════════════════════════════════════════════════════════════
 
 // 다중 태그 검색 상태
 let searchTags = [];
@@ -2311,6 +2340,23 @@ window.selectMood = function(m) {
     document.getElementById('tagInput').value = '';
     autoTags = new Set(); manualTags = new Set(); renderTagList();
     _lastAutoKey = '';
+
+    // ═══════════════════════════════════════════════════════════════
+    // [수정 버스트 & 유창성 지표] — 새 일기 시작 시 모든 측정값 초기화
+    // ───────────────────────────────────────────────────────────────
+    writeStartTime         = Date.now();
+    firstKeyTime           = null;
+    _lastBackspaceTime     = null;
+    _inCorrectionMode      = false;
+    shortCorrectionBursts  = 0;
+    longCorrectionBursts   = 0;
+    correctionPauseTimes   = [];
+    _lastKeystrokeTime     = null;
+    _lastCharBeforePause   = '';
+    interKeystrokeIntervals = [];
+    wordBoundaryPauses     = [];
+    longPauseEvents        = [];
+    // ═══════════════════════════════════════════════════════════════
     // 감정 테마 적용
     const writeEl = document.getElementById('write');
     writeEl.classList.remove('mood-happy','mood-good','mood-neutral','mood-sad','mood-angry','mood-tired');
@@ -2487,8 +2533,59 @@ document.getElementById('aiHelpBtn').addEventListener('click', callGeminiHelp);
 
 // ── textarea ──────────────────────────────────
 document.getElementById('text').addEventListener('keydown', e => {
-    if (!firstKeyTime) firstKeyTime = Date.now();
-    if (e.key === 'Backspace') backspaceCount++;
+    const now = Date.now();
+    if (!firstKeyTime) firstKeyTime = now;
+
+    // ═══════════════════════════════════════════════════════════════
+    // [수정 버스트 & 휴지기 분석] — keydown 핸들러 내부
+    // Backspace 감지 → 다음 일반 키까지의 pause 를 측정
+    // ───────────────────────────────────────────────────────────────
+    if (e.key === 'Backspace') {
+        _lastBackspaceTime = now;
+        _inCorrectionMode  = true;
+    } else if (_inCorrectionMode && e.key.length === 1) {
+        // Backspace 이후 첫 일반 문자 입력 → pause 측정
+        if (_lastBackspaceTime !== null) {
+            const pauseMs = now - _lastBackspaceTime;
+            correctionPauseTimes.push(pauseMs);
+            if (pauseMs < SHORT_CORRECTION_THRESHOLD_MS) {
+                shortCorrectionBursts++; // 짧은 휴지기: 단순 오타 수정
+            } else {
+                longCorrectionBursts++;  // 긴 휴지기: 단어/문장 고민 후 수정
+            }
+        }
+        _inCorrectionMode  = false;
+        _lastBackspaceTime = null;
+    } else if (e.key.length === 1) {
+        _inCorrectionMode = false;
+    }
+    // ═══════════════════════════════════════════════════════════════
+
+    // ═══════════════════════════════════════════════════════════════
+    // [유창성 & 인지 부하 — 키스트로크 다이나믹스] — keydown 핸들러 내부
+    // IKI(키 입력 간격) 측정, Spacebar 멈춤, 장기 휴지기 기록
+    // ───────────────────────────────────────────────────────────────
+    if (_lastKeystrokeTime !== null && e.key.length === 1) {
+        const iki = now - _lastKeystrokeTime;
+        interKeystrokeIntervals.push(iki);
+
+        // Spacebar 전 멈춤 → 단어 경계 pause
+        if (e.key === ' ') {
+            wordBoundaryPauses.push(iki);
+        }
+
+        // 장기 휴지기 감지
+        if (iki >= LONG_PAUSE_THRESHOLD_MS) {
+            const afterEnd = /[.!?。]$/.test(_lastCharBeforePause.trimEnd());
+            longPauseEvents.push({ pauseMs: iki, afterSentenceEnd: afterEnd });
+        }
+    }
+    if (e.key.length === 1) {
+        _lastCharBeforePause = document.getElementById('text').value;
+        _lastKeystrokeTime   = now;
+    }
+    // ═══════════════════════════════════════════════════════════════
+
     resetIdleTimer(); // 키 누를 때마다 idle 타이머 리셋
 });
 let _lastAutoKey = '';
@@ -2532,6 +2629,85 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
                            ? Math.round((charCount / writingDuration) * 60) : null;
     const hourOfDay      = new Date().getHours();
 
+    // ═══════════════════════════════════════════════════════════════
+    // [수정 버스트 & 휴지기] — 저장 시 집계
+    // ───────────────────────────────────────────────────────────────
+    const avgCorrectionPauseMs = correctionPauseTimes.length > 0
+        ? Math.round(correctionPauseTimes.reduce((a,b) => a+b, 0) / correctionPauseTimes.length)
+        : null;
+    const correctionBurstData = {
+        shortBursts:       shortCorrectionBursts,   // 오타 수정(짧은 pause)
+        longBursts:        longCorrectionBursts,     // 고민 후 수정(긴 pause)
+        avgPauseMs:        avgCorrectionPauseMs,     // 평균 수정 pause(ms)
+        totalCorrections:  correctionPauseTimes.length
+    };
+    // ═══════════════════════════════════════════════════════════════
+
+    // ═══════════════════════════════════════════════════════════════
+    // [유창성 & 인지 부하] — 저장 시 집계
+    // ───────────────────────────────────────────────────────────────
+    const avgIKI = interKeystrokeIntervals.length > 0
+        ? Math.round(interKeystrokeIntervals.reduce((a,b) => a+b, 0) / interKeystrokeIntervals.length)
+        : null;
+    const avgWordBoundaryPause = wordBoundaryPauses.length > 0
+        ? Math.round(wordBoundaryPauses.reduce((a,b) => a+b, 0) / wordBoundaryPauses.length)
+        : null;
+    const longPauseMidSentence = longPauseEvents.filter(e => !e.afterSentenceEnd).length;
+    const longPauseAfterSentence = longPauseEvents.filter(e => e.afterSentenceEnd).length;
+    const fluencyData = {
+        avgIKI,                  // 평균 키 입력 간격(ms) — 낮을수록 유창
+        avgWordBoundaryPause,    // Spacebar 전 평균 멈춤(ms) — 단어 고민 지표
+        longPauseCount:          longPauseEvents.length,         // 총 장기 휴지기 횟수
+        longPauseMidSentence,    // 문장 중간 장기 휴지기 — 문장 구성 어려움 지표
+        longPauseAfterSentence,  // 문장 끝 장기 휴지기 — 서사 기획 능력 지표
+    };
+    // ═══════════════════════════════════════════════════════════════
+
+    // ═══════════════════════════════════════════════════════════════
+    // [어휘력 & 표현력] — 저장 시 텍스트 분석
+    // TTR(Type-Token Ratio), 상투어 반복, 구어체 표현 감지
+    // (한국어 형태소 분석 라이브러리 없이 공백/어절 기반 근사치 사용)
+    // ───────────────────────────────────────────────────────────────
+    const _words = text.trim()
+        .split(/\s+/)
+        .map(w => w.replace(/[^가-힣a-zA-Z0-9]/g, '').toLowerCase())
+        .filter(w => w.length > 1);
+    const _tokenCount  = _words.length;
+    const _typeCount   = new Set(_words).size;
+    const ttr          = _tokenCount >= 3
+        ? Math.round((_typeCount / _tokenCount) * 100) / 100   // 소수점 2자리
+        : null;
+
+    // 상투적/구어체 표현 과다 사용 감지
+    // ← 아래 배열에 추가/수정하여 감지할 단어 목록을 바꿀 수 있습니다
+    const COLLOQUIAL_WORDS = ['진짜', '너무', '막', '그냥', '엄청', '완전', '되게', '진짜로', '좀', '약간'];
+    const colloquialCounts = {};
+    _words.forEach(w => {
+        if (COLLOQUIAL_WORDS.includes(w)) colloquialCounts[w] = (colloquialCounts[w] || 0) + 1;
+    });
+    const colloquialTotal = Object.values(colloquialCounts).reduce((a,b) => a+b, 0);
+
+    // 단어 반복 Top 3 (불용어 제외)
+    // ← 아래 배열에 불용어를 추가하면 반복 분석에서 제외됩니다
+    const STOPWORDS = new Set(['이','그','저','것','수','등','및','의','을','를','이','가','은','는','에','도','와','과','하','한','있','없','되','않','했','했다','이다','있다','없다']);
+    const wordFreq = {};
+    _words.forEach(w => { if (!STOPWORDS.has(w)) wordFreq[w] = (wordFreq[w] || 0) + 1; });
+    const topRepeatedWords = Object.entries(wordFreq)
+        .filter(([,c]) => c > 1)
+        .sort((a,b) => b[1]-a[1])
+        .slice(0, 3)
+        .map(([w,c]) => ({ word: w, count: c }));
+
+    const vocabularyData = {
+        ttr,                  // Type-Token Ratio (0~1, 높을수록 어휘 다양)
+        tokenCount: _tokenCount,
+        typeCount:  _typeCount,
+        colloquialTotal,      // 구어체/상투어 총 사용 횟수
+        colloquialCounts,     // 단어별 사용 횟수 { '너무': 3, ... }
+        topRepeatedWords,     // 반복 단어 Top 3 [{ word, count }, ...]
+    };
+    // ═══════════════════════════════════════════════════════════════
+
     try {
                 // 어제 날짜 처리
         const isBackdate = selectedWriteDate === 'yesterday';
@@ -2551,7 +2727,16 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
             tags: [...autoTags, ...manualTags],
             date: logDate,
             isBackdate: isBackdate,
-            metrics: { timeToFirst, writingDuration, charCount, sentenceCount, charsPerMinute, backspaceCount, hourOfDay }
+            metrics: {
+                timeToFirst, writingDuration, charCount, sentenceCount,
+                charsPerMinute, hourOfDay,
+                // ── [수정 버스트 & 휴지기] ──
+                correctionBurst: correctionBurstData,
+                // ── [유창성 & 인지 부하] ──
+                fluency: fluencyData,
+                // ── [어휘력 & 표현력] ──
+                vocabulary: vocabularyData,
+            }
         });
         document.getElementById('text').value = "";
         autoTags = new Set(); manualTags = new Set(); renderTagList();
@@ -2972,73 +3157,173 @@ function renderStats() {
         }
     }
 
-    // ── ✍️ 글쓰기 분석: 단어 중복율 + 공백 시간 ─────────────────
+    // ═══════════════════════════════════════════════════════════════
+    // [글쓰기 분석] — 통계 화면 렌더링
+    // 수정 버스트 / 유창성 / 어휘력 지표를 카드로 표시합니다
+    // ───────────────────────────────────────────────────────────────
     const analysisGrid = document.getElementById('writingAnalysisGrid');
     if (analysisGrid) {
         if (!filtered.length) {
             analysisGrid.innerHTML = '<div class="metrics-empty">📭 해당 기간에 작성된 일기가 없어요.</div>';
         } else {
-            // 단어 중복율 계산
-            let totalDupRate = 0;
-            let dupCount = 0;
-            filtered.forEach(l => {
-                if (!l.text || l.text.trim().length < 10) return;
-                const words = l.text.trim().split(/\s+/).map(w => w.replace(/[^가-힣a-zA-Z0-9]/g,'').toLowerCase()).filter(w => w.length > 1);
-                if (words.length < 3) return;
-                const unique = new Set(words).size;
-                const dupRate = Math.round((1 - unique / words.length) * 100);
-                totalDupRate += dupRate;
-                dupCount++;
-            });
-            const avgDupRate = dupCount > 0 ? Math.round(totalDupRate / dupCount) : null;
-            const dupColor = avgDupRate === null ? '#9aa0a6' : avgDupRate > 50 ? '#ef4444' : avgDupRate > 30 ? '#f59e0b' : '#10b981';
-            const dupDesc = avgDupRate === null ? '-' : avgDupRate > 50 ? '같은 단어가 자주 반복돼요' : avgDupRate > 30 ? '적당한 다양성이에요' : '다양한 어휘를 쓰고 있어요!';
 
-            // 공백(머뭇거림) 시간 계산 — metrics.pauseTime 있으면 사용, 없으면 추정
-            let totalPauseMs = 0;
-            let pauseCount = 0;
+            // ── [수정 버스트 & 휴지기] 집계 ──────────────────────────
+            let totalShortBursts = 0, totalLongBursts = 0, pauseMsList = [];
             filtered.forEach(l => {
-                if (l.metrics && l.metrics.pauseTime != null) {
-                    totalPauseMs += l.metrics.pauseTime;
-                    pauseCount++;
-                } else if (l.metrics && l.metrics.writingDuration != null && l.metrics.charCount != null && l.metrics.charCount > 10) {
-                    // 추정: 전체 시간의 약 (1 - 타이핑속도/표준속도) 비율을 공백으로 가정
-                    const typingTime = l.metrics.charsPerMinute ? (l.metrics.charCount / l.metrics.charsPerMinute) * 60 * 1000 : 0;
-                    const estimated = Math.max(0, l.metrics.writingDuration * 1000 - typingTime);
-                    if (estimated > 0) { totalPauseMs += estimated; pauseCount++; }
-                }
+                const cb = l.metrics?.correctionBurst;
+                if (!cb) return;
+                totalShortBursts += cb.shortBursts  || 0;
+                totalLongBursts  += cb.longBursts   || 0;
+                if (cb.avgPauseMs != null) pauseMsList.push(cb.avgPauseMs);
             });
-            const avgPauseSec = pauseCount > 0 ? Math.round(totalPauseMs / pauseCount / 1000) : null;
-            const pauseDisplay = avgPauseSec === null ? null : avgPauseSec >= 60 ? Math.round(avgPauseSec / 60) : avgPauseSec;
-            const pauseUnit = avgPauseSec === null ? '' : avgPauseSec >= 60 ? '분/일기' : '초/일기';
-            const pauseDesc = avgPauseSec === null ? '데이터가 쌓이면 표시돼요' : avgPauseSec > 120 ? '글감을 떠올리는 데 시간이 필요해요' : avgPauseSec > 30 ? '적당히 생각하며 써요' : '막힘 없이 술술 써요!';
+            const avgCorrPauseMs = pauseMsList.length > 0
+                ? Math.round(pauseMsList.reduce((a,b)=>a+b,0) / pauseMsList.length) : null;
+            const corrRatio = (totalShortBursts + totalLongBursts) > 0
+                ? Math.round(totalLongBursts / (totalShortBursts + totalLongBursts) * 100) : null;
+            const corrDesc = corrRatio === null ? '데이터가 쌓이면 표시돼요'
+                : corrRatio > 60 ? '단어·문장을 자주 고민해요'
+                : corrRatio > 30 ? '오타 수정과 내용 수정이 섞여요'
+                : '대부분 오타 수정이에요';
 
+            // ── [유창성 & 인지 부하] 집계 ────────────────────────────
+            let ikiList = [], wbpList = [], longPauseTotal = 0, midTotal = 0, afterTotal = 0;
+            filtered.forEach(l => {
+                const fl = l.metrics?.fluency;
+                if (!fl) return;
+                if (fl.avgIKI != null) ikiList.push(fl.avgIKI);
+                if (fl.avgWordBoundaryPause != null) wbpList.push(fl.avgWordBoundaryPause);
+                longPauseTotal += fl.longPauseCount        || 0;
+                midTotal       += fl.longPauseMidSentence  || 0;
+                afterTotal     += fl.longPauseAfterSentence|| 0;
+            });
+            const avgIKI = ikiList.length > 0
+                ? Math.round(ikiList.reduce((a,b)=>a+b,0) / ikiList.length) : null;
+            const avgWBP = wbpList.length > 0
+                ? Math.round(wbpList.reduce((a,b)=>a+b,0) / wbpList.length) : null;
+            const fluencyDesc = avgIKI === null ? '데이터가 쌓이면 표시돼요'
+                : avgIKI < 200 ? '막힘 없이 빠르게 써요!'
+                : avgIKI < 500 ? '적당한 속도로 생각하며 써요'
+                : '천천히 신중하게 쓰는 편이에요';
+            const longPauseDesc = longPauseTotal === 0 ? '장기 멈춤이 거의 없어요'
+                : midTotal > afterTotal ? `문장 중간에 ${midTotal}회 멈췄어요 — 표현 탐색 중`
+                : `문장 끝에서 ${afterTotal}회 멈췄어요 — 다음 이야기 구상 중`;
+
+            // ── [어휘력 & 표현력] 집계 ────────────────────────────────
+            let ttrList = [], colloquialTotalSum = 0, vocabCount = 0;
+            const repeatedWordMap = {};
+            filtered.forEach(l => {
+                const vc = l.metrics?.vocabulary;
+                if (!vc) return;
+                if (vc.ttr != null) ttrList.push(vc.ttr);
+                colloquialTotalSum += vc.colloquialTotal || 0;
+                vocabCount++;
+                (vc.topRepeatedWords || []).forEach(({ word, count }) => {
+                    repeatedWordMap[word] = (repeatedWordMap[word] || 0) + count;
+                });
+            });
+            const avgTTR = ttrList.length > 0
+                ? Math.round(ttrList.reduce((a,b)=>a+b,0) / ttrList.length * 100) : null; // %로 표시
+            const avgColloquial = vocabCount > 0
+                ? Math.round(colloquialTotalSum / vocabCount * 10) / 10 : null;
+            const topRepeatWords = Object.entries(repeatedWordMap)
+                .sort((a,b)=>b[1]-a[1]).slice(0,3);
+            const ttrDesc = avgTTR === null ? '데이터가 쌓이면 표시돼요'
+                : avgTTR > 70 ? '다양한 어휘를 풍부하게 써요!'
+                : avgTTR > 50 ? '적당한 어휘 다양성이에요'
+                : '같은 단어가 자주 반복돼요';
+            const colloquialDesc = avgColloquial === null ? ''
+                : avgColloquial > 3 ? `구어체 표현이 일기당 평균 ${avgColloquial}회 등장해요`
+                : `구어체 표현 사용이 적어요 (일기당 ${avgColloquial}회)`;
+
+            // ── 카드 HTML 렌더링 ───────────────────────────────────────
             analysisGrid.innerHTML = `
+
+                <!-- ★ [수정 버스트] 고민 수정 비율 -->
                 <div class="writing-analysis-card">
-                    <div class="writing-analysis-label">🔤 단어 중복율</div>
+                    <div class="writing-analysis-label">✏️ 고민 수정 비율</div>
                     <div>
-                        <span class="writing-analysis-value" style="color:${dupColor}">${avgDupRate !== null ? avgDupRate : '-'}</span>
-                        ${avgDupRate !== null ? '<span class="writing-analysis-unit">%</span>' : ''}
+                        <span class="writing-analysis-value" style="color:${corrRatio === null ? '#9aa0a6' : corrRatio > 60 ? '#6366f1' : corrRatio > 30 ? '#f59e0b' : '#10b981'}">
+                            ${corrRatio !== null ? corrRatio : '-'}
+                        </span>
+                        ${corrRatio !== null ? '<span class="writing-analysis-unit">%</span>' : ''}
                     </div>
-                    ${avgDupRate !== null ? `<div class="writing-analysis-bar-wrap">
-                        <div class="writing-analysis-bar" style="width:${Math.min(avgDupRate,100)}%; background:${dupColor};"></div>
+                    ${corrRatio !== null ? `<div class="writing-analysis-bar-wrap">
+                        <div class="writing-analysis-bar" style="width:${corrRatio}%;background:linear-gradient(90deg,#6366f1,#8b5cf6);"></div>
                     </div>` : ''}
-                    <div class="writing-analysis-desc">${dupDesc}</div>
+                    <div class="writing-analysis-desc">${corrDesc}
+                        ${avgCorrPauseMs !== null ? `<br>평균 수정 pause: ${avgCorrPauseMs}ms` : ''}
+                        ${(totalShortBursts + totalLongBursts) > 0
+                            ? `<br>오타수정 ${totalShortBursts}회 · 내용고민 ${totalLongBursts}회` : ''}
+                    </div>
                 </div>
+
+                <!-- ★ [유창성] 평균 키 입력 간격 -->
                 <div class="writing-analysis-card">
-                    <div class="writing-analysis-label">⏸ 평균 공백 시간</div>
+                    <div class="writing-analysis-label">⚡ 타이핑 유창성</div>
                     <div>
-                        <span class="writing-analysis-value">${pauseDisplay !== null ? pauseDisplay : '-'}</span>
-                        ${pauseUnit ? `<span class="writing-analysis-unit">${pauseUnit}</span>` : ''}
+                        <span class="writing-analysis-value" style="color:${avgIKI === null ? '#9aa0a6' : avgIKI < 200 ? '#10b981' : avgIKI < 500 ? '#f59e0b' : '#ef4444'}">
+                            ${avgIKI !== null ? avgIKI : '-'}
+                        </span>
+                        ${avgIKI !== null ? '<span class="writing-analysis-unit">ms/키</span>' : ''}
                     </div>
-                    ${avgPauseSec !== null ? `<div class="writing-analysis-bar-wrap">
-                        <div class="writing-analysis-bar" style="width:${Math.min(Math.round(avgPauseSec/180*100),100)}%; background:linear-gradient(90deg,#6366f1,#8b5cf6);"></div>
+                    ${avgIKI !== null ? `<div class="writing-analysis-bar-wrap">
+                        <div class="writing-analysis-bar" style="width:${Math.min(Math.round(avgIKI/1000*100),100)}%;background:linear-gradient(90deg,#10b981,#6366f1);"></div>
                     </div>` : ''}
-                    <div class="writing-analysis-desc">${pauseDesc}</div>
+                    <div class="writing-analysis-desc">${fluencyDesc}
+                        ${avgWBP !== null ? `<br>단어 사이 pause: ${avgWBP}ms` : ''}
+                    </div>
+                </div>
+
+                <!-- ★ [장기 휴지기] 위치 분석 -->
+                <div class="writing-analysis-card">
+                    <div class="writing-analysis-label">⏸ 장기 멈춤 (3초↑)</div>
+                    <div>
+                        <span class="writing-analysis-value" style="color:${longPauseTotal === 0 ? '#10b981' : '#f59e0b'}">
+                            ${longPauseTotal}
+                        </span>
+                        <span class="writing-analysis-unit">회</span>
+                    </div>
+                    <div class="writing-analysis-bar-wrap">
+                        <div class="writing-analysis-bar" style="width:${Math.min(longPauseTotal*10,100)}%;background:linear-gradient(90deg,#f59e0b,#ef4444);"></div>
+                    </div>
+                    <div class="writing-analysis-desc">${longPauseDesc}</div>
+                </div>
+
+                <!-- ★ [어휘 다양성] TTR -->
+                <div class="writing-analysis-card">
+                    <div class="writing-analysis-label">🔤 어휘 다양성 (TTR)</div>
+                    <div>
+                        <span class="writing-analysis-value" style="color:${avgTTR === null ? '#9aa0a6' : avgTTR > 70 ? '#10b981' : avgTTR > 50 ? '#f59e0b' : '#ef4444'}">
+                            ${avgTTR !== null ? avgTTR : '-'}
+                        </span>
+                        ${avgTTR !== null ? '<span class="writing-analysis-unit">%</span>' : ''}
+                    </div>
+                    ${avgTTR !== null ? `<div class="writing-analysis-bar-wrap">
+                        <div class="writing-analysis-bar" style="width:${Math.min(avgTTR,100)}%;background:${avgTTR > 70 ? '#10b981' : avgTTR > 50 ? '#f59e0b' : '#ef4444'};"></div>
+                    </div>` : ''}
+                    <div class="writing-analysis-desc">${ttrDesc}
+                        ${topRepeatWords.length > 0
+                            ? '<br>자주 쓴 단어: ' + topRepeatWords.map(([w,c])=>`"${w}"(${c})`).join(', ') : ''}
+                    </div>
+                </div>
+
+                <!-- ★ [구어체] 상투어 사용 빈도 -->
+                <div class="writing-analysis-card" style="grid-column: 1 / -1;">
+                    <div class="writing-analysis-label">💬 구어체·상투어 빈도</div>
+                    <div>
+                        <span class="writing-analysis-value" style="color:${avgColloquial === null ? '#9aa0a6' : avgColloquial > 3 ? '#ef4444' : '#10b981'}">
+                            ${avgColloquial !== null ? avgColloquial : '-'}
+                        </span>
+                        ${avgColloquial !== null ? '<span class="writing-analysis-unit">회/일기</span>' : ''}
+                    </div>
+                    <div class="writing-analysis-desc">${colloquialDesc || '데이터가 쌓이면 표시돼요'}
+                        <br><span style="color:#c4c9d0;font-size:10px;">감지어: 진짜, 너무, 막, 그냥, 엄청, 완전, 되게 등</span>
+                    </div>
                 </div>
             `;
         }
     }
+    // ═══════════════════════════════════════════════════════════════
 
     if (!filtered.length) {
         box.innerHTML = `<div class="stats-empty">📭 해당 기간에 작성된 일기가 없어요.</div>`;
