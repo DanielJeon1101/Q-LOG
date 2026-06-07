@@ -1991,6 +1991,17 @@ let wordBoundaryPauses   = [];        // Spacebar 전후 멈춤 시간(ms) 배�
 let longPauseEvents      = [];        // { pauseMs, afterSentenceEnd: bool } 배열
 // ═══════════════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════════════
+// [지표 오염 방지 — 복붙/드롭/자동완성/비현실 속도 감지]
+// 키 입력 없이 글자가 삽입되는 경로를 감지해 시간 기반 지표를 무효화한다.
+// ───────────────────────────────────────────────────────────────────
+const UNREALISTIC_CPM = 600;   // ← 한국어 기준 인간 최대치 근사. 이 값 초과 시 이상치로 간주
+let _pasteDetected      = false; // 붙여넣기(Ctrl+V / 우클릭 붙여넣기) 발생 여부
+let _dropDetected       = false; // 드래그 앤 드롭 삽입 여부
+let _nonTypedInsertChars = 0;    // 키 입력이 아닌 방식으로 삽입된 누적 글자 수
+let _typedInsertChars    = 0;    // 실제 타이핑(insertText)으로 삽입된 누적 글자 수
+// ═══════════════════════════════════════════════════════════════════
+
 // 다중 태그 검색 상태
 let searchTags = [];
 
@@ -2082,6 +2093,11 @@ window.go = function(id) {
         writeStartTime = Date.now();
         firstKeyTime   = null;
         backspaceCount = 0;
+        // ── 지표 오염 플래그 초기화 ──
+        _pasteDetected       = false;
+        _dropDetected        = false;
+        _nonTypedInsertChars = 0;
+        _typedInsertChars    = 0;
         // ── Gemini 상태 초기화 ──
         aiHelpCount = 2;
         updateAiHelpBtn();
@@ -2356,6 +2372,11 @@ window.selectMood = function(m) {
     interKeystrokeIntervals = [];
     wordBoundaryPauses     = [];
     longPauseEvents        = [];
+    // ── 지표 오염 플래그 초기화 ──
+    _pasteDetected         = false;
+    _dropDetected          = false;
+    _nonTypedInsertChars   = 0;
+    _typedInsertChars      = 0;
     // ═══════════════════════════════════════════════════════════════
     // 감정 테마 적용
     const writeEl = document.getElementById('write');
@@ -2589,7 +2610,34 @@ document.getElementById('text').addEventListener('keydown', e => {
     resetIdleTimer(); // 키 누를 때마다 idle 타이머 리셋
 });
 let _lastAutoKey = '';
-document.getElementById('text').addEventListener('input', function() {
+// ═══════════════════════════════════════════════════════════════════
+// [지표 오염 방지] — 붙여넣기 / 드래그앤드롭 감지
+// 키 입력 없이 글자가 삽입되는 경로를 직접 가로채 플래그를 세운다.
+// ───────────────────────────────────────────────────────────────────
+document.getElementById('text').addEventListener('paste', e => {
+    const pasted = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+    _pasteDetected = true;
+    _nonTypedInsertChars += pasted.length;
+});
+document.getElementById('text').addEventListener('drop', () => {
+    _dropDetected = true;
+});
+document.getElementById('text').addEventListener('input', function(e) {
+    // [지표 오염 방지] inputType으로 타이핑 vs 비타이핑 삽입 구분
+    // insertText(일반 타이핑) 외의 모든 삽입(붙여넣기/드롭/자동완성/IME 대량삽입)은 비타이핑으로 집계
+    if (e.inputType === 'insertText' && e.data) {
+        _typedInsertChars += e.data.length;
+    } else if (e.inputType === 'insertFromPaste') {
+        _pasteDetected = true;
+        if (e.data) _nonTypedInsertChars += e.data.length;
+    } else if (e.inputType === 'insertFromDrop') {
+        _dropDetected = true;
+        if (e.data) _nonTypedInsertChars += e.data.length;
+    } else if (e.inputType === 'insertReplacementText' || e.inputType === 'insertFromAutofill') {
+        // 자동완성/자동수정 등으로 삽입
+        _nonTypedInsertChars += (e.data ? e.data.length : 0);
+    }
+
     // AI 감정 감지 표시 제거됨
     const detected = detectAutoTags(this.value);
     const key = [...detected].sort().join(',');
@@ -2628,6 +2676,35 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     const charsPerMinute = (writingDuration && writingDuration > 0)
                            ? Math.round((charCount / writingDuration) * 60) : null;
     const hourOfDay      = new Date().getHours();
+
+    // ═══════════════════════════════════════════════════════════════
+    // [지표 오염 검증] — 시간 기반 지표를 신뢰할 수 있는지 판정
+    // 오염 조건(하나라도 해당 시 시간 기반 지표 무효화):
+    //  1) 붙여넣기 발생            (_pasteDetected)
+    //  2) 드래그 앤 드롭 발생       (_dropDetected)
+    //  3) 비현실적 타이핑 속도      (charsPerMinute > UNREALISTIC_CPM)
+    //  4) 키 입력으로 설명 안 되는 글자 과다
+    //     (실제 타이핑 글자 비율이 50% 미만 — 자동완성/대량삽입 의심)
+    // ───────────────────────────────────────────────────────────────
+    const _typedRatio = charCount > 0
+        ? Math.min(1, _typedInsertChars / charCount)
+        : 1;
+    const _cpmTooHigh = charsPerMinute !== null && charsPerMinute > UNREALISTIC_CPM;
+    const _tooFewTyped = charCount >= 20 && _typedRatio < 0.5;
+
+    const _pollutionReasons = [];
+    if (_pasteDetected) _pollutionReasons.push('paste');
+    if (_dropDetected)  _pollutionReasons.push('drop');
+    if (_cpmTooHigh)    _pollutionReasons.push('cpm_outlier');
+    if (_tooFewTyped)   _pollutionReasons.push('low_typed_ratio');
+
+    const metricsValid = _pollutionReasons.length === 0;
+
+    // 오염 시 시간 기반 지표 무효화(null) → 통계 평균 오염 방지
+    const safeTimeToFirst     = metricsValid ? timeToFirst     : null;
+    const safeWritingDuration = metricsValid ? writingDuration : null;
+    const safeCharsPerMinute  = metricsValid ? charsPerMinute  : null;
+    // ═══════════════════════════════════════════════════════════════
 
     // ═══════════════════════════════════════════════════════════════
     // [수정 버스트 & 휴지기] — 저장 시 집계
@@ -2728,8 +2805,15 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
             date: logDate,
             isBackdate: isBackdate,
             metrics: {
-                timeToFirst, writingDuration, charCount, sentenceCount,
-                charsPerMinute, hourOfDay,
+                timeToFirst: safeTimeToFirst,
+                writingDuration: safeWritingDuration,
+                charCount, sentenceCount,
+                charsPerMinute: safeCharsPerMinute,
+                hourOfDay,
+                // ── [지표 오염 방지] 신뢰도 플래그 ──
+                metricsValid,                       // true: 시간 지표 신뢰 가능 / false: 무효화됨
+                pollutionReasons: _pollutionReasons, // 무효화 사유 ['paste','drop',...]
+                typedRatio: Math.round(_typedRatio * 100) / 100, // 실제 타이핑 글자 비율
                 // ── [수정 버스트 & 휴지기] ──
                 correctionBurst: correctionBurstData,
                 // ── [유창성 & 인지 부하] ──
