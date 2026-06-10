@@ -2760,9 +2760,14 @@ document.getElementById('text').addEventListener('paste', e => {
 document.getElementById('text').addEventListener('drop', () => {
     _dropDetected = true;
 });
+// ★ 한글 IME: 조합이 끝난 시점(compositionend)에 완성된 글자 수를 1회만 집계
+//   (조합 중 insertCompositionText는 input 핸들러에서 세지 않으므로 중복 없음)
+document.getElementById('text').addEventListener('compositionend', e => {
+    if (e.data) _typedInsertChars += e.data.length;
+});
 document.getElementById('text').addEventListener('input', function(e) {
     // [지표 오염 방지] inputType으로 타이핑 vs 비타이핑 삽입 구분
-    // insertText(일반 타이핑) 외의 모든 삽입(붙여넣기/드롭/자동완성/IME 대량삽입)은 비타이핑으로 집계
+    // ★ 한글 IME 조합(insertCompositionText)은 compositionend에서 별도 집계하므로 여기선 제외
     if (e.inputType === 'insertText' && e.data) {
         _typedInsertChars += e.data.length;
     } else if (e.inputType === 'insertFromPaste') {
@@ -2775,6 +2780,7 @@ document.getElementById('text').addEventListener('input', function(e) {
         // 자동완성/자동수정 등으로 삽입
         _nonTypedInsertChars += (e.data ? e.data.length : 0);
     }
+    // insertCompositionText(한글 조합 중)는 여기서 세지 않음 → compositionend에서 1회만 집계
 
     // AI 감정 감지 표시 제거됨
     const detected = detectAutoTags(this.value);
