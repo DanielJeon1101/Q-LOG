@@ -568,6 +568,25 @@ body:has(#write.active) .nav {
 }
 
 /* 기간 버튼 */
+/* 감정/글쓰기 토글 탭 */
+.stats-view-tabs {
+    display: flex; gap: 8px;
+    margin: 0 16px 14px;
+    background: #eef0f3; border-radius: 14px; padding: 4px;
+}
+.stats-view-tab {
+    flex: 1; padding: 10px 0; margin: 0;
+    border: none; background: transparent;
+    font-size: 14px; font-weight: 700; color: #8b95a1;
+    border-radius: 10px; cursor: pointer;
+    transition: all 0.2s;
+}
+.stats-view-tab.active {
+    background: white; color: #191f28;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+body.dark-mode .stats-view-tabs { background: #2a2a2a; }
+body.dark-mode .stats-view-tab.active { background: #3a3a3a; color: #e8eaed; }
 .stats-period-btns {
     display: flex; gap: 8px;
     padding: 16px 16px 4px;
@@ -800,6 +819,104 @@ body:has(#write.active) .nav {
     padding-bottom: 40px;
     min-height: calc(100vh - 70px);
 }
+/* ════════ 글쓰기 레벨 (반원 게이지) ════════ */
+.level-screen-wrap { padding: 0 0 90px; }
+.level-top-bar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 18px 16px 14px;
+    position: sticky; top: 0; background: #f8f8f8; z-index: 10;
+}
+.level-back-btn {
+    width: 36px; height: 36px; border: none; background: #eef0f3;
+    border-radius: 50%; font-size: 16px; cursor: pointer; margin: 0;
+    display: flex; align-items: center; justify-content: center;
+}
+.level-top-title { font-size: 18px; font-weight: 800; color: #191f28; }
+.level-gauge-card {
+    background: white; border-radius: 20px; margin: 0 16px 16px;
+    padding: 24px 20px 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    text-align: center;
+}
+.level-gauge-svg { width: 100%; max-width: 280px; height: auto; margin: 0 auto; display: block; }
+.level-label-big { font-size: 26px; font-weight: 800; margin-top: 8px; }
+.level-label-sub { font-size: 13px; color: #8b95a1; margin-top: 4px; }
+.level-empty { color: #aaa; font-size: 14px; padding: 30px 0; }
+.level-detail-card {
+    background: white; border-radius: 16px; margin: 0 16px 14px;
+    padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.level-detail-title { font-size: 14px; font-weight: 800; color: #191f28; margin-bottom: 14px; }
+.level-metric-row { margin-bottom: 16px; }
+.level-metric-row:last-child { margin-bottom: 0; }
+.level-metric-head {
+    display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;
+}
+.level-metric-name { font-size: 13px; font-weight: 700; color: #333; }
+.level-metric-val  { font-size: 13px; font-weight: 700; }
+.level-metric-bar-wrap { height: 8px; background: #f2f4f6; border-radius: 8px; overflow: hidden; }
+.level-metric-bar { height: 100%; border-radius: 8px; transition: width 0.5s; }
+.level-metric-desc { font-size: 11px; color: #9aa0a6; margin-top: 5px; }
+.level-feedback-card {
+    background: linear-gradient(135deg, #eef2ff, #f5f3ff);
+    border-radius: 16px; margin: 0 16px 14px; padding: 18px;
+    border: 1px solid #e0e7ff;
+}
+.level-feedback-title { font-size: 14px; font-weight: 800; color: #4f46e5; margin-bottom: 12px; }
+.level-feedback-item {
+    display: flex; gap: 9px; align-items: flex-start;
+    font-size: 13px; color: #444; line-height: 1.6; margin-bottom: 10px;
+}
+.level-feedback-item:last-child { margin-bottom: 0; }
+.level-feedback-icon { flex-shrink: 0; font-size: 15px; }
+.level-feedback-good { color: #059669; }
+/* ════════ 나의 기록 데이터 ════════ */
+.mywr-hero {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 20px; margin: 0 16px 16px; padding: 22px 20px;
+    color: white; text-align: center;
+}
+.mywr-hero-num { font-size: 38px; font-weight: 800; line-height: 1.1; }
+.mywr-hero-label { font-size: 13px; opacity: 0.9; margin-top: 4px; }
+.mywr-stat-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    margin: 0 16px 16px;
+}
+.mywr-stat-card {
+    background: white; border-radius: 16px; padding: 18px 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04); text-align: center;
+}
+.mywr-stat-num { font-size: 24px; font-weight: 800; color: #191f28; }
+.mywr-stat-label { font-size: 12px; color: #8b95a1; margin-top: 4px; }
+.mywr-card {
+    background: white; border-radius: 16px; margin: 0 16px 16px;
+    padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.mywr-card-title { font-size: 14px; font-weight: 800; color: #191f28; margin-bottom: 14px; }
+.mywr-word-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+}
+.mywr-word-row:last-child { margin-bottom: 0; }
+.mywr-word-rank {
+    width: 22px; height: 22px; flex-shrink: 0;
+    background: #eef2ff; color: #4f46e5; border-radius: 50%;
+    font-size: 11px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+}
+.mywr-word-name { font-size: 14px; font-weight: 700; color: #333; min-width: 60px; }
+.mywr-word-bar-wrap { flex: 1; height: 8px; background: #f2f4f6; border-radius: 8px; overflow: hidden; }
+.mywr-word-bar { height: 100%; border-radius: 8px; background: linear-gradient(90deg,#6366f1,#8b5cf6); }
+.mywr-word-count { font-size: 12px; color: #8b95a1; min-width: 32px; text-align: right; }
+.mywr-empty { color: #aaa; font-size: 14px; padding: 30px 0; text-align: center; }
+.mywr-note {
+    font-size: 11px; color: #b0b8c4; text-align: center;
+    margin: 4px 16px 0; line-height: 1.6;
+}
+.mywr-time-row { display: flex; justify-content: space-around; text-align: center; }
+.mywr-time-item { flex: 1; }
+.mywr-time-num { font-size: 20px; font-weight: 800; color: #6366f1; }
+.mywr-time-label { font-size: 11px; color: #8b95a1; margin-top: 3px; }
+body.dark-mode .mywr-stat-card, body.dark-mode .mywr-card { background: #2a2a2a; }
+body.dark-mode .mywr-stat-num, body.dark-mode .mywr-card-title, body.dark-mode .mywr-word-name { color: #e8eaed; }
 </style>
 <style>
 /* ═══════════════════════════════════════════════
@@ -1746,6 +1863,12 @@ body.dark-mode .writing-analysis-bar-wrap { background: #333; }
             <span class="stats-top-title">나의 작성</span>
         </div>
 
+        <!-- 감정 / 글쓰기 토글 탭 -->
+        <div class="stats-view-tabs">
+            <button class="stats-view-tab active" id="tabEmotion" data-view="emotion">감정 통계</button>
+            <button class="stats-view-tab" id="tabWriting" data-view="writing">글쓰기 통계</button>
+        </div>
+
         <!-- 기간 선택 -->
         <div class="stats-period-btns">
             <button class="period-btn active-period" data-period="7">1주일</button>
@@ -1753,24 +1876,38 @@ body.dark-mode .writing-analysis-bar-wrap { background: #333; }
             <button class="period-btn" data-period="90">3개월</button>
         </div>
 
-        <!-- 📋 간단 리포트 -->
-        <div class="stats-section-title">📋 리포트</div>
-        <div id="statsReportBox" class="stats-report-box">
-            <!-- JS로 채워짐 -->
+        <!-- ===== 감정 통계 뷰 ===== -->
+        <div id="emotionView">
+            <!-- 📋 간단 리포트 -->
+            <div class="stats-section-title">📋 리포트</div>
+            <div id="statsReportBox" class="stats-report-box">
+                <!-- JS로 채워짐 -->
+            </div>
+
+            <!-- 차트/감정 섹션 -->
+            <div id="statsBox"></div>
+            <div class="streak-heatmap-section">
+                <div class="heatmap-title">📅 최근 28일 기록</div>
+                <div class="heatmap-grid" id="heatmapGrid"></div>
+            </div>
         </div>
 
-        <!-- 🔤 글쓰기 분석 (수정 버스트 / 유창성 / 어휘력) -->
-        <div class="stats-section-title">✍️ 글쓰기 분석</div>
-        <div class="metrics-grid" id="writingAnalysisGrid" style="grid-template-columns:1fr 1fr;">
-            <!-- JS로 채워짐 -->
+        <!-- ===== 글쓰기 통계 뷰 ===== -->
+        <div id="writingView" style="display:none;">
+            <div id="levelContent"><!-- JS로 채워짐 --></div>
         </div>
 
-        <!-- 차트/감정 섹션 -->
-        <div id="statsBox"></div>
-        <div class="streak-heatmap-section">
-            <div class="heatmap-title">📅 최근 28일 기록</div>
-            <div class="heatmap-grid" id="heatmapGrid"></div>
+    </div>
+</div>
+
+<!-- 나의 작성 통계 (객관적 기록 데이터) -->
+<div id="myWriting" class="screen">
+    <div class="level-screen-wrap">
+        <div class="level-top-bar">
+            <button class="level-back-btn" id="myWritingBackBtn">←</button>
+            <span class="level-top-title">나의 기록 데이터</span>
         </div>
+        <div id="myWritingContent"><!-- JS로 채워짐 --></div>
     </div>
 </div>
 
@@ -1866,7 +2003,7 @@ body.dark-mode .writing-analysis-bar-wrap { background: #333; }
             </div>
             <span class="profile-menu-arrow">›</span>
         </div>
-        <div class="profile-menu-item" onclick="window.go('stats')" style="margin-bottom:20px;">
+        <div class="profile-menu-item" onclick="window.go('myWriting')" style="margin-bottom:20px;">
             <span class="profile-menu-icon">📊</span>
             <div style="flex:1;"><div class="profile-menu-label">나의 작성 통계</div></div>
             <span class="profile-menu-arrow">›</span>
@@ -2044,7 +2181,7 @@ const MIN_HEADER = 80;
 let homeScrollY        = 0;
 let homeWasMinimized   = false;
 
-window.go = function(id) {
+window.go = function(id, view) {
     const homeEl = document.getElementById('home');
     const header = document.getElementById('homeHeader');
     const hint   = document.getElementById('swipeHint');
@@ -2086,7 +2223,8 @@ window.go = function(id) {
         window.scrollTo({ top: 0, behavior: 'instant' });
     }
 
-    if (id === 'stats')    renderStats();
+    if (id === 'stats')    switchStatsView(view || 'emotion');
+    if (id === 'myWriting') renderMyWriting();
     if (id === 'calendar') renderCalendar();
     if (id === 'profile')  renderProfile();
     if (id === 'write') {
@@ -2785,6 +2923,54 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     };
     // ═══════════════════════════════════════════════════════════════
 
+    // ═══════════════════════════════════════════════════════════════
+    // [통사 복잡도 & 응집성 지표] — 글쓰기 레벨 산정용
+    //  · wordCount        : 텍스트 길이(어절 수). 가장 강력하고 단순한 지표
+    //  · avgWordsPerSent  : 문장당 평균 어절 수 (통사 복잡도)
+    //  · connectiveDensity: 연결어미·접속사 밀도 (응집성, 2학기 ETRI 연동 예정)
+    // ───────────────────────────────────────────────────────────────
+    const wordCount = _tokenCount; // 위에서 계산한 어절 수 재사용
+
+    // 문장 분리 (마침표/물음표/느낌표 기준, 빈 문장 제외)
+    const _sentences = text.split(/[.!?。\n]+/).map(s => s.trim()).filter(s => s.length > 0);
+    const _sentCount = _sentences.length > 0 ? _sentences.length : 1;
+    const avgWordsPerSent = Math.round((wordCount / _sentCount) * 10) / 10;
+
+    // 연결어미·접속사 빈도
+    // ← 아래 배열로 감지할 연결 표현을 추가/수정할 수 있습니다 (ETRI 연동 시 대체 예정)
+    const CONNECTIVES = [
+        // 접속 부사
+        '그리고','그러나','하지만','그래서','따라서','그런데','왜냐하면','그러면','그러므로',
+        '또한','게다가','반면','반면에','즉','예를 들어','다만','오히려','한편','결국','특히',
+        // 연결 어미 (어절 내 포함 탐지)
+        '지만','으니까','니까','어서','아서','는데','은데','면서','거나','든지','려고','도록','뿐만'
+    ];
+    let _connectiveHits = 0;
+    // 접속 부사: 텍스트 전체에서 등장 횟수
+    CONNECTIVES.slice(0, 21).forEach(c => {
+        const re = new RegExp(c, 'g');
+        const m = text.match(re);
+        if (m) _connectiveHits += m.length;
+    });
+    // 연결 어미: 어절 단위로 포함 여부
+    const _emDdiList = CONNECTIVES.slice(21);
+    text.trim().split(/\s+/).forEach(w => {
+        if (_emDdiList.some(em => w.includes(em))) _connectiveHits += 1;
+    });
+    // 밀도 = 연결표현 수 / 어절 수 (어절당 연결 표현 비율)
+    const connectiveDensity = wordCount > 0
+        ? Math.round((_connectiveHits / wordCount) * 100) / 100
+        : 0;
+
+    const syntaxData = {
+        wordCount,             // 어절 수 (텍스트 길이)
+        sentenceCount: _sentCount,
+        avgWordsPerSent,       // 문장당 평균 어절 수
+        connectiveHits: _connectiveHits,
+        connectiveDensity,     // 연결어미·접속사 밀도
+    };
+    // ═══════════════════════════════════════════════════════════════
+
     try {
                 // 어제 날짜 처리
         const isBackdate = selectedWriteDate === 'yesterday';
@@ -2820,6 +3006,8 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
                 fluency: fluencyData,
                 // ── [어휘력 & 표현력] ──
                 vocabulary: vocabularyData,
+                // ── [통사 복잡도 & 응집성] ──
+                syntax: syntaxData,
             }
         });
         document.getElementById('text').value = "";
@@ -3162,13 +3350,181 @@ window.saveNickname = saveNickname;
 // ── 통계 뒤로가기 ─────────────────────────────
 document.getElementById('statsBackBtn').addEventListener('click', () => window.go('home'));
 
+// ── 감정/글쓰기 통계 뷰 전환 ──
+function switchStatsView(view) {
+    const emotionView = document.getElementById('emotionView');
+    const writingView = document.getElementById('writingView');
+    const tabEmotion  = document.getElementById('tabEmotion');
+    const tabWriting  = document.getElementById('tabWriting');
+
+    if (view === 'writing') {
+        emotionView.style.display = 'none';
+        writingView.style.display = '';
+        tabEmotion.classList.remove('active');
+        tabWriting.classList.add('active');
+        renderWritingLevel();
+    } else {
+        emotionView.style.display = '';
+        writingView.style.display = 'none';
+        tabWriting.classList.remove('active');
+        tabEmotion.classList.add('active');
+        renderStats();
+    }
+}
+document.getElementById('tabEmotion').addEventListener('click', () => switchStatsView('emotion'));
+document.getElementById('tabWriting').addEventListener('click', () => switchStatsView('writing'));
+document.getElementById('myWritingBackBtn').addEventListener('click', () => window.go('profile'));
+
+// ═══════════════════════════════════════════════════════════════════
+// [나의 기록 데이터] — 본인이 실제로 어떻게 썼는지 보여주는 객관적 누적 통계
+// 행동 추적(백스페이스/IKI/휴지기)은 제외하고, 본인 결과물 기반 데이터만 표시
+// ───────────────────────────────────────────────────────────────────
+function renderMyWriting() {
+    const wrap = document.getElementById('myWritingContent');
+    if (!currentUser) {
+        wrap.innerHTML = '<div class="mywr-card"><div class="mywr-empty">로그인 후 이용할 수 있어요.</div></div>';
+        return;
+    }
+    // 전체 기간 누적 (어제 작성 포함 — 단순 기록 데이터이므로)
+    const all = logs.filter(l => l.text);
+    if (all.length === 0) {
+        wrap.innerHTML = '<div class="mywr-card"><div class="mywr-empty">📭 아직 작성한 일기가 없어요.</div></div>';
+        return;
+    }
+
+    // ── 누적 집계 ──
+    const totalLogs  = all.length;
+    const totalChars = all.reduce((s,l) => s + l.text.length, 0);
+    let totalWords = 0, totalSentences = 0;
+    const wordFreqMap = {};
+    const colloquialMap = {};
+    const hourBuckets = {};
+
+    all.forEach(l => {
+        const s = l.metrics?.syntax;
+        const v = l.metrics?.vocabulary;
+        if (s) { totalWords += s.wordCount || 0; totalSentences += s.sentenceCount || 0; }
+        // 반복 단어 누적
+        if (v?.topRepeatedWords) {
+            v.topRepeatedWords.forEach(({ word, count }) => {
+                wordFreqMap[word] = (wordFreqMap[word] || 0) + count;
+            });
+        }
+        // 구어체 누적
+        if (v?.colloquialCounts) {
+            Object.entries(v.colloquialCounts).forEach(([w, c]) => {
+                colloquialMap[w] = (colloquialMap[w] || 0) + c;
+            });
+        }
+        // 작성 시각 분포
+        const h = l.metrics?.hourOfDay;
+        if (h != null) hourBuckets[h] = (hourBuckets[h] || 0) + 1;
+    });
+
+    const avgChars     = Math.round(totalChars / totalLogs);
+    const avgSentences = totalSentences > 0 ? Math.round((totalSentences / totalLogs) * 10) / 10 : '-';
+
+    // 가장 자주 쓴 단어 Top 5
+    const topWords = Object.entries(wordFreqMap).sort((a,b) => b[1]-a[1]).slice(0, 5);
+    const maxWordCount = topWords.length ? topWords[0][1] : 1;
+
+    // 구어체 Top
+    const topColloquial = Object.entries(colloquialMap).sort((a,b) => b[1]-a[1]).slice(0, 5);
+
+    // 주 작성 시간대
+    let peakHour = null, peakCount = 0;
+    Object.entries(hourBuckets).forEach(([h, c]) => { if (c > peakCount) { peakCount = c; peakHour = parseInt(h); } });
+    const peakHourLabel = peakHour === null ? '-'
+        : peakHour < 6  ? '새벽'
+        : peakHour < 12 ? '오전'
+        : peakHour < 18 ? '오후'
+        : '저녁';
+
+    // ── HTML ──
+    let html = `
+        <div class="mywr-hero">
+            <div class="mywr-hero-num">${totalLogs}</div>
+            <div class="mywr-hero-label">지금까지 작성한 일기</div>
+        </div>
+        <div class="mywr-stat-grid">
+            <div class="mywr-stat-card">
+                <div class="mywr-stat-num">${totalChars.toLocaleString()}</div>
+                <div class="mywr-stat-label">총 글자 수</div>
+            </div>
+            <div class="mywr-stat-card">
+                <div class="mywr-stat-num">${totalWords.toLocaleString()}</div>
+                <div class="mywr-stat-label">총 어절 수</div>
+            </div>
+            <div class="mywr-stat-card">
+                <div class="mywr-stat-num">${avgChars}</div>
+                <div class="mywr-stat-label">일기당 평균 글자</div>
+            </div>
+            <div class="mywr-stat-card">
+                <div class="mywr-stat-num">${avgSentences}</div>
+                <div class="mywr-stat-label">일기당 평균 문장</div>
+            </div>
+        </div>`;
+
+    // 자주 쓴 단어
+    if (topWords.length > 0) {
+        html += `<div class="mywr-card">
+            <div class="mywr-card-title">🔤 내가 자주 쓰는 단어</div>
+            ${topWords.map(([w, c], i) => `
+                <div class="mywr-word-row">
+                    <span class="mywr-word-rank">${i+1}</span>
+                    <span class="mywr-word-name">${w}</span>
+                    <span class="mywr-word-bar-wrap"><span class="mywr-word-bar" style="width:${Math.round(c/maxWordCount*100)}%"></span></span>
+                    <span class="mywr-word-count">${c}번</span>
+                </div>`).join('')}
+        </div>`;
+    }
+
+    // 구어체 습관
+    if (topColloquial.length > 0) {
+        html += `<div class="mywr-card">
+            <div class="mywr-card-title">💬 내 말버릇</div>
+            ${topColloquial.map(([w, c]) => `
+                <div class="mywr-word-row">
+                    <span class="mywr-word-name">"${w}"</span>
+                    <span class="mywr-word-bar-wrap"><span class="mywr-word-bar" style="width:${Math.round(c/topColloquial[0][1]*100)}%"></span></span>
+                    <span class="mywr-word-count">${c}번</span>
+                </div>`).join('')}
+            <div class="mywr-note" style="margin-top:10px;text-align:left;">일기에서 습관적으로 자주 등장한 표현이에요.</div>
+        </div>`;
+    }
+
+    // 주 작성 시간대
+    if (peakHour !== null) {
+        html += `<div class="mywr-card">
+            <div class="mywr-card-title">🕐 주로 기록하는 시간</div>
+            <div class="mywr-time-row">
+                <div class="mywr-time-item">
+                    <div class="mywr-time-num">${peakHourLabel}</div>
+                    <div class="mywr-time-label">가장 자주 쓰는 때</div>
+                </div>
+                <div class="mywr-time-item">
+                    <div class="mywr-time-num">${peakHour}시경</div>
+                    <div class="mywr-time-label">${peakCount}편 작성</div>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    html += `<div class="mywr-note">이 데이터는 모두 내가 작성한 일기에서 집계된 거예요.<br>나만 볼 수 있어요.</div>`;
+
+    wrap.innerHTML = html;
+}
+
 // ── 통계 (기간 필터 + 추세 + 차트) ──────────────────
 document.querySelectorAll('.period-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active-period'));
         btn.classList.add('active-period');
         statsPeriod = parseInt(btn.dataset.period);
-        renderStats();
+        // 현재 활성 뷰에 맞게 다시 렌더링
+        const writingActive = document.getElementById('tabWriting').classList.contains('active');
+        if (writingActive) renderWritingLevel();
+        else renderStats();
     });
 });
 
@@ -3180,6 +3536,214 @@ function getFilteredLogs(days) {
 function getMetricsLogs(days) {
     return getFilteredLogs(days).filter(l => !l.isBackdate);
 }
+
+
+// ═══════════════════════════════════════════════════════════════════
+// [글쓰기 레벨] — 객관 지표를 종합해 5단계 레벨 산정 + 반원 게이지 + 규칙 기반 피드백
+//
+// 레벨 색상: 1 우수(초록) → 5 위험(빨강). 사용자에게는 숫자 대신 색+라벨로 표시.
+// 근거(절대 기준 A):
+//   · 문장 길이: 美 언론협회 가독성표(8~17단어 읽기쉬움~표준) → 일기 보정 7~15어절 적정
+//   · 텍스트 길이(어절 수): L1/L2 연구에서 점수 수준을 가장 일관되게 구분한 지표
+//   · TTR: 어휘 다양성 표준 지표
+//   · 연결어미 밀도: 응집성 지표(2학기 ETRI 연동 예정)
+// ───────────────────────────────────────────────────────────────────
+
+// 각 지표를 1(우수)~5(위험) 점수로 변환
+function _scoreWordCount(v) {           // 텍스트 길이(어절)
+    if (v >= 80) return 1;
+    if (v >= 50) return 2;
+    if (v >= 30) return 3;
+    if (v >= 15) return 4;
+    return 5;
+}
+function _scoreSentLen(v) {             // 문장당 평균 어절 (적정 범위 중심)
+    if (v >= 7 && v <= 15) return 1;
+    if (v >= 6 && v <= 17) return 2;
+    if (v >= 5 && v <= 19) return 3;
+    if (v >= 4 && v <= 21) return 4;
+    return 5;
+}
+function _scoreTTR(v) {                 // 어휘 다양성 (0~1)
+    if (v >= 0.75) return 1;
+    if (v >= 0.65) return 2;
+    if (v >= 0.55) return 3;
+    if (v >= 0.45) return 4;
+    return 5;
+}
+function _scoreConnective(v) {          // 연결어미 밀도
+    if (v >= 0.20) return 1;
+    if (v >= 0.15) return 2;
+    if (v >= 0.10) return 3;
+    if (v >= 0.05) return 4;
+    return 5;
+}
+
+// 레벨 → 색상/라벨 (1 우수 → 5 위험)
+const LEVEL_META = {
+    1: { color: '#22c55e', label: '우수', desc: '풍부하고 짜임새 있는 글쓰기예요!' },
+    2: { color: '#a3c637', label: '양호', desc: '안정적으로 잘 쓰고 있어요.' },
+    3: { color: '#facc15', label: '보통', desc: '기본기는 충분해요. 조금만 더!' },
+    4: { color: '#f97316', label: '주의', desc: '표현을 조금 더 다듬어볼까요?' },
+    5: { color: '#ef4444', label: '시작', desc: '함께 차근차근 늘려가요.' },
+};
+
+// 기간 내 일기들의 평균 지표 + 종합 레벨 계산
+function computeWritingLevel(logs) {
+    const valid = logs.filter(l => l.metrics && l.metrics.syntax);
+    if (valid.length === 0) return null;
+
+    let wcSum = 0, slSum = 0, ttrSum = 0, ttrN = 0, cdSum = 0;
+    valid.forEach(l => {
+        const s = l.metrics.syntax;
+        const v = l.metrics.vocabulary || {};
+        wcSum += s.wordCount || 0;
+        slSum += s.avgWordsPerSent || 0;
+        cdSum += s.connectiveDensity || 0;
+        if (v.ttr != null) { ttrSum += v.ttr; ttrN++; }
+    });
+    const n = valid.length;
+    const avgWordCount = Math.round(wcSum / n);
+    const avgSentLen   = Math.round((slSum / n) * 10) / 10;
+    const avgTTR       = ttrN > 0 ? Math.round((ttrSum / ttrN) * 100) / 100 : 0;
+    const avgConnDens  = Math.round((cdSum / n) * 100) / 100;
+
+    const sWord = _scoreWordCount(avgWordCount);
+    const sSent = _scoreSentLen(avgSentLen);
+    const sTTR  = _scoreTTR(avgTTR);
+    const sConn = _scoreConnective(avgConnDens);
+
+    // 종합 레벨 = 4개 지표 점수 평균 (반올림)
+    const overall = Math.round((sWord + sSent + sTTR + sConn) / 4);
+
+    return {
+        count: n,
+        overall: Math.min(5, Math.max(1, overall)),
+        metrics: {
+            wordCount:   { value: avgWordCount, score: sWord, name: '텍스트 길이', unit: '어절' },
+            sentLen:     { value: avgSentLen,   score: sSent, name: '문장당 어절', unit: '어절' },
+            ttr:         { value: Math.round(avgTTR * 100), score: sTTR, name: '어휘 다양성', unit: '%' },
+            connective:  { value: Math.round(avgConnDens * 100), score: sConn, name: '문장 연결성', unit: '%' },
+        }
+    };
+}
+
+// 반원 5분할 게이지 SVG 생성 (1 우수 바깥 초록 → 5 위험 안쪽 빨강 톤)
+function buildLevelGaugeSVG(level) {
+    // 반원을 5등분, 현재 레벨 구간만 색칠하고 나머지는 흐리게
+    const segColors = ['#22c55e','#a3c637','#facc15','#f97316','#ef4444'];
+    const cx = 140, cy = 130, rOuter = 120, rInner = 70;
+    let paths = '';
+    for (let i = 0; i < 5; i++) {
+        // 반원: 180도(왼쪽)에서 0도(오른쪽). i=0이 왼쪽(우수)
+        const a0 = Math.PI - (Math.PI * i / 5);
+        const a1 = Math.PI - (Math.PI * (i + 1) / 5);
+        const x0o = cx + rOuter * Math.cos(a0), y0o = cy - rOuter * Math.sin(a0);
+        const x1o = cx + rOuter * Math.cos(a1), y1o = cy - rOuter * Math.sin(a1);
+        const x1i = cx + rInner * Math.cos(a1), y1i = cy - rInner * Math.sin(a1);
+        const x0i = cx + rInner * Math.cos(a0), y0i = cy - rInner * Math.sin(a0);
+        const isActive = (i + 1) === level;
+        const fill = isActive ? segColors[i] : segColors[i] + '33'; // 비활성은 투명도
+        paths += `<path d="M ${x0o} ${y0o} A ${rOuter} ${rOuter} 0 0 1 ${x1o} ${y1o} L ${x1i} ${y1i} A ${rInner} ${rInner} 0 0 0 ${x0i} ${y0i} Z" fill="${fill}" stroke="white" stroke-width="2"/>`;
+    }
+    const meta = LEVEL_META[level];
+    return `<svg class="level-gauge-svg" viewBox="0 0 280 160" xmlns="http://www.w3.org/2000/svg">
+        ${paths}
+        <text x="140" y="120" text-anchor="middle" font-size="30" font-weight="800" fill="${meta.color}">${meta.label}</text>
+    </svg>`;
+}
+
+// 규칙 기반 피드백 생성
+function buildLevelFeedback(result) {
+    const m = result.metrics;
+    const items = [];
+    // 각 지표별: 점수 4~5면 개선 제안, 1~2면 칭찬
+    if (m.wordCount.score >= 4) {
+        items.push({ icon: '📝', good: false, text: `일기가 다소 짧아요(평균 ${m.wordCount.value}어절). 떠오른 생각을 한두 문장 더 이어보면 표현력이 늘어요.` });
+    } else if (m.wordCount.score <= 2) {
+        items.push({ icon: '✅', good: true, text: `충분한 분량으로 쓰고 있어요(평균 ${m.wordCount.value}어절).` });
+    }
+    if (m.sentLen.score >= 4) {
+        const tooShort = m.sentLen.value < 7;
+        items.push({ icon: '🔗', good: false, text: tooShort
+            ? `문장이 짧고 단순해요(평균 ${m.sentLen.value}어절). '그래서', '하지만' 같은 연결어로 문장을 이어보세요.`
+            : `문장이 너무 길어요(평균 ${m.sentLen.value}어절). 한 문장을 둘로 나누면 더 또렷해져요.` });
+    } else if (m.sentLen.score <= 2) {
+        items.push({ icon: '✅', good: true, text: `문장 길이가 읽기 좋은 범위예요(평균 ${m.sentLen.value}어절).` });
+    }
+    if (m.ttr.score >= 4) {
+        items.push({ icon: '🔤', good: false, text: `같은 단어가 자주 반복돼요(어휘 다양성 ${m.ttr.value}%). 비슷한 뜻의 다른 표현을 섞어보세요.` });
+    } else if (m.ttr.score <= 2) {
+        items.push({ icon: '✅', good: true, text: `다양한 어휘를 풍부하게 사용하고 있어요(${m.ttr.value}%).` });
+    }
+    if (m.connective.score >= 4) {
+        items.push({ icon: '🧩', good: false, text: `문장 사이 연결이 적어요. '왜냐하면', '그리고', '그런데' 같은 말로 생각을 이어보면 글이 매끄러워져요.` });
+    } else if (m.connective.score <= 2) {
+        items.push({ icon: '✅', good: true, text: `문장을 자연스럽게 연결하며 쓰고 있어요.` });
+    }
+    if (items.length === 0) {
+        items.push({ icon: '👍', good: true, text: '전반적으로 균형 잡힌 글쓰기예요. 지금처럼 꾸준히 기록해보세요!' });
+    }
+    return items;
+}
+
+// 글쓰기 레벨 화면 렌더링
+function renderWritingLevel() {
+    const wrap = document.getElementById('levelContent');
+    if (!currentUser) {
+        wrap.innerHTML = '<div class="level-gauge-card"><div class="level-empty">로그인 후 이용할 수 있어요.</div></div>';
+        return;
+    }
+    // 선택된 기간 기준, 어제 작성 제외
+    const data = computeWritingLevel(getMetricsLogs(statsPeriod));
+    if (!data) {
+        wrap.innerHTML = '<div class="level-gauge-card"><div class="level-empty">📭 분석할 일기가 아직 없어요.<br>며칠간 일기를 써보면 글쓰기 레벨이 나타나요!</div></div>';
+        return;
+    }
+
+    const meta = LEVEL_META[data.overall];
+    const gauge = buildLevelGaugeSVG(data.overall);
+    const feedback = buildLevelFeedback(data);
+
+    // 상세 지표 막대
+    const metricRows = Object.values(data.metrics).map(mt => {
+        const c = LEVEL_META[mt.score].color;
+        const pct = (6 - mt.score) / 5 * 100; // 점수 1→100%, 5→20%
+        return `<div class="level-metric-row">
+            <div class="level-metric-head">
+                <span class="level-metric-name">${mt.name}</span>
+                <span class="level-metric-val" style="color:${c}">${mt.value}${mt.unit} · ${LEVEL_META[mt.score].label}</span>
+            </div>
+            <div class="level-metric-bar-wrap">
+                <div class="level-metric-bar" style="width:${pct}%;background:${c};"></div>
+            </div>
+        </div>`;
+    }).join('');
+
+    const fbItems = feedback.map(f => `
+        <div class="level-feedback-item">
+            <span class="level-feedback-icon">${f.icon}</span>
+            <span class="${f.good ? 'level-feedback-good' : ''}">${f.text}</span>
+        </div>`).join('');
+
+    wrap.innerHTML = `
+        <div class="level-gauge-card">
+            ${gauge}
+            <div class="level-label-big" style="color:${meta.color}">${meta.label}</div>
+            <div class="level-label-sub">최근 ${statsPeriod === 7 ? '1주일' : statsPeriod === 30 ? '1개월' : '3개월'} · 일기 ${data.count}편 분석 · ${meta.desc}</div>
+        </div>
+        <div class="level-detail-card">
+            <div class="level-detail-title">📐 항목별 분석</div>
+            ${metricRows}
+            <div class="level-metric-desc" style="margin-top:12px;">※ 미국 언론협회 가독성 기준과 L2 글쓰기 연구를 바탕으로 한 참고 지표입니다.</div>
+        </div>
+        <div class="level-feedback-card">
+            <div class="level-feedback-title">💡 이렇게 해보세요</div>
+            ${fbItems}
+        </div>
+    `;
+}
+
 
 function renderStats() {
     const box      = document.getElementById('statsBox');
@@ -3241,173 +3805,7 @@ function renderStats() {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // [글쓰기 분석] — 통계 화면 렌더링
-    // 수정 버스트 / 유창성 / 어휘력 지표를 카드로 표시합니다
-    // ───────────────────────────────────────────────────────────────
-    const analysisGrid = document.getElementById('writingAnalysisGrid');
-    if (analysisGrid) {
-        if (!filtered.length) {
-            analysisGrid.innerHTML = '<div class="metrics-empty">📭 해당 기간에 작성된 일기가 없어요.</div>';
-        } else {
-
-            // ── [수정 버스트 & 휴지기] 집계 ──────────────────────────
-            let totalShortBursts = 0, totalLongBursts = 0, pauseMsList = [];
-            filtered.forEach(l => {
-                const cb = l.metrics?.correctionBurst;
-                if (!cb) return;
-                totalShortBursts += cb.shortBursts  || 0;
-                totalLongBursts  += cb.longBursts   || 0;
-                if (cb.avgPauseMs != null) pauseMsList.push(cb.avgPauseMs);
-            });
-            const avgCorrPauseMs = pauseMsList.length > 0
-                ? Math.round(pauseMsList.reduce((a,b)=>a+b,0) / pauseMsList.length) : null;
-            const corrRatio = (totalShortBursts + totalLongBursts) > 0
-                ? Math.round(totalLongBursts / (totalShortBursts + totalLongBursts) * 100) : null;
-            const corrDesc = corrRatio === null ? '데이터가 쌓이면 표시돼요'
-                : corrRatio > 60 ? '단어·문장을 자주 고민해요'
-                : corrRatio > 30 ? '오타 수정과 내용 수정이 섞여요'
-                : '대부분 오타 수정이에요';
-
-            // ── [유창성 & 인지 부하] 집계 ────────────────────────────
-            let ikiList = [], wbpList = [], longPauseTotal = 0, midTotal = 0, afterTotal = 0;
-            filtered.forEach(l => {
-                const fl = l.metrics?.fluency;
-                if (!fl) return;
-                if (fl.avgIKI != null) ikiList.push(fl.avgIKI);
-                if (fl.avgWordBoundaryPause != null) wbpList.push(fl.avgWordBoundaryPause);
-                longPauseTotal += fl.longPauseCount        || 0;
-                midTotal       += fl.longPauseMidSentence  || 0;
-                afterTotal     += fl.longPauseAfterSentence|| 0;
-            });
-            const avgIKI = ikiList.length > 0
-                ? Math.round(ikiList.reduce((a,b)=>a+b,0) / ikiList.length) : null;
-            const avgWBP = wbpList.length > 0
-                ? Math.round(wbpList.reduce((a,b)=>a+b,0) / wbpList.length) : null;
-            const fluencyDesc = avgIKI === null ? '데이터가 쌓이면 표시돼요'
-                : avgIKI < 200 ? '막힘 없이 빠르게 써요!'
-                : avgIKI < 500 ? '적당한 속도로 생각하며 써요'
-                : '천천히 신중하게 쓰는 편이에요';
-            const longPauseDesc = longPauseTotal === 0 ? '장기 멈춤이 거의 없어요'
-                : midTotal > afterTotal ? `문장 중간에 ${midTotal}회 멈췄어요 — 표현 탐색 중`
-                : `문장 끝에서 ${afterTotal}회 멈췄어요 — 다음 이야기 구상 중`;
-
-            // ── [어휘력 & 표현력] 집계 ────────────────────────────────
-            let ttrList = [], colloquialTotalSum = 0, vocabCount = 0;
-            const repeatedWordMap = {};
-            filtered.forEach(l => {
-                const vc = l.metrics?.vocabulary;
-                if (!vc) return;
-                if (vc.ttr != null) ttrList.push(vc.ttr);
-                colloquialTotalSum += vc.colloquialTotal || 0;
-                vocabCount++;
-                (vc.topRepeatedWords || []).forEach(({ word, count }) => {
-                    repeatedWordMap[word] = (repeatedWordMap[word] || 0) + count;
-                });
-            });
-            const avgTTR = ttrList.length > 0
-                ? Math.round(ttrList.reduce((a,b)=>a+b,0) / ttrList.length * 100) : null; // %로 표시
-            const avgColloquial = vocabCount > 0
-                ? Math.round(colloquialTotalSum / vocabCount * 10) / 10 : null;
-            const topRepeatWords = Object.entries(repeatedWordMap)
-                .sort((a,b)=>b[1]-a[1]).slice(0,3);
-            const ttrDesc = avgTTR === null ? '데이터가 쌓이면 표시돼요'
-                : avgTTR > 70 ? '다양한 어휘를 풍부하게 써요!'
-                : avgTTR > 50 ? '적당한 어휘 다양성이에요'
-                : '같은 단어가 자주 반복돼요';
-            const colloquialDesc = avgColloquial === null ? ''
-                : avgColloquial > 3 ? `구어체 표현이 일기당 평균 ${avgColloquial}회 등장해요`
-                : `구어체 표현 사용이 적어요 (일기당 ${avgColloquial}회)`;
-
-            // ── 카드 HTML 렌더링 ───────────────────────────────────────
-            analysisGrid.innerHTML = `
-
-                <!-- ★ [수정 버스트] 고민 수정 비율 -->
-                <div class="writing-analysis-card">
-                    <div class="writing-analysis-label">✏️ 고민 수정 비율</div>
-                    <div>
-                        <span class="writing-analysis-value" style="color:${corrRatio === null ? '#9aa0a6' : corrRatio > 60 ? '#6366f1' : corrRatio > 30 ? '#f59e0b' : '#10b981'}">
-                            ${corrRatio !== null ? corrRatio : '-'}
-                        </span>
-                        ${corrRatio !== null ? '<span class="writing-analysis-unit">%</span>' : ''}
-                    </div>
-                    ${corrRatio !== null ? `<div class="writing-analysis-bar-wrap">
-                        <div class="writing-analysis-bar" style="width:${corrRatio}%;background:linear-gradient(90deg,#6366f1,#8b5cf6);"></div>
-                    </div>` : ''}
-                    <div class="writing-analysis-desc">${corrDesc}
-                        ${avgCorrPauseMs !== null ? `<br>평균 수정 pause: ${avgCorrPauseMs}ms` : ''}
-                        ${(totalShortBursts + totalLongBursts) > 0
-                            ? `<br>오타수정 ${totalShortBursts}회 · 내용고민 ${totalLongBursts}회` : ''}
-                    </div>
-                </div>
-
-                <!-- ★ [유창성] 평균 키 입력 간격 -->
-                <div class="writing-analysis-card">
-                    <div class="writing-analysis-label">⚡ 타이핑 유창성</div>
-                    <div>
-                        <span class="writing-analysis-value" style="color:${avgIKI === null ? '#9aa0a6' : avgIKI < 200 ? '#10b981' : avgIKI < 500 ? '#f59e0b' : '#ef4444'}">
-                            ${avgIKI !== null ? avgIKI : '-'}
-                        </span>
-                        ${avgIKI !== null ? '<span class="writing-analysis-unit">ms/키</span>' : ''}
-                    </div>
-                    ${avgIKI !== null ? `<div class="writing-analysis-bar-wrap">
-                        <div class="writing-analysis-bar" style="width:${Math.min(Math.round(avgIKI/1000*100),100)}%;background:linear-gradient(90deg,#10b981,#6366f1);"></div>
-                    </div>` : ''}
-                    <div class="writing-analysis-desc">${fluencyDesc}
-                        ${avgWBP !== null ? `<br>단어 사이 pause: ${avgWBP}ms` : ''}
-                    </div>
-                </div>
-
-                <!-- ★ [장기 휴지기] 위치 분석 -->
-                <div class="writing-analysis-card">
-                    <div class="writing-analysis-label">⏸ 장기 멈춤 (3초↑)</div>
-                    <div>
-                        <span class="writing-analysis-value" style="color:${longPauseTotal === 0 ? '#10b981' : '#f59e0b'}">
-                            ${longPauseTotal}
-                        </span>
-                        <span class="writing-analysis-unit">회</span>
-                    </div>
-                    <div class="writing-analysis-bar-wrap">
-                        <div class="writing-analysis-bar" style="width:${Math.min(longPauseTotal*10,100)}%;background:linear-gradient(90deg,#f59e0b,#ef4444);"></div>
-                    </div>
-                    <div class="writing-analysis-desc">${longPauseDesc}</div>
-                </div>
-
-                <!-- ★ [어휘 다양성] TTR -->
-                <div class="writing-analysis-card">
-                    <div class="writing-analysis-label">🔤 어휘 다양성 (TTR)</div>
-                    <div>
-                        <span class="writing-analysis-value" style="color:${avgTTR === null ? '#9aa0a6' : avgTTR > 70 ? '#10b981' : avgTTR > 50 ? '#f59e0b' : '#ef4444'}">
-                            ${avgTTR !== null ? avgTTR : '-'}
-                        </span>
-                        ${avgTTR !== null ? '<span class="writing-analysis-unit">%</span>' : ''}
-                    </div>
-                    ${avgTTR !== null ? `<div class="writing-analysis-bar-wrap">
-                        <div class="writing-analysis-bar" style="width:${Math.min(avgTTR,100)}%;background:${avgTTR > 70 ? '#10b981' : avgTTR > 50 ? '#f59e0b' : '#ef4444'};"></div>
-                    </div>` : ''}
-                    <div class="writing-analysis-desc">${ttrDesc}
-                        ${topRepeatWords.length > 0
-                            ? '<br>자주 쓴 단어: ' + topRepeatWords.map(([w,c])=>`"${w}"(${c})`).join(', ') : ''}
-                    </div>
-                </div>
-
-                <!-- ★ [구어체] 상투어 사용 빈도 -->
-                <div class="writing-analysis-card" style="grid-column: 1 / -1;">
-                    <div class="writing-analysis-label">💬 구어체·상투어 빈도</div>
-                    <div>
-                        <span class="writing-analysis-value" style="color:${avgColloquial === null ? '#9aa0a6' : avgColloquial > 3 ? '#ef4444' : '#10b981'}">
-                            ${avgColloquial !== null ? avgColloquial : '-'}
-                        </span>
-                        ${avgColloquial !== null ? '<span class="writing-analysis-unit">회/일기</span>' : ''}
-                    </div>
-                    <div class="writing-analysis-desc">${colloquialDesc || '데이터가 쌓이면 표시돼요'}
-                        <br><span style="color:#c4c9d0;font-size:10px;">감지어: 진짜, 너무, 막, 그냥, 엄청, 완전, 되게 등</span>
-                    </div>
-                </div>
-            `;
-        }
-    }
-    // ═══════════════════════════════════════════════════════════════
+    // [글쓰기 분석 카드는 프로필 > 나의 작성 통계로 이동됨]
 
     if (!filtered.length) {
         box.innerHTML = `<div class="stats-empty">📭 해당 기간에 작성된 일기가 없어요.</div>`;
