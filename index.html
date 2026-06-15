@@ -2242,6 +2242,9 @@ window.go = function(id, view) {
         document.getElementById('aiResponseArea').innerHTML = '';
         document.getElementById('aiStuckPopup').style.display = 'none';
         resetIdleTimer();
+        // ── [안전장치] 질문/감정 테마가 비어 있으면 채워줌 ──
+        // (감정 선택 없이 진입했거나, 렌더 타이밍 문제로 비어 있는 경우 대비)
+        ensureWriteQuestion();
     }
 };
 
@@ -2459,6 +2462,35 @@ const moodThemeMap = {
     '😡': 'mood-angry',
     '😫': 'mood-tired'
 };
+
+// 감정별 배경 테마 적용 (모든 mood-* 클래스 제거 후 해당 클래스 추가)
+function applyMoodTheme(m) {
+    const writeEl = document.getElementById('write');
+    if (!writeEl) return;
+    writeEl.classList.remove('mood-happy','mood-good','mood-neutral','mood-sad','mood-angry','mood-tired');
+    const cls = moodThemeMap[m];
+    if (cls) writeEl.classList.add(cls);
+}
+
+// 현재 감정에 맞는 랜덤 질문을 질문 칸에 출력
+function setMoodQuestion(m) {
+    const qEl = document.getElementById('questionText');
+    if (!qEl) return;
+    const qList = moodQuestions[m] || moodQuestions['😐'];
+    qEl.innerText = qList[Math.floor(Math.random() * qList.length)];
+}
+
+// [안전장치] 글쓰기 화면 진입 시 질문/감정표시/테마가 비어 있으면 채움
+function ensureWriteQuestion() {
+    // 감정이 선택 안 된 상태로 진입한 경우 기본값(보통)으로 설정
+    if (!selectedMood) selectedMood = '😐';
+    const moodEl = document.getElementById('writeMoodDisplay');
+    if (moodEl && !moodEl.innerText) moodEl.innerText = selectedMood;
+    const qEl = document.getElementById('questionText');
+    if (qEl && !qEl.innerText.trim()) setMoodQuestion(selectedMood);
+    applyMoodTheme(selectedMood);
+}
+
 let selectedWriteDate = 'today';
 function updateWriteDateLabel() {
     const label = document.getElementById('writeDateLabel');
@@ -2485,10 +2517,13 @@ window.selectMood = function(m) {
     document.getElementById('dateBtnToday').classList.add('active');
     document.getElementById('dateBtnYesterday').classList.remove('active');
     updateWriteDateLabel();
-    selectedMood = m; closeMood(); window.go('write');
+    selectedMood = m;
+    closeMood();
+    // 감정 표시 · 질문 · 테마를 먼저 설정한 뒤 화면 전환
     document.getElementById('writeMoodDisplay').innerText = m;
-    const qList = moodQuestions[m] || moodQuestions['😐'];
-    document.getElementById('questionText').innerText = qList[Math.floor(Math.random() * qList.length)];
+    setMoodQuestion(m);
+    applyMoodTheme(m);
+    window.go('write');
     document.getElementById('text').value = '';
     document.getElementById('aiSuggestion').innerHTML = '';
     document.getElementById('tagInput').value = '';
@@ -2516,10 +2551,6 @@ window.selectMood = function(m) {
     _nonTypedInsertChars   = 0;
     _typedInsertChars      = 0;
     // ═══════════════════════════════════════════════════════════════
-    // 감정 테마 적용
-    const writeEl = document.getElementById('write');
-    writeEl.classList.remove('mood-happy','mood-good','mood-neutral','mood-sad','mood-angry','mood-tired');
-    if (moodThemeMap[m]) writeEl.classList.add(moodThemeMap[m]);
 };
 
 // ── Gemini 상태 ───────────────────────────────
