@@ -2389,13 +2389,24 @@ function findLogForOffset(offsetDays) {
     }) || null;
 }
 
-function updateWriteAvailability() {
-    const offset   = selectedWriteDate === 'yesterday' ? 1 : 0;
-    const existing = findLogForOffset(offset);
+// 글쓰기 화면에 진입/전환할 때마다 호출.
+// 새로고침 직후처럼 logs가 아직 로드되지 않았거나 오래된 상태일 수 있으므로,
+// 매번 Firestore에서 최신 데이터를 다시 불러온 뒤 오늘/어제 작성 여부를 판단한다.
+async function updateWriteAvailability() {
     const doneBox  = document.getElementById('writeAlreadyDone');
     const doneMsg  = document.getElementById('writeAlreadyDoneMsg');
     const inputArea= document.getElementById('writeInputArea');
     if (!doneBox || !inputArea) return;
+
+    // 확인이 끝나기 전까지는 입력 영역을 숨겨 중복 작성 가능성을 차단
+    inputArea.style.display = 'none';
+    doneBox.style.display   = 'none';
+
+    if (currentUser) {
+        await loadLogs();
+    }
+    const offset   = selectedWriteDate === 'yesterday' ? 1 : 0;
+    const existing = findLogForOffset(offset);
 
     if (existing) {
         doneMsg.innerText = offset === 0
@@ -2602,6 +2613,18 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     const text = document.getElementById('text').value.trim();
     if (!text)        return alert("내용을 입력해주세요.");
     if (!currentUser) return alert("로그인이 필요합니다.");
+
+    // ── 하루 1편 제한 최종 확인 (중복 저장 방지) ──
+    // 최신 데이터 기준으로 다시 한번 확인한 뒤 저장을 진행한다.
+    await loadLogs();
+    const _writeOffset = selectedWriteDate === 'yesterday' ? 1 : 0;
+    if (findLogForOffset(_writeOffset)) {
+        updateWriteAvailability();
+        alert(_writeOffset === 0
+            ? '오늘의 일기를 이미 작성했어요.'
+            : '어제의 일기를 이미 작성했어요.');
+        return;
+    }
 
     const now = Date.now();
     const timeToFirst    = firstKeyTime ? Math.round((firstKeyTime - writeStartTime) / 1000) : null;
@@ -2818,6 +2841,8 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
         const _cntEl = document.getElementById('summaryCharCount');
         if (_cntEl) _cntEl.textContent = '0';
         await loadLogs();
+        // 저장이 끝나자마자 글쓰기 화면을 "이미 작성됨" 상태로 즉시 전환
+        updateWriteAvailability();
         qlogCheckMilestone();
         window.go('home');
     } catch (err) {
@@ -3054,6 +3079,8 @@ document.getElementById('detailDeleteBtn').addEventListener('click', async () =>
         document.getElementById('detailModal').classList.remove('show');
         currentDetailLog = null;
         await loadLogs();
+        // 삭제된 일기가 오늘/어제 것이었다면 글쓰기 화면에서 다시 작성 가능하도록 즉시 반영
+        updateWriteAvailability();
     } catch (err) { alert('삭제 실패: ' + err.message); }
 });
 
