@@ -343,14 +343,6 @@ body.dark-mode .detail-cancel-btn { background:#333 !important; color:#ccc !impo
 #write.mood-angry  { background: linear-gradient(160deg, #fff5f5 0%, #ffe5e5 100%); }
 #write.mood-tired  { background: linear-gradient(160deg, #f5f3ff 0%, #ede8ff 100%); }
 
-/* 감정별 질문 박스 색상 */
-#write.mood-happy  .write-question-box { background: linear-gradient(135deg, #f97316, #fb923c); }
-#write.mood-good   .write-question-box { background: linear-gradient(135deg, #22c55e, #16a34a); }
-#write.mood-neutral .write-question-box{ background: linear-gradient(135deg, #667eea, #764ba2); }
-#write.mood-sad    .write-question-box { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
-#write.mood-angry  .write-question-box { background: linear-gradient(135deg, #ef4444, #b91c1c); }
-#write.mood-tired  .write-question-box { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
-
 /* 글쓰기 화면에서 네비바 숨기기 */
 #write.active ~ .nav,
 body:has(#write.active) .nav {
@@ -377,19 +369,6 @@ body:has(#write.active) .nav {
 .write-header h2 {
     font-size: 22px; font-weight: 800;
     margin: 0; color: #191f28;
-}
-.write-question-box {
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    border-radius: 16px;
-    padding: 18px 20px;
-    margin: 0 20px 16px;
-    color: white; text-align: left;
-}
-.write-question-label {
-    font-size: 11px; font-weight: 600; opacity: 0.8; margin-bottom: 6px;
-}
-.write-question-text {
-    font-size: 16px; font-weight: 700; line-height: 1.5;
 }
 .write-textarea-wrap {
     margin: 0 20px 16px;
@@ -443,6 +422,27 @@ body:has(#write.active) .nav {
 .write-date-btn.active { background:#191f28; color:white; border-color:#191f28; }
 .write-date-label { font-size:11px; color:#6366f1; margin:-8px 20px 10px; text-align:center; min-height:16px; }
 
+/* ── 이미 작성한 일기가 있을 때 안내 ── */
+.write-already-box {
+    margin: 40px 20px;
+    background: white;
+    border-radius: 20px;
+    padding: 44px 24px;
+    text-align: center;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+.write-already-icon { font-size: 46px; margin-bottom: 14px; }
+.write-already-msg { font-size: 16px; font-weight: 700; color: #191f28; margin-bottom: 22px; line-height: 1.6; }
+.write-already-edit-btn {
+    padding: 14px 30px; border-radius: 14px;
+    background: #191f28; color: white; font-size: 15px;
+    font-weight: 700; border: none; cursor: pointer; margin: 0;
+    transition: background 0.15s;
+}
+.write-already-edit-btn:active { background: #333; }
+body.dark-mode .write-already-box { background: #2a2a2a; }
+body.dark-mode .write-already-msg { color: #e8eaed; }
+
 .write-save-wrap { padding: 0 20px; }
 .write-save-btn {
     width: 100%; padding: 16px; border-radius: 16px;
@@ -451,88 +451,6 @@ body:has(#write.active) .nav {
     transition: background 0.2s;
 }
 .write-save-btn:active { background: #333; }
-
-/* ── Gemini 도움받기 버튼 ── */
-.write-question-row {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 10px;
-}
-.write-question-row .write-question-text { flex: 1; }
-
-.ai-help-btn-wrap { position: relative; flex-shrink: 0; }
-
-.ai-help-btn {
-    display: flex; align-items: center; gap: 5px;
-    padding: 6px 12px; border-radius: 20px;
-    background: rgba(255,255,255,0.25);
-    border: 1.5px solid rgba(255,255,255,0.5);
-    color: white; font-size: 12px; font-weight: 700;
-    cursor: pointer; margin: 0;
-    transition: background 0.2s, transform 0.1s;
-    white-space: nowrap;
-}
-.ai-help-btn:hover  { background: rgba(255,255,255,0.35); }
-.ai-help-btn:active { transform: scale(0.95); }
-.ai-help-btn:disabled {
-    opacity: 0.4; cursor: not-allowed;
-}
-.ai-help-btn .ai-icon { font-size: 14px; }
-.ai-help-count {
-    font-size: 10px; opacity: 0.8;
-}
-
-/* 10초 막힘 팝업 */
-.ai-stuck-popup {
-    position: absolute;
-    bottom: calc(100% + 8px);
-    right: 0;
-    background: white;
-    color: #333;
-    font-size: 12px; font-weight: 600;
-    padding: 7px 12px;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    white-space: nowrap;
-    cursor: pointer;
-    z-index: 10;
-    animation: popupFadeIn 0.25s ease;
-}
-.ai-stuck-popup::after {
-    content: '';
-    position: absolute;
-    top: 100%; right: 14px;
-    border: 6px solid transparent;
-    border-top-color: white;
-}
-@keyframes popupFadeIn {
-    from { opacity:0; transform: translateY(4px); }
-    to   { opacity:1; transform: translateY(0); }
-}
-
-/* AI 응답 질문 박스 */
-.ai-response-box {
-    margin: 0 20px 12px;
-    background: linear-gradient(135deg, #10b981, #059669);
-    border-radius: 14px; padding: 14px 16px;
-    color: white; text-align: left;
-    animation: popupFadeIn 0.3s ease;
-}
-.ai-response-label { font-size: 11px; font-weight: 600; opacity: 0.85; margin-bottom: 5px; }
-.ai-response-text  { font-size: 15px; font-weight: 700; line-height: 1.5; }
-
-/* AI 로딩 스피너 */
-.ai-loading {
-    display: inline-block;
-    width: 14px; height: 14px;
-    border: 2px solid rgba(255,255,255,0.4);
-    border-top-color: white;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    vertical-align: middle;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── 통계 화면 ── */
 #stats {
@@ -1005,11 +923,11 @@ body.dark-mode .mywr-stat-num, body.dark-mode .mywr-card-title, body.dark-mode .
     position: fixed;
     top: 20px; left: 50%;
     transform: translateX(-50%) translateY(-100px);
-    background: linear-gradient(135deg, #f97316, #fb923c);
+    background: #191f28;
     color: white; border-radius: 20px;
     padding: 14px 22px;
     display: flex; align-items: center; gap: 12px;
-    box-shadow: 0 8px 30px rgba(249,115,22,0.45);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
     z-index: 10000; max-width: 360px; width: 90%;
     transition: transform 0.5s cubic-bezier(0.16,1,0.3,1);
     pointer-events: none;
@@ -1020,6 +938,7 @@ body.dark-mode .mywr-stat-num, body.dark-mode .mywr-card-title, body.dark-mode .
 .badge-new-label { font-size: 11px; font-weight: 700; opacity: 0.85; margin-bottom: 2px; }
 .badge-new-name  { font-size: 16px; font-weight: 900; }
 .badge-new-desc  { font-size: 12px; opacity: 0.85; }
+body.dark-mode .badge-new-popup { background: #2a2a2a; box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
 
 /* 배지 그리드 (프로필/통계에서 사용) */
 .badge-section { padding: 0 16px 16px; }
@@ -1809,47 +1728,38 @@ body.dark-mode .writing-analysis-bar-wrap { background: #333; }
         <button class="write-date-btn" id="dateBtnYesterday">어제</button>
     </div>
 <div class="write-date-label" id="writeDateLabel"></div>
-    <div class="write-question-box">
-        <div class="write-question-label">오늘의 질문 ✨</div>
-        <div class="write-question-row">
-            <div class="write-question-text" id="questionText"></div>
-            <div class="ai-help-btn-wrap">
-                <!-- 10초 막힘 팝업 (JS로 표시/숨김) -->
-                <div class="ai-stuck-popup" id="aiStuckPopup" style="display:none;">
-                    ✏️ 글쓰기가 막히시나요?
-                </div>
-                <button class="ai-help-btn" id="aiHelpBtn" title="AI 질문 도움받기">
-                    <span class="ai-icon">✦</span>
-                    <span id="aiHelpLabel">도움받기</span>
-                    <span class="ai-help-count" id="aiHelpCount">(2/2)</span>
-                </button>
-            </div>
-        </div>
-    </div>
-    <!-- AI 응답 질문 표시 영역 (동적으로 삽입) -->
-    <div id="aiResponseArea"></div>
-    <div class="write-textarea-wrap">
-        <textarea id="text" placeholder="오늘의 이야기를 써보세요..."></textarea>
-        <div class="write-ai-hint" id="aiSuggestion" style="display:none;"></div>
-        <div class="write-word-count">
-            <span class="write-word-count-num" id="writeCharCount">0</span>자
-            <span id="writeWordCount" style="color:#c4c9d0;">· 0단어</span>
-            <div class="write-char-progress">
-                <div class="write-char-progress-bar" id="writeCharBar" style="width:0%"></div>
-            </div>
-        </div>
-    </div>
-    <div class="write-tag-box">
-        <div class="write-tag-label">태그</div>
-        <div id="tagList"></div>
-        <div class="write-tag-input-row">
-            <input id="tagInput" type="text" placeholder="태그 입력 (예: 친구)">
-            <button id="tagAddBtn">+ 추가</button>
-        </div>
+
+    <!-- 이미 해당 날짜의 일기를 작성한 경우 표시 -->
+    <div class="write-already-box" id="writeAlreadyDone" style="display:none;">
+        <div class="write-already-icon">📝</div>
+        <div class="write-already-msg" id="writeAlreadyDoneMsg">오늘의 일기를 이미 작성했어요.</div>
+        <button class="write-already-edit-btn" id="writeEditExistingBtn">일기 수정하기</button>
     </div>
 
-    <div class="write-save-wrap">
-        <button class="write-save-btn" id="saveBtn">저장</button>
+    <!-- 작성 입력 영역 -->
+    <div id="writeInputArea">
+        <div class="write-textarea-wrap">
+            <textarea id="text" placeholder="오늘의 이야기를 써보세요..."></textarea>
+            <div class="write-word-count">
+                <span class="write-word-count-num" id="writeCharCount">0</span>자
+                <span id="writeWordCount" style="color:#c4c9d0;">· 0단어</span>
+                <div class="write-char-progress">
+                    <div class="write-char-progress-bar" id="writeCharBar" style="width:0%"></div>
+                </div>
+            </div>
+        </div>
+        <div class="write-tag-box">
+            <div class="write-tag-label">태그</div>
+            <div id="tagList"></div>
+            <div class="write-tag-input-row">
+                <input id="tagInput" type="text" placeholder="태그 입력 (예: 친구)">
+                <button id="tagAddBtn">+ 추가</button>
+            </div>
+        </div>
+
+        <div class="write-save-wrap">
+            <button class="write-save-btn" id="saveBtn">저장</button>
+        </div>
     </div>
 </div>
 
@@ -2236,15 +2146,11 @@ window.go = function(id, view) {
         _dropDetected        = false;
         _nonTypedInsertChars = 0;
         _typedInsertChars    = 0;
-        // ── Gemini 상태 초기화 ──
-        aiHelpCount = 2;
-        updateAiHelpBtn();
-        document.getElementById('aiResponseArea').innerHTML = '';
-        document.getElementById('aiStuckPopup').style.display = 'none';
-        resetIdleTimer();
-        // ── [안전장치] 질문/감정 테마가 비어 있으면 채워줌 ──
+        // ── [안전장치] 감정 테마가 비어 있으면 채워줌 ──
         // (감정 선택 없이 진입했거나, 렌더 타이밍 문제로 비어 있는 경우 대비)
         ensureWriteQuestion();
+        // ── 하루 1편 제한 확인 ──
+        updateWriteAvailability();
     }
 };
 
@@ -2400,16 +2306,6 @@ document.getElementById('moodModal').addEventListener('click', e => {
     if (e.target.id === 'moodModal') closeMood();
 });
 
-// ── 기분별 질문 ───────────────────────────────
-const moodQuestions = {
-    '😀':['오늘 가장 기분 좋았던 순간은 언제였나요?','오늘 나를 웃게 만든 것은 무엇인가요?','오늘 감사했던 것 세 가지를 써볼게요!','오늘 잘한 일 하나를 적어볼까요?'],
-    '🙂':['오늘 소소하게 좋았던 일이 있었나요?','오늘 만난 사람 중 기억에 남는 사람이 있나요?','오늘 가장 집중했던 순간은 언제인가요?'],
-    '😐':['지금 마음이 어떤 상태인가요?','오늘 아쉬웠던 점이 있다면 무엇인가요?','지금 이 순간 가장 필요한 게 뭔가요?'],
-    '😢':['오늘 힘들었던 일을 털어놓아 볼까요?','오늘 나를 위로해 준 것이 있었나요?','내일의 나에게 한마디 남겨볼까요?'],
-    '😡':['오늘 화가 났던 순간을 적어볼까요?','그 감정의 원인이 무엇이었나요?','나 자신에게 어떤 말을 해주고 싶나요?'],
-    '😫':['오늘 왜 이렇게 피곤했나요?','오늘 가장 에너지를 많이 쓴 일은 무엇인가요?','지금 가장 하고 싶은 것은 무엇인가요?']
-};
-
 // ── 태그 상태 ─────────────────────────────────
 let autoTags   = new Set();
 let manualTags = new Set();
@@ -2472,24 +2368,56 @@ function applyMoodTheme(m) {
     if (cls) writeEl.classList.add(cls);
 }
 
-// 현재 감정에 맞는 랜덤 질문을 질문 칸에 출력
-function setMoodQuestion(m) {
-    const qEl = document.getElementById('questionText');
-    if (!qEl) return;
-    const qList = moodQuestions[m] || moodQuestions['😐'];
-    qEl.innerText = qList[Math.floor(Math.random() * qList.length)];
-}
-
-// [안전장치] 글쓰기 화면 진입 시 질문/감정표시/테마가 비어 있으면 채움
+// [안전장치] 글쓰기 화면 진입 시 감정표시/테마가 비어 있으면 채움
 function ensureWriteQuestion() {
     // 감정이 선택 안 된 상태로 진입한 경우 기본값(보통)으로 설정
     if (!selectedMood) selectedMood = '😐';
     const moodEl = document.getElementById('writeMoodDisplay');
     if (moodEl && !moodEl.innerText) moodEl.innerText = selectedMood;
-    const qEl = document.getElementById('questionText');
-    if (qEl && !qEl.innerText.trim()) setMoodQuestion(selectedMood);
     applyMoodTheme(selectedMood);
 }
+
+// ── 하루 1편 제한: 선택한 날짜(오늘/어제)에 이미 작성된 일기가 있는지 확인 ──
+function findLogForOffset(offsetDays) {
+    const target = new Date();
+    target.setDate(target.getDate() - offsetDays);
+    return logs.find(l => {
+        const d = l.date instanceof Date ? l.date : new Date(l.date);
+        return d.getFullYear() === target.getFullYear()
+            && d.getMonth() === target.getMonth()
+            && d.getDate() === target.getDate();
+    }) || null;
+}
+
+function updateWriteAvailability() {
+    const offset   = selectedWriteDate === 'yesterday' ? 1 : 0;
+    const existing = findLogForOffset(offset);
+    const doneBox  = document.getElementById('writeAlreadyDone');
+    const doneMsg  = document.getElementById('writeAlreadyDoneMsg');
+    const inputArea= document.getElementById('writeInputArea');
+    if (!doneBox || !inputArea) return;
+
+    if (existing) {
+        doneMsg.innerText = offset === 0
+            ? '오늘의 일기를 이미 작성했어요.'
+            : '어제의 일기를 이미 작성했어요.';
+        doneBox.style.display  = 'block';
+        inputArea.style.display = 'none';
+        window._writeExistingLog = existing;
+    } else {
+        doneBox.style.display  = 'none';
+        inputArea.style.display = '';
+        window._writeExistingLog = null;
+    }
+}
+
+document.getElementById('writeEditExistingBtn').addEventListener('click', () => {
+    const target = window._writeExistingLog;
+    if (!target) return;
+    window.go('home');
+    openDetail(target);
+    setDetailEditMode();
+});
 
 let selectedWriteDate = 'today';
 function updateWriteDateLabel() {
@@ -2504,12 +2432,14 @@ document.getElementById('dateBtnToday').addEventListener('click', () => {
     document.getElementById('dateBtnToday').classList.add('active');
     document.getElementById('dateBtnYesterday').classList.remove('active');
     updateWriteDateLabel();
+    updateWriteAvailability();
 });
 document.getElementById('dateBtnYesterday').addEventListener('click', () => {
     selectedWriteDate = 'yesterday';
     document.getElementById('dateBtnYesterday').classList.add('active');
     document.getElementById('dateBtnToday').classList.remove('active');
     updateWriteDateLabel();
+    updateWriteAvailability();
 });
 
 window.selectMood = function(m) {
@@ -2519,11 +2449,11 @@ window.selectMood = function(m) {
     updateWriteDateLabel();
     selectedMood = m;
     closeMood();
-    // 감정 표시 · 질문 · 테마를 먼저 설정한 뒤 화면 전환
+    // 감정 표시 · 테마를 먼저 설정한 뒤 화면 전환
     document.getElementById('writeMoodDisplay').innerText = m;
-    setMoodQuestion(m);
     applyMoodTheme(m);
     window.go('write');
+    updateWriteAvailability();
     document.getElementById('text').value = '';
     document.getElementById('aiSuggestion').innerHTML = '';
     document.getElementById('tagInput').value = '';
@@ -2552,174 +2482,6 @@ window.selectMood = function(m) {
     _typedInsertChars      = 0;
     // ═══════════════════════════════════════════════════════════════
 };
-
-// ── Gemini 상태 ───────────────────────────────
-// ★ 본인의 Google AI Studio API 키를 아래에 직접 입력하세요
-// 발급: https://aistudio.google.com/app/apikey
-
-// 교체 코드
-const GEMINI_API_KEY = window.GEMINI_KEY || '';
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-
-
-let aiHelpCount  = 2;  // 일기당 최대 2회
-let idleTimer    = null;
-
-function updateAiHelpBtn() {
-    const btn   = document.getElementById('aiHelpBtn');
-    const count = document.getElementById('aiHelpCount');
-    const label = document.getElementById('aiHelpLabel');
-    count.innerText = `(${aiHelpCount}/2)`;
-    if (aiHelpCount <= 0) {
-        btn.disabled = true;
-        label.innerText = '다음 일기에서';
-    } else {
-        btn.disabled = false;
-        label.innerText = '도움받기';
-    }
-}
-
-// 10초 idle 감지 → 팝업 표시
-function resetIdleTimer() {
-    clearTimeout(idleTimer);
-    document.getElementById('aiStuckPopup').style.display = 'none';
-    const text = document.getElementById('text')?.value || '';
-    // 텍스트가 10자 이상 입력된 상태에서만 팝업 표시
-    if (text.trim().length < 10) return;
-    idleTimer = setTimeout(() => {
-        if (aiHelpCount > 0) {
-            document.getElementById('aiStuckPopup').style.display = 'block';
-        }
-    }, 10000); // 10초
-}
-
-// 팝업 클릭 시 닫기
-document.getElementById('aiStuckPopup').addEventListener('click', () => {
-    document.getElementById('aiStuckPopup').style.display = 'none';
-    clearTimeout(idleTimer);
-});
-
-// Gemini API 호출
-async function callGeminiHelp() {
-    const text = document.getElementById('text').value.trim();
-    const mood = selectedMood || '😐';
-    const btn  = document.getElementById('aiHelpBtn');
-
-    if (aiHelpCount <= 0) return;
-    if (!text) { alert('먼저 글을 조금 써보세요 ✏️'); return; }
-
-    // 로딩 상태
-    btn.disabled = true;
-    document.getElementById('aiHelpLabel').innerHTML = '<span class="ai-loading"></span>';
-    document.getElementById('aiStuckPopup').style.display = 'none';
-
-    // ★ 프롬프트: 인간친화적 + 법적 안전장치 포함
-    const prompt = `당신은 따뜻한 일기 글쓰기 코치입니다.
-        사용자의 현재 감정 상태: ${selectedMood || '😐'}
-
-        아래 일기를 읽고, 다음 4가지 전략 중 지금 이 일기에 가장 적합한 전략 하나를 선택하여 질문 한 문장을 만드세요.
-
-        [전략 목록]
-        1. 감정 탐색: 일기에 감정 표현은 있지만 깊이가 부족할 때 → 그 감정을 구체적으로 묻는 질문
-        2. 활동 탐색: 사건이나 행동 위주로만 서술됐을 때 → 구체적인 사실이나 행동을 묻는 질문  
-        3. 심층 후속 질문: 감정의 원인이 불명확하거나 복잡할 때 → 감정의 진짜 이유를 파고드는 질문
-        4. 미래 계획 탐색: 문제나 고민이 명확히 드러났을 때 → 앞으로의 대처나 해결책을 묻는 질문
-
-        [일기 내용]
-        ${text}
-
-        [출력 규칙 - 반드시 지킬 것]
-        - 선택한 전략 번호나 이름은 출력하지 마
-        - 질문 한 문장만 출력
-        - "?"로 끝낼 것
-        - 한국어, 15자~45자
-        - 따뜻하고 비판적이지 않은 어조
-        - 위기 표현(자살, 자해, 죽고싶다)이 있으면 
-        질문 대신 이것만 출력: "지금 괜찮나요? 힘들면 마음이음 1577-0199 💙"
-
-        [각 전략별 좋은 예시]
-        1번: 그 순간 가장 크게 느껴진 감정이 무엇이었나요?
-        2번: 오늘 집에 오자마자 어떤 행동을 했나요?
-        3번: 노력이 안 보인다는 느낌이 언제부터 쌓여온 것 같나요?
-        4번: 다음번에 비슷한 상황이 오면 어떻게 해보고 싶으신가요?`;
-
-    try {
-        const res = await fetch(GEMINI_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                    temperature: 0.7,
-                    maxOutputTokens: 300,
-                    thinkingConfig: { thinkingBudget: 0 }
-                },
-                safetySettings: [
-                    { category: 'HARM_CATEGORY_HARASSMENT',        threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-                    { category: 'HARM_CATEGORY_HATE_SPEECH',       threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-                    { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-                    { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' }
-                ]
-            })
-        });
-
-        if (!res.ok) {
-            const err = await res.json();
-            throw new Error(err.error?.message || `HTTP ${res.status}`);
-        }
-
-        const data     = await res.json();
-        const question = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-
-        if (!question) throw new Error('응답이 비어있습니다');
-
-        // 응답 표시
-        const area = document.getElementById('aiResponseArea');
-        area.innerHTML = `
-            <div class="ai-response-box">
-                <div class="ai-response-label">✦ AI 추가 질문</div>
-                <div class="ai-response-text">${question}</div>
-            </div>`;
-
-        // 사용 횟수 차감
-        aiHelpCount--;
-        updateAiHelpBtn();
-        resetIdleTimer();
-
-    } catch (err) {
-        console.error('Gemini API 오류:', err);
-
-        let errMsg = '잠시 후 다시 시도해주세요.';
-        let errStyle = 'background:linear-gradient(135deg,#6b7280,#4b5563);';
-
-        // API 키 미설정
-        if (!GEMINI_API_KEY) {
-            errMsg   = 'GEMINI_API_KEY를 index.html에 직접 입력해주세요.';
-            errStyle = 'background:linear-gradient(135deg,#f59e0b,#d97706);';
-        }
-        // API 키 잘못됨 (403 / 400 / invalid key)
-        else if (err.message && (err.message.includes('API_KEY_INVALID') || err.message.includes('400') || err.message.includes('403'))) {
-            errMsg   = 'API 키가 올바르지 않습니다. Google AI Studio에서 키를 재발급하세요.';
-            errStyle = 'background:linear-gradient(135deg,#ef4444,#b91c1c);';
-        }
-        // 모델명 오류 (404)
-        else if (err.message && err.message.includes('404')) {
-            errMsg   = '모델을 찾을 수 없습니다. 모델명을 확인하세요.';
-            errStyle = 'background:linear-gradient(135deg,#f59e0b,#d97706);';
-        }
-
-        document.getElementById('aiResponseArea').innerHTML = `
-            <div class="ai-response-box" style="${errStyle}">
-                <div class="ai-response-label">⚠️ 오류</div>
-                <div class="ai-response-text">${errMsg}</div>
-            </div>`;
-
-        updateAiHelpBtn();
-    }
-}
-
-// 도움받기 버튼 클릭
-document.getElementById('aiHelpBtn').addEventListener('click', callGeminiHelp);
 
 // ── textarea ──────────────────────────────────
 document.getElementById('text').addEventListener('keydown', e => {
@@ -2775,8 +2537,6 @@ document.getElementById('text').addEventListener('keydown', e => {
         _lastKeystrokeTime   = now;
     }
     // ═══════════════════════════════════════════════════════════════
-
-    resetIdleTimer(); // 키 누를 때마다 idle 타이머 리셋
 });
 let _lastAutoKey = '';
 // ═══════════════════════════════════════════════════════════════════
@@ -4780,9 +4540,9 @@ function showDayLogs(year, month, day) {
                 <div class="onboarding-sub">매일의 감정을 기록하고<br>나를 더 깊이 이해해 보세요</div>
             </div>
             <div class="onboarding-slide">
-                <span class="onboarding-emoji">✦</span>
-                <div class="onboarding-title">AI가 질문을<br>대신 만들어줘요</div>
-                <div class="onboarding-sub">글이 막힐 때 AI 도움받기를 누르면<br>딱 맞는 질문이 나타나요</div>
+                <span class="onboarding-emoji">✏️</span>
+                <div class="onboarding-title">하루에 한 편,<br>솔직하게 적어봐요</div>
+                <div class="onboarding-sub">오늘 있었던 일과 감정을<br>편하게 기록해보세요</div>
             </div>
             <div class="onboarding-slide">
                 <span class="onboarding-emoji">🌱</span>
