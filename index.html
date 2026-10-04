@@ -8,6 +8,12 @@
 <link rel="stylesheet" href="style.css">
 <!-- Chart.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<!-- ★ Gemini 키 (로컬: .gitignore 처리된 파일 / 배포: GitHub Actions가 Secret으로 생성). 모듈보다 먼저 로드 -->
+<script src="gemini-config.js"></script>
+<!-- AI 교정 선생님 손글씨 서체 -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap">
 
 <style>
 * { box-sizing: border-box; }
@@ -1730,6 +1736,209 @@ body.dark-mode .writing-analysis-value { color: #e8eaed; }
 body.dark-mode .writing-analysis-bar-wrap { background: #333; }
 
 </style>
+<style>
+/* ═══════════════════════════════════════════════
+   AI 교정 선생님 (B그룹·ALL) — 줄노트 + 빨간 펜 첨삭
+═══════════════════════════════════════════════ */
+.teacher-modal {
+    position: fixed; inset: 0;
+    background: rgba(25,31,40,0.55);
+    display: flex; align-items: flex-end; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s; z-index: 9995;
+}
+.teacher-modal.show { opacity: 1; pointer-events: auto; }
+.teacher-sheet {
+    background: #fffdf7;
+    width: 100%; max-width: 480px; max-height: 88vh;
+    overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+    border-radius: 24px 24px 0 0;
+    padding: 10px 20px 0;
+    text-align: left;
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
+}
+.teacher-modal.show .teacher-sheet { transform: translateY(0); }
+.teacher-sheet [hidden] { display: none !important; }
+.teacher-grip { width: 40px; height: 4px; border-radius: 2px; background: #e8e3d8; margin: 4px auto 14px; }
+
+.teacher-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+.teacher-head-text { min-width: 0; }
+.teacher-kicker { font-size: 12px; font-weight: 700; color: #d6453a; margin-bottom: 4px; }
+.teacher-title { font-size: 20px; font-weight: 800; color: #191f28; letter-spacing: -0.4px; }
+.teacher-date { font-size: 13px; color: #8b95a1; margin-top: 4px; }
+
+.teacher-stamp {
+    flex-shrink: 0; width: 70px; height: 70px; border-radius: 50%;
+    border: 3px solid #d6453a; color: #d6453a;
+    box-shadow: inset 0 0 0 2px rgba(214,69,58,0.22);
+    font-family: 'Gaegu', 'Segoe UI', sans-serif; font-weight: 700; font-size: 16px; line-height: 1.05;
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    transform: rotate(-12deg); opacity: 0.88; margin: 4px 6px 0 0;
+    animation: teacherStampIn 0.45s cubic-bezier(0.2,1.4,0.4,1) both;
+}
+@keyframes teacherStampIn {
+    from { transform: rotate(-12deg) scale(1.6); opacity: 0; }
+    to   { transform: rotate(-12deg) scale(1);   opacity: 0.88; }
+}
+
+.teacher-praise {
+    font-family: 'Gaegu', 'Segoe UI', sans-serif;
+    font-size: 19px; line-height: 1.4; color: #c2362c;
+    margin: 0 0 12px;
+}
+
+/* 줄노트 */
+.teacher-paper {
+    font-size: 16px; line-height: 34px; color: #2b2f36;
+    white-space: pre-wrap; word-break: keep-all; overflow-wrap: anywhere;
+    background-color: #fff;
+    background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 33px, #dfe7f2 33px, #dfe7f2 34px);
+    background-origin: content-box;
+    border: 1px solid #efe9dc; border-radius: 14px;
+    box-shadow: inset 3px 0 0 #f3b6b0;
+    padding: 6px 16px 8px 22px;
+}
+/* 빨간 펜 하이라이트 */
+.tmark {
+    color: inherit;
+    background: linear-gradient(transparent 55%, rgba(214,69,58,0.16) 55%);
+    text-decoration: underline wavy #d6453a;
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 6px;
+    text-decoration-skip-ink: none;
+    border-radius: 3px; padding: 0 1px;
+    cursor: pointer;
+}
+.tmark:focus-visible { outline: 2px solid #d6453a; outline-offset: 2px; }
+.tmark.flash { animation: teacherMarkFlash 1s ease; }
+@keyframes teacherMarkFlash { from { background-color: rgba(214,69,58,0.35); } to { background-color: transparent; } }
+.tmark-num {
+    font-family: 'Gaegu', 'Segoe UI', sans-serif; font-weight: 700;
+    color: #d6453a; font-size: 14px; line-height: 0;
+    vertical-align: super; margin-left: 1px;
+}
+
+.teacher-status {
+    margin-top: 12px; padding: 12px 14px; border-radius: 12px;
+    font-size: 14px; line-height: 1.5;
+    background: #fff4e5; color: #8a4b00;
+}
+.teacher-status.error { background: #f2f4f6; color: #4e5968; }
+.teacher-status.good  { background: #ecfdf3; color: #067647; }
+.teacher-status.care  { background: #e0f2fe; color: #075985; }
+.teacher-pencil { display: inline-block; animation: teacherPencil 1.2s ease-in-out infinite; }
+@keyframes teacherPencil {
+    0%, 100% { transform: rotate(-8deg) translateX(0); }
+    50%      { transform: rotate(6deg) translateX(3px); }
+}
+
+/* 선생님 메모 */
+.teacher-notes { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+.teacher-notes:empty { display: none; }
+.tnote {
+    display: flex; gap: 10px;
+    background: #fff; border: 1px solid #f0e9dc; border-radius: 14px;
+    padding: 12px 14px;
+}
+.tnote.flash { animation: teacherNoteFlash 1s ease; }
+@keyframes teacherNoteFlash {
+    from { box-shadow: 0 0 0 3px rgba(214,69,58,0.35); }
+    to   { box-shadow: 0 0 0 0 rgba(214,69,58,0); }
+}
+.tnote-num {
+    font-family: 'Gaegu', 'Segoe UI', sans-serif; font-weight: 700;
+    font-size: 24px; line-height: 1; color: #d6453a;
+    flex-shrink: 0; padding-top: 2px; cursor: pointer;
+}
+.tnote-body { flex: 1; min-width: 0; }
+.tnote-type {
+    display: inline-block; font-size: 11px; font-weight: 700;
+    color: #b4372e; background: #fdecea;
+    padding: 2px 8px; border-radius: 10px; margin-bottom: 6px;
+}
+.tnote-fix { font-size: 15px; line-height: 1.6; color: #191f28; word-break: keep-all; overflow-wrap: anywhere; }
+.tnote-from { color: #8b95a1; text-decoration: line-through; text-decoration-color: #d6453a; text-decoration-thickness: 2px; }
+.tnote-arrow { color: #d6453a; font-weight: 700; margin: 0 6px; }
+.tnote-to { color: #c2362c; font-weight: 700; }
+.tnote-reason {
+    font-family: 'Gaegu', 'Segoe UI', sans-serif;
+    font-size: 17px; line-height: 1.4; color: #6b3a2e; margin-top: 6px;
+}
+.tnote-choices { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.tnote-choice {
+    margin: 0; padding: 7px 12px; min-height: 34px;
+    border-radius: 20px; border: 1.5px solid transparent;
+    background: #f5f3ee; color: #6b6458;
+    font-size: 12.5px; font-weight: 700; cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.tnote-choice.on[data-choice="try"]  { background: #fdecea; color: #c2362c; border-color: #f3b6b0; }
+.tnote-choice.on[data-choice="skip"] { background: #eef0f3; color: #333d4b; border-color: #d1d6db; }
+
+.teacher-closing {
+    font-family: 'Gaegu', 'Segoe UI', sans-serif;
+    font-size: 18px; line-height: 1.4; color: #c2362c;
+    text-align: right; margin-top: 14px;
+}
+
+.teacher-actions {
+    position: sticky; bottom: 0;
+    display: flex; gap: 8px; align-items: center;
+    margin-top: 16px;
+    padding: 12px 0 calc(16px + env(safe-area-inset-bottom));
+    background: #fffdf7;
+}
+.teacher-hide-btn {
+    flex: 0 0 auto; margin: 0; padding: 14px 12px;
+    background: transparent; color: #8b95a1;
+    border: none; border-radius: 14px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.teacher-close-btn {
+    flex: 1; margin: 0; padding: 14px;
+    background: #191f28; color: #fff;
+    border: none; border-radius: 14px;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .teacher-modal, .teacher-sheet { transition: none; }
+    .teacher-stamp, .teacher-pencil, .tmark.flash, .tnote.flash { animation: none; }
+}
+
+/* 다크모드 */
+body.dark-mode .teacher-sheet,
+body.dark-mode .teacher-actions { background: #1f1f1f; }
+body.dark-mode .teacher-grip { background: #3a3a3a; }
+body.dark-mode .teacher-title { color: #e8eaed; }
+body.dark-mode .teacher-kicker,
+body.dark-mode .teacher-praise,
+body.dark-mode .teacher-closing,
+body.dark-mode .tmark-num,
+body.dark-mode .tnote-num,
+body.dark-mode .tnote-arrow { color: #ff8a7f; }
+body.dark-mode .teacher-stamp { color: #ff8a7f; border-color: #ff8a7f; box-shadow: inset 0 0 0 2px rgba(255,138,127,0.25); }
+body.dark-mode .teacher-paper {
+    background-color: #262626; color: #e3e3e3; border-color: #333;
+    background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 33px, #343b45 33px, #343b45 34px);
+    box-shadow: inset 3px 0 0 #6b2b26;
+}
+body.dark-mode .tmark { background: linear-gradient(transparent 55%, rgba(255,138,127,0.18) 55%); text-decoration-color: #ff8a7f; }
+body.dark-mode .tnote { background: #262626; border-color: #333; }
+body.dark-mode .tnote-fix { color: #e8eaed; }
+body.dark-mode .tnote-to { color: #ff8a7f; }
+body.dark-mode .tnote-reason { color: #f2b8ad; }
+body.dark-mode .tnote-type { background: #3a1f1d; color: #ff8a7f; }
+body.dark-mode .tnote-choice { background: #2f2f2f; color: #b0b8c1; }
+body.dark-mode .tnote-choice.on[data-choice="try"]  { background: #3a1f1d; color: #ff8a7f; border-color: #6b2b26; }
+body.dark-mode .tnote-choice.on[data-choice="skip"] { background: #333; color: #e8eaed; border-color: #4a4a4a; }
+body.dark-mode .teacher-status        { background: #3a2a12; color: #f5c27a; }
+body.dark-mode .teacher-status.error  { background: #2a2a2a; color: #b0b8c1; }
+body.dark-mode .teacher-status.good   { background: #12301f; color: #7ee2a8; }
+body.dark-mode .teacher-status.care   { background: #0f2a3a; color: #8fd3ff; }
+body.dark-mode .teacher-close-btn { background: #444; }
+</style>
 </head>
 
 <body>
@@ -2078,8 +2287,8 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/fire
 import { getAuth, onAuthStateChanged, signOut, updateProfile }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
-    getFirestore, collection, addDoc, getDocs,
-    deleteDoc, doc, updateDoc, query, where, serverTimestamp
+    getFirestore, collection, addDoc, getDocs, getDoc,
+    deleteDoc, doc, updateDoc, query, where, serverTimestamp, increment
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -2151,7 +2360,7 @@ let _typedInsertChars    = 0;    // 실제 타이핑(insertText)으로 삽입된
 let searchTags = [];
 
 // ── 로그인 상태 감지 ─────────────────────────
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     // 현재 로그인 계정 이메일 캐시 (항상 최신으로 덮어씀)
     if (user && user.email) {
@@ -2172,11 +2381,15 @@ onAuthStateChanged(auth, (user) => {
     }
     renderProfile();
     if (user) {
-        loadLogs();
         // 로그인 시 식물 위젯 표시
         const pw = document.getElementById('plantWidget');
         if (pw) pw.style.display = '';
+        // ★ 실험 그룹과 일기를 동시에 불러온 뒤, B그룹이면 어제 일기 첨삭 팝업 확인
+        await Promise.all([loadUserGroup(user), loadLogs()]);
+        if (currentUser && currentUser.uid === user.uid) maybeShowTeacher();
     } else {
+        resetUserGroup();
+        teacherCheckedUid = null;
         logs = []; renderLogs();
         // 로그아웃 시 식물 위젯 숨기기
         const pw = document.getElementById('plantWidget');
@@ -2238,17 +2451,21 @@ window.go = function(id, view) {
     if (id === 'write') {
         writeStartTime = Date.now();
         firstKeyTime   = null;
-        backspaceCount = 0;
+        // ★ [버그 수정] 예전 코드의 `backspaceCount = 0;` 삭제.
+        //   선언되지 않은 변수라 module(strict 모드)에서 ReferenceError가 나고,
+        //   아래 초기화(도움받기 횟수 리셋·하루 1편 확인 등)가 전부 실행되지 않았음.
         // ── 지표 오염 플래그 초기화 ──
         _pasteDetected       = false;
         _dropDetected        = false;
         _nonTypedInsertChars = 0;
         _typedInsertChars    = 0;
         // ── Gemini 상태 초기화 ──
-        aiHelpCount = 2;
+        aiHelpCount = AI_HELP_MAX;
+        aiQuestionLog = [];
         updateAiHelpBtn();
         document.getElementById('aiResponseArea').innerHTML = '';
         document.getElementById('aiStuckPopup').style.display = 'none';
+        applyGroupUI();   // ★ 실험 그룹에 따라 도움받기 버튼 표시/숨김
         resetIdleTimer();
         // ── [안전장치] 질문/감정 테마가 비어 있으면 채워줌 ──
         // (감정 선택 없이 진입했거나, 렌더 타이밍 문제로 비어 있는 경우 대비)
@@ -2619,23 +2836,208 @@ window.selectMood = function(m) {
     // ═══════════════════════════════════════════════════════════════
 };
 
-// ── Gemini 상태 ───────────────────────────────
-// ★ 본인의 Google AI Studio API 키를 아래에 직접 입력하세요
-// 발급: https://aistudio.google.com/app/apikey
+// ═══════════════════════════════════════════════════════════════════
+// [Gemini 공통 설정]
+// · API 키 위치
+//   - 로컬: gemini-config.js  →  window.GEMINI_KEY = '...';   (.gitignore 처리, GitHub에 올리지 않음)
+//   - 배포: GitHub 저장소 Settings → Secrets → GEMINI_API_KEY
+//           .github/workflows/deploy.yml 이 배포 직전에 gemini-config.js 를 만들어서 올림
+//   - Google Cloud Console 에는 키를 저장한 게 아니라 "웹사이트(HTTP referrer) 제한"을 걸어둔 것.
+//     로컬(Live Server)에서 테스트하려면 그 제한 목록에 http://127.0.0.1:5500/* 와 http://localhost:5500/* 를 추가해야 함.
+// · 모델: gemini-2.5-flash 는 2026-10-16 종료 예정 → 공식 대체 모델 gemini-3.5-flash 로 교체.
+//   실험 기간 중에는 모델을 바꾸지 말 것(바꾸면 그룹 간·날짜 간 비교가 깨짐). 일기마다 모델명을 같이 저장함.
+//   Gemini 3.x 권장사항: temperature 등 샘플링 값은 기본값 유지, thinkingBudget 대신 thinkingLevel 사용.
+// ───────────────────────────────────────────────────────────────────
+const GEMINI_MODEL = window.GEMINI_MODEL || 'gemini-3.5-flash';
+function getGeminiKey() {
+    // 모듈 로드 시점이 아니라 "호출 시점"에 읽음 → gemini-config.js 로드 순서와 무관하게 동작
+    return window.GEMINI_KEY || '';
+}
 
-// 교체 코드
-const GEMINI_API_KEY = window.GEMINI_KEY || '';
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+const GEMINI_SAFETY = [
+    { category: 'HARM_CATEGORY_HARASSMENT',        threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+    { category: 'HARM_CATEGORY_HATE_SPEECH',       threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+    { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+    { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' }
+];
 
+// 위기 표현 사전 차단 (API 호출 전에 JS에서 먼저 확인 — 결정적이고 지연이 없음)
+// 띄어쓰기를 지운 뒤 비교하므로 '죽고 싶' / '죽고싶' 모두 잡힘. 우회 표현은 못 잡으므로 프롬프트 규칙도 함께 유지.
+const CRISIS_WORDS = ['자살', '자해', '죽고싶', '죽을것같', '끝내고싶', '사라지고싶', '없어지고싶', '살기싫'];
+const CRISIS_MESSAGE = '지금 괜찮나요? 혼자 힘들면 자살예방상담 109, 정신건강위기상담 1577-0199에 이야기해 보세요 💙';
+function containsCrisis(text) {
+    const flat = String(text || '').replace(/\s+/g, '');
+    return CRISIS_WORDS.some(w => flat.includes(w));
+}
 
-let aiHelpCount  = 2;  // 일기당 최대 2회
-let idleTimer    = null;
+function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// Gemini 호출 공통 함수 — 실패 시 err.kind 로 원인을 구분해서 던짐
+async function callGemini({ prompt, thinkingLevel = 'MINIMAL', maxOutputTokens = 1024, json = false }) {
+    const key = getGeminiKey();
+    if (!key) {
+        const e = new Error('Gemini API 키가 없습니다 (window.GEMINI_KEY 비어 있음)');
+        e.kind = 'no_key';
+        throw e;
+    }
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(key)}`;
+    const generationConfig = { maxOutputTokens, thinkingConfig: { thinkingLevel } };
+    if (json) generationConfig.responseMimeType = 'application/json';
+
+    let res;
+    try {
+        res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig,
+                safetySettings: GEMINI_SAFETY
+            })
+        });
+    } catch (netErr) {
+        const e = new Error('네트워크 오류: ' + netErr.message);
+        e.kind = 'network';
+        throw e;
+    }
+
+    if (!res.ok) {
+        let body = {};
+        try { body = await res.json(); } catch {}
+        const msg = body.error?.message || '';
+        const e = new Error(`HTTP ${res.status} ${msg}`);
+        e.status = res.status;
+        if (res.status === 403 && /refer/i.test(msg))                         e.kind = 'referrer';
+        else if (res.status === 400 && /API_KEY_INVALID|API key not valid/i.test(msg)) e.kind = 'key';
+        else if (res.status === 403)                                           e.kind = 'key';
+        else if (res.status === 404)                                           e.kind = 'model';
+        else if (res.status === 429)                                           e.kind = 'quota';
+        else                                                                   e.kind = 'unknown';
+        throw e;
+    }
+
+    const data = await res.json();
+    const cand = data.candidates?.[0];
+    const text = (cand?.content?.parts || [])
+        .filter(p => !p.thought && typeof p.text === 'string')
+        .map(p => p.text).join('').trim();
+    if (!text) {
+        const e = new Error('응답이 비어있습니다 (finishReason: ' + (cand?.finishReason || data.promptFeedback?.blockReason || '없음') + ')');
+        e.kind = (cand?.finishReason === 'SAFETY' || data.promptFeedback?.blockReason) ? 'blocked' : 'empty';
+        throw e;
+    }
+    if (cand?.finishReason === 'MAX_TOKENS') {
+        const e = new Error('응답이 길이 제한에서 잘렸습니다');
+        e.kind = 'truncated';
+        throw e;
+    }
+    return text;
+}
+
+// 사용자에게 보여줄 오류 문구 (자세한 원인은 콘솔에 출력)
+function geminiErrorMessage(err) {
+    switch (err && err.kind) {
+        case 'no_key':   return 'AI 설정 파일(gemini-config.js)을 찾지 못했어요.';
+        case 'referrer': return '이 주소에서는 AI를 쓸 수 없도록 막혀 있어요. (키의 웹사이트 제한 확인)';
+        case 'key':      return 'AI 키가 올바르지 않거나 권한이 없어요.';
+        case 'model':    return 'AI 모델을 찾을 수 없어요. (모델 종료 여부 확인)';
+        case 'quota':    return '지금은 AI 사용량이 많아요. 잠시 후 다시 시도해 주세요.';
+        case 'network':  return '인터넷 연결을 확인해 주세요.';
+        default:         return '잠시 후 다시 시도해주세요.';
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// [실험 그룹]
+// Firestore 의 users/{uid} 문서를 연구자가 콘솔에서 직접 만들어 지정함.
+//   group      : 'A' | 'B' | 'C' | 'ALL'
+//   aiOffDates : ['2026-10-19', '2026-11-01']   ← 이 날짜에는 그룹과 상관없이 AI 전부 꺼짐 (첫날·마지막 날 측정용)
+// A = AI 질문(작성 중 도움받기) / B = AI 교정 선생님(접속 시 어제 일기 첨삭) / C = AI 없음(통제군)
+// ALL = 둘 다 (팀원 테스트·경진대회 시연용 계정에만 지정)
+// 문서가 없거나 group 값이 이상하면 C(AI 없음) → 그룹 배정 전 기준 글을 AI 없이 쓰게 하기 위함.
+// 참여자에게 자기 그룹이 화면에 표시되지 않도록 함(맹검 유지).
+// ───────────────────────────────────────────────────────────────────
+const GROUP_FEATURES = {
+    A:   { question: true,  teacher: false },
+    B:   { question: false, teacher: true  },
+    C:   { question: false, teacher: false },
+    ALL: { question: true,  teacher: true  },
+};
+const DEFAULT_GROUP = 'C';
+let userGroup      = DEFAULT_GROUP;
+let userAiOffDates = [];
+
+function isLocalDev() {
+    return ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+}
+function localDateKey(d = new Date()) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}
+function isAiOffToday() {
+    return userAiOffDates.includes(localDateKey());
+}
+function aiAllowed(feature) {
+    return !!(GROUP_FEATURES[userGroup] && GROUP_FEATURES[userGroup][feature]) && !isAiOffToday();
+}
+
+async function loadUserGroup(user) {
+    userGroup = DEFAULT_GROUP;
+    userAiOffDates = [];
+    try {
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        if (snap.exists()) {
+            const d = snap.data();
+            const g = String(d.group || '').trim().toUpperCase();
+            if (GROUP_FEATURES[g]) userGroup = g;
+            if (Array.isArray(d.aiOffDates)) userAiOffDates = d.aiOffDates.map(v => String(v).trim());
+        }
+    } catch (err) {
+        console.warn('[실험 그룹] users 문서를 읽지 못해 C(AI 없음)로 처리합니다. Firestore 규칙을 확인하세요.', err.code || err);
+    }
+    // 개발 편의: 로컬(localhost/127.0.0.1)에서만 주소 뒤 ?group=A 처럼 붙여 강제 지정 가능. 배포 사이트에서는 무시됨.
+    if (isLocalDev()) {
+        const q = (new URLSearchParams(location.search).get('group') || '').toUpperCase();
+        if (GROUP_FEATURES[q]) userGroup = q;
+    }
+    console.info(`[실험 그룹] ${userGroup}${isAiOffToday() ? ' (오늘은 AI 끔)' : ''}`);
+    applyGroupUI();
+}
+function resetUserGroup() {
+    userGroup = DEFAULT_GROUP;
+    userAiOffDates = [];
+    applyGroupUI();
+}
+
+// 그룹 설정을 화면에 반영 (도움받기 버튼 + 10초 막힘 팝업)
+function applyGroupUI() {
+    const wrap = document.querySelector('.ai-help-btn-wrap');
+    const allowed = aiAllowed('question');
+    if (wrap) wrap.style.display = allowed ? '' : 'none';
+    if (!allowed) {
+        clearTimeout(idleTimer);
+        const pop = document.getElementById('aiStuckPopup');
+        if (pop) pop.style.display = 'none';
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// [A그룹] AI 질문 (작성 중 도움받기) — 1학기 원래 기능 복구
+// ───────────────────────────────────────────────────────────────────
+const AI_HELP_MAX = 2;          // 일기당 최대 2회
+let aiHelpCount   = AI_HELP_MAX;
+let aiQuestionLog = [];         // 이번 일기에서 받은 질문 기록 → 저장 시 함께 기록(분석 변수)
+let idleTimer     = null;
 
 function updateAiHelpBtn() {
     const btn   = document.getElementById('aiHelpBtn');
     const count = document.getElementById('aiHelpCount');
     const label = document.getElementById('aiHelpLabel');
-    count.innerText = `(${aiHelpCount}/2)`;
+    count.innerText = `(${aiHelpCount}/${AI_HELP_MAX})`;
     if (aiHelpCount <= 0) {
         btn.disabled = true;
         label.innerText = '다음 일기에서';
@@ -2649,11 +3051,12 @@ function updateAiHelpBtn() {
 function resetIdleTimer() {
     clearTimeout(idleTimer);
     document.getElementById('aiStuckPopup').style.display = 'none';
+    if (!aiAllowed('question')) return;   // A그룹·ALL 이 아니면 팝업 자체를 띄우지 않음
     const text = document.getElementById('text')?.value || '';
     // 텍스트가 10자 이상 입력된 상태에서만 팝업 표시
     if (text.trim().length < 10) return;
     idleTimer = setTimeout(() => {
-        if (aiHelpCount > 0) {
+        if (aiHelpCount > 0 && aiAllowed('question')) {
             document.getElementById('aiStuckPopup').style.display = 'block';
         }
     }, 10000); // 10초
@@ -2665,21 +3068,39 @@ document.getElementById('aiStuckPopup').addEventListener('click', () => {
     clearTimeout(idleTimer);
 });
 
+function showAiResponse(label, message, style = '') {
+    document.getElementById('aiResponseArea').innerHTML = `
+        <div class="ai-response-box"${style ? ` style="${style}"` : ''}>
+            <div class="ai-response-label">${escapeHtml(label)}</div>
+            <div class="ai-response-text">${escapeHtml(message)}</div>
+        </div>`;
+}
+
 // Gemini API 호출
 async function callGeminiHelp() {
+    if (!aiAllowed('question')) return;
     const text = document.getElementById('text').value.trim();
-    const mood = selectedMood || '😐';
     const btn  = document.getElementById('aiHelpBtn');
 
     if (aiHelpCount <= 0) return;
     if (!text) { alert('먼저 글을 조금 써보세요 ✏️'); return; }
 
+    document.getElementById('aiStuckPopup').style.display = 'none';
+
+    // 위기 표현이 있으면 질문을 만들지 않고 상담 안내만 표시
+    if (containsCrisis(text)) {
+        showAiResponse('💙 마음 건강 안내', CRISIS_MESSAGE, 'background:linear-gradient(135deg,#0ea5e9,#0284c7);');
+        aiQuestionLog.push({ question: '[crisis]', at: Date.now(), textLen: text.length });
+        aiHelpCount--;
+        updateAiHelpBtn();
+        return;
+    }
+
     // 로딩 상태
     btn.disabled = true;
     document.getElementById('aiHelpLabel').innerHTML = '<span class="ai-loading"></span>';
-    document.getElementById('aiStuckPopup').style.display = 'none';
 
-    // ★ 프롬프트: 인간친화적 + 법적 안전장치 포함
+    // ★ 프롬프트: 인간친화적 + 법적 안전장치 포함 (1학기 4가지 전략 프롬프트 그대로)
     const prompt = `당신은 따뜻한 일기 글쓰기 코치입니다.
         사용자의 현재 감정 상태: ${selectedMood || '😐'}
 
@@ -2687,7 +3108,7 @@ async function callGeminiHelp() {
 
         [전략 목록]
         1. 감정 탐색: 일기에 감정 표현은 있지만 깊이가 부족할 때 → 그 감정을 구체적으로 묻는 질문
-        2. 활동 탐색: 사건이나 행동 위주로만 서술됐을 때 → 구체적인 사실이나 행동을 묻는 질문  
+        2. 활동 탐색: 사건이나 행동 위주로만 서술됐을 때 → 구체적인 사실이나 행동을 묻는 질문
         3. 심층 후속 질문: 감정의 원인이 불명확하거나 복잡할 때 → 감정의 진짜 이유를 파고드는 질문
         4. 미래 계획 탐색: 문제나 고민이 명확히 드러났을 때 → 앞으로의 대처나 해결책을 묻는 질문
 
@@ -2700,8 +3121,8 @@ async function callGeminiHelp() {
         - "?"로 끝낼 것
         - 한국어, 15자~45자
         - 따뜻하고 비판적이지 않은 어조
-        - 위기 표현(자살, 자해, 죽고싶다)이 있으면 
-        질문 대신 이것만 출력: "지금 괜찮나요? 힘들면 마음이음 1577-0199 💙"
+        - 위기 표현(자살, 자해, 죽고싶다)이 있으면
+        질문 대신 이것만 출력: "${CRISIS_MESSAGE}"
 
         [각 전략별 좋은 예시]
         1번: 그 순간 가장 크게 느껴진 감정이 무엇이었나요?
@@ -2710,42 +3131,13 @@ async function callGeminiHelp() {
         4번: 다음번에 비슷한 상황이 오면 어떻게 해보고 싶으신가요?`;
 
     try {
-        const res = await fetch(GEMINI_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                    temperature: 0.7,
-                    maxOutputTokens: 300,
-                    thinkingConfig: { thinkingBudget: 0 }
-                },
-                safetySettings: [
-                    { category: 'HARM_CATEGORY_HARASSMENT',        threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-                    { category: 'HARM_CATEGORY_HATE_SPEECH',       threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-                    { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-                    { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' }
-                ]
-            })
-        });
-
-        if (!res.ok) {
-            const err = await res.json();
-            throw new Error(err.error?.message || `HTTP ${res.status}`);
-        }
-
-        const data     = await res.json();
-        const question = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-
-        if (!question) throw new Error('응답이 비어있습니다');
+        const raw = await callGemini({ prompt, thinkingLevel: 'MINIMAL', maxOutputTokens: 1024 });
+        // 모델이 따옴표나 줄바꿈을 붙이는 경우 정리
+        const question = raw.split('\n').map(s => s.trim()).filter(Boolean)[0].replace(/^["'“”]+|["'“”]+$/g, '');
 
         // 응답 표시
-        const area = document.getElementById('aiResponseArea');
-        area.innerHTML = `
-            <div class="ai-response-box">
-                <div class="ai-response-label">✦ AI 추가 질문</div>
-                <div class="ai-response-text">${question}</div>
-            </div>`;
+        showAiResponse('✦ AI 추가 질문', question);
+        aiQuestionLog.push({ question, at: Date.now(), textLen: text.length });
 
         // 사용 횟수 차감
         aiHelpCount--;
@@ -2753,39 +3145,379 @@ async function callGeminiHelp() {
         resetIdleTimer();
 
     } catch (err) {
-        console.error('Gemini API 오류:', err);
-
-        let errMsg = '잠시 후 다시 시도해주세요.';
-        let errStyle = 'background:linear-gradient(135deg,#6b7280,#4b5563);';
-
-        // API 키 미설정
-        if (!GEMINI_API_KEY) {
-            errMsg   = 'GEMINI_API_KEY를 index.html에 직접 입력해주세요.';
-            errStyle = 'background:linear-gradient(135deg,#f59e0b,#d97706);';
-        }
-        // API 키 잘못됨 (403 / 400 / invalid key)
-        else if (err.message && (err.message.includes('API_KEY_INVALID') || err.message.includes('400') || err.message.includes('403'))) {
-            errMsg   = 'API 키가 올바르지 않습니다. Google AI Studio에서 키를 재발급하세요.';
-            errStyle = 'background:linear-gradient(135deg,#ef4444,#b91c1c);';
-        }
-        // 모델명 오류 (404)
-        else if (err.message && err.message.includes('404')) {
-            errMsg   = '모델을 찾을 수 없습니다. 모델명을 확인하세요.';
-            errStyle = 'background:linear-gradient(135deg,#f59e0b,#d97706);';
-        }
-
-        document.getElementById('aiResponseArea').innerHTML = `
-            <div class="ai-response-box" style="${errStyle}">
-                <div class="ai-response-label">⚠️ 오류</div>
-                <div class="ai-response-text">${errMsg}</div>
-            </div>`;
-
-        updateAiHelpBtn();
+        console.error('Gemini API 오류:', err.kind, err);
+        const warn = ['no_key', 'model', 'referrer'].includes(err.kind);
+        showAiResponse('⚠️ 오류', geminiErrorMessage(err),
+            warn ? 'background:linear-gradient(135deg,#f59e0b,#d97706);'
+                 : err.kind === 'key' ? 'background:linear-gradient(135deg,#ef4444,#b91c1c);'
+                 : 'background:linear-gradient(135deg,#6b7280,#4b5563);');
+        updateAiHelpBtn();   // 실패하면 횟수는 차감하지 않음
     }
 }
 
 // 도움받기 버튼 클릭
 document.getElementById('aiHelpBtn').addEventListener('click', callGeminiHelp);
+
+// ═══════════════════════════════════════════════════════════════════
+// [B그룹] AI 교정 선생님 — 접속 시 "어제 쓴 일기"를 빨간 펜 첨삭처럼 보여줌
+// · 목표 지표: 어휘 밀도 = 내용어 ÷ 전체 형태소 (원미진 외, 2017 / Kiwi 태그 분류 기준)
+//   내용어: NNG·VV·VA·MAG·MM  /  기능어: NNB·NP·MAJ·VX·VCP·XSN·J*·E*
+// · 원문 일기는 절대 수정하지 않음. 사용자는 제안마다 "써볼게요/괜찮아요" 의사만 남기고, 그 기록만 저장.
+// · 첨삭 결과는 해당 일기 문서의 aiCorrection 필드에 1회 저장(캐시) → 다시 열어도 API를 또 부르지 않고,
+//   참여자가 정확히 어떤 피드백을 봤는지 연구자가 나중에 확인할 수 있음.
+//   일기를 수정하면(sourceHash 불일치) 새로 첨삭함.
+// · 팝업: "닫기" = 이번 접속에서만 닫힘 / "오늘 하루 보지 않기" = 오늘 자정까지 안 뜸
+// ───────────────────────────────────────────────────────────────────
+const TEACHER_PROMPT_VERSION = 'teacher-v1';
+const TEACHER_MIN_CHARS      = 30;   // 이보다 짧은 일기는 첨삭하지 않음 (짧으면 제안 품질이 불안정)
+const TEACHER_MAX_ITEMS      = 3;    // 선생님 빨간 펜은 최대 3군데까지
+const TEACHER_TYPES          = ['구체적인 낱말로', '군더더기 줄이기', '또렷하게 말하기'];
+const CIRCLED                = ['①', '②', '③', '④', '⑤'];
+
+let teacherCheckedUid = null;   // 이번 접속에서 이미 확인한 계정 (중복 팝업 방지)
+let teacherState      = null;   // { log, corr, openedAt }
+
+function teacherStore(key, val) {
+    try {
+        if (val === undefined) return localStorage.getItem(key);
+        localStorage.setItem(key, val);
+    } catch { return null; }
+}
+function teacherHiddenToday(uid) {
+    return teacherStore(`qlog_teacher_hide_${uid}`) === localDateKey();
+}
+function teacherSeenToday() {
+    if (!currentUser) return false;
+    return teacherStore(`qlog_teacher_seen_${currentUser.uid}`) === localDateKey();
+}
+
+// 일기 본문 해시(FNV-1a 32bit) — 첨삭 이후 일기가 수정됐는지 판별용
+function hashText(s) {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < s.length; i++) {
+        h ^= s.charCodeAt(i);
+        h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return h.toString(16);
+}
+
+function buildTeacherPrompt(text) {
+    return `너는 초등학교 담임선생님처럼 학생의 어제 일기를 빨간 펜으로 첨삭한다.
+목표: 글에서 뜻을 가진 낱말이 차지하는 비율(어휘 밀도)을 높일 수 있는 곳을 최대 ${TEACHER_MAX_ITEMS}군데 골라 보여준다.
+
+[품사 기준]
+- 뜻을 가진 낱말(내용어): 일반명사, 동사, 형용사, 일반부사, 관형사
+- 문법 역할만 하는 말(기능어): 조사, 어미, 의존명사(것·수·때문·거), 대명사(나·그거·이거·거기), 접속부사(그리고·그래서), 보조용언(-고 있다·-어 보다·-어 버리다), 서술격조사(이다), 접미사(-들)
+
+[고를 곳 — 이 세 종류만]
+1. 구체적인 낱말로: '그거', '거기', '그런 거', '뭔가'처럼 막연한 말을 구체적인 명사로
+2. 군더더기 줄이기: '~하는 것 같다', '~했던 것이었다', '~해 버리고 말았다', '그리고'·'그래서' 반복처럼 기능어가 겹친 표현을 간결하게
+3. 또렷하게 말하기: '좋았다', '재밌었다', '힘들었다'처럼 뭉뚱그린 서술에 무엇이 어땠는지 내용어를 더해서
+
+[절대 하지 말 것]
+- 조사나 어미를 빼서 문장을 어색하게 만들기 (예: '나 학교 갔다')
+- 맞춤법·띄어쓰기·구어체(ㅋㅋ, 넘, 완전, ~당) 지적
+- 일기에 없는 사실 지어내기. 내용을 모르면 대괄호 자리표시를 쓴다. 예: '[먹은 음식]을 먹었다'
+- 감정이나 내용에 대한 평가, 훈계
+- 설명에 '밀도', '내용어', '기능어', '품사' 같은 용어 사용
+
+[출력 — JSON 하나만]
+{"crisis": false, "praise": "", "items": [{"original": "", "suggestion": "", "reason": "", "type": ""}], "closing": ""}
+- praise: 일기 속 구체적인 부분을 짚어 칭찬하는 한 문장 (~요)
+- original: 일기 원문에서 글자 하나 바꾸지 않고 그대로 복사한 구절. 2~25자. 서로 겹치지 않게
+- suggestion: original 자리에 바꿔 쓸 문장 조각
+- reason: 초등학생도 알아듣는 쉬운 말로 한 문장 (~요)
+- type: "구체적인 낱말로" | "군더더기 줄이기" | "또렷하게 말하기" 중 하나
+- closing: 다음 일기를 응원하는 한 문장 (~요)
+- 고칠 곳이 없으면 items는 빈 배열
+- 일기에 자살·자해·죽고 싶다는 표현이 있으면 {"crisis": true, "praise": "", "items": [], "closing": ""} 만 출력
+
+[어제 일기]
+"""
+${text}
+"""`;
+}
+
+// 코드펜스·앞뒤 잡문이 섞여도 JSON만 꺼내서 파싱
+function parseJsonLoose(raw) {
+    let s = String(raw || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
+    const a = s.indexOf('{'), b = s.lastIndexOf('}');
+    if (a === -1 || b === -1 || b <= a) return null;
+    try { return JSON.parse(s.slice(a, b + 1)); } catch { return null; }
+}
+
+const clip = (v, n) => String(v ?? '').trim().slice(0, n);
+
+// AI가 준 original 구절을 실제 원문에서 찾아 위치를 붙임. 못 찾거나 겹치면 버림(하이라이트가 엉뚱한 곳에 그어지는 것 방지)
+function locateTeacherItems(text, rawItems) {
+    const found = [];
+    (Array.isArray(rawItems) ? rawItems : []).forEach(it => {
+        if (!it || typeof it !== 'object') return;
+        const original = clip(it.original, 60).replace(/^["'“”‘’「」『』]+|["'“”‘’「」『』]+$/g, '');
+        const suggestion = clip(it.suggestion, 120);
+        if (original.length < 2 || !suggestion) return;
+        let idx = text.indexOf(original);
+        while (idx !== -1 && found.some(f => idx < f.end && idx + original.length > f.start)) {
+            idx = text.indexOf(original, idx + 1);
+        }
+        if (idx === -1) return;
+        found.push({
+            original, suggestion,
+            reason: clip(it.reason, 160),
+            type: TEACHER_TYPES.includes(it.type) ? it.type : '',
+            start: idx, end: idx + original.length
+        });
+    });
+    found.sort((x, y) => x.start - y.start);
+    return found.slice(0, TEACHER_MAX_ITEMS);
+}
+
+async function generateTeacherCorrection(text) {
+    const raw = await callGemini({
+        prompt: buildTeacherPrompt(text),
+        thinkingLevel: 'LOW',
+        maxOutputTokens: 4096,
+        json: true
+    });
+    const parsed = parseJsonLoose(raw);
+    if (!parsed) {
+        const e = new Error('첨삭 응답을 해석하지 못했습니다: ' + String(raw).slice(0, 200));
+        e.kind = 'parse';
+        throw e;
+    }
+    const rawCount = Array.isArray(parsed.items) ? parsed.items.length : 0;
+    const items = parsed.crisis ? [] : locateTeacherItems(text, parsed.items);
+    return {
+        crisis: !!parsed.crisis,
+        praise: parsed.crisis ? '' : clip(parsed.praise, 200),
+        closing: parsed.crisis ? '' : clip(parsed.closing, 200),
+        items,
+        rawItemCount: rawCount   // AI가 제안한 개수 (원문에서 못 찾거나 최대 개수를 넘어 버린 것 포함) — 프롬프트 품질 점검용
+    };
+}
+
+// 접속 시 1회: B그룹·ALL 이고, 오늘 숨김을 누르지 않았고, 어제 일기가 있으면 팝업
+async function maybeShowTeacher() {
+    if (!currentUser) return;
+    const uid = currentUser.uid;
+    if (teacherCheckedUid === uid) return;
+    teacherCheckedUid = uid;
+
+    if (!aiAllowed('teacher')) return;           // A·C 그룹 또는 AI 차단일
+    if (teacherHiddenToday(uid)) return;          // "오늘 하루 보지 않기"
+    const log = findLogForOffset(1);              // 어제 날짜 일기
+    if (!log || !log.text || log.text.trim().length < TEACHER_MIN_CHARS) return;
+
+    openTeacherModal(log);
+    const hash = hashText(log.text);
+    let corr = (log.aiCorrection && log.aiCorrection.sourceHash === hash) ? log.aiCorrection : null;
+
+    if (!corr) {
+        try {
+            if (containsCrisis(log.text)) {
+                corr = { crisis: true, praise: '', closing: '', items: [], rawItemCount: 0 };
+            } else {
+                corr = await generateTeacherCorrection(log.text);
+            }
+        } catch (err) {
+            console.error('[AI 교정 선생님] 첨삭 생성 실패:', err.kind, err);
+            if (teacherState && teacherState.log.id === log.id) renderTeacherError(err);
+            return;
+        }
+        Object.assign(corr, {
+            version: TEACHER_PROMPT_VERSION,
+            model: GEMINI_MODEL,
+            sourceHash: hash,
+            group: userGroup,
+            viewCount: 0,
+            totalDwellMs: 0,
+            responses: {}
+        });
+        try {
+            await updateDoc(doc(db, 'logs', log.id), { aiCorrection: { ...corr, createdAt: serverTimestamp() } });
+        } catch (err) {
+            console.warn('[AI 교정 선생님] 첨삭 저장 실패 (화면에는 표시함). Firestore 규칙 확인:', err.code || err);
+        }
+        log.aiCorrection = corr;
+    }
+
+    if (!teacherState || teacherState.log.id !== log.id) return;   // 그 사이 닫힘
+    teacherState.corr = corr;
+    renderTeacher(log, corr);
+    logTeacherView(log, corr);
+}
+
+function logTeacherView(log, corr) {
+    const patch = {
+        'aiCorrection.viewCount': increment(1),
+        'aiCorrection.lastViewedAt': serverTimestamp()
+    };
+    if (!corr.firstViewedAt) {
+        patch['aiCorrection.firstViewedAt'] = serverTimestamp();
+        corr.firstViewedAt = true;
+    }
+    updateDoc(doc(db, 'logs', log.id), patch).catch(err => console.warn('[AI 교정 선생님] 열람 기록 실패:', err.code || err));
+    if (!corr.crisis) teacherStore(`qlog_teacher_seen_${currentUser.uid}`, localDateKey());
+}
+
+// ── 화면 ──────────────────────────────────────
+function openTeacherModal(log) {
+    teacherState = { log, corr: null, openedAt: Date.now() };
+    const d = log.date instanceof Date ? log.date : new Date(log.date);
+    document.getElementById('teacherDate').textContent =
+        d.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' }) + ' 일기';
+    document.getElementById('teacherMood').textContent = log.mood || '';
+    document.getElementById('teacherPaper').textContent = log.text;   // 첨삭이 오기 전엔 원문만
+    document.getElementById('teacherPraise').hidden = true;
+    document.getElementById('teacherStamp').hidden = true;
+    document.getElementById('teacherNotes').innerHTML = '';
+    document.getElementById('teacherClosing').hidden = true;
+    const st = document.getElementById('teacherStatus');
+    st.className = 'teacher-status loading';
+    st.innerHTML = '<span class="teacher-pencil">✏️</span> 선생님이 빨간 펜으로 읽고 있어요…';
+    st.hidden = false;
+    const modal = document.getElementById('teacherModal');
+    modal.classList.add('show');
+    modal.setAttribute('aria-hidden', 'false');
+    setTimeout(() => document.getElementById('teacherCloseBtn').focus({ preventScroll: true }), 50);
+}
+
+function renderTeacherError(err) {
+    const st = document.getElementById('teacherStatus');
+    st.className = 'teacher-status error';
+    st.textContent = '오늘은 첨삭을 불러오지 못했어요. ' + geminiErrorMessage(err);
+    st.hidden = false;
+}
+
+function renderTeacher(log, corr) {
+    const st = document.getElementById('teacherStatus');
+    const paper = document.getElementById('teacherPaper');
+    const notes = document.getElementById('teacherNotes');
+
+    if (corr.crisis) {
+        paper.textContent = log.text;
+        st.className = 'teacher-status care';
+        st.textContent = CRISIS_MESSAGE;
+        st.hidden = false;
+        notes.innerHTML = '';
+        return;
+    }
+
+    // 원문 + 빨간 펜 하이라이트 (원문은 escape 후 구간만 감쌈 → 일기 내용이 HTML로 해석되지 않음)
+    const text = log.text;
+    const items = corr.items || [];
+    let html = '', cur = 0;
+    items.forEach((it, i) => {
+        if (it.start < cur || text.slice(it.start, it.end) !== it.original) return;  // 안전장치
+        html += escapeHtml(text.slice(cur, it.start));
+        html += `<mark class="tmark" data-i="${i}" tabindex="0">${escapeHtml(it.original)}<sup class="tmark-num">${CIRCLED[i]}</sup></mark>`;
+        cur = it.end;
+    });
+    html += escapeHtml(text.slice(cur));
+    paper.innerHTML = html;
+
+    const praiseEl = document.getElementById('teacherPraise');
+    if (corr.praise) { praiseEl.textContent = corr.praise; praiseEl.hidden = false; }
+    document.getElementById('teacherStamp').hidden = false;
+
+    if (!items.length) {
+        st.className = 'teacher-status good';
+        st.textContent = '어제 일기는 고칠 곳 없이 또렷했어요! 👏';
+        st.hidden = false;
+    } else {
+        st.hidden = true;
+    }
+
+    const responses = corr.responses || {};
+    notes.innerHTML = items.map((it, i) => {
+        const r = responses[i] && responses[i].choice;
+        return `
+        <div class="tnote" id="tnote-${i}" data-i="${i}">
+            <div class="tnote-num">${CIRCLED[i]}</div>
+            <div class="tnote-body">
+                ${it.type ? `<div class="tnote-type">${escapeHtml(it.type)}</div>` : ''}
+                <div class="tnote-fix"><span class="tnote-from">${escapeHtml(it.original)}</span><span class="tnote-arrow">→</span><span class="tnote-to">${escapeHtml(it.suggestion)}</span></div>
+                ${it.reason ? `<div class="tnote-reason">${escapeHtml(it.reason)}</div>` : ''}
+                <div class="tnote-choices" role="group" aria-label="${i + 1}번 제안에 대한 생각">
+                    <button type="button" class="tnote-choice${r === 'try' ? ' on' : ''}" data-i="${i}" data-choice="try" aria-pressed="${r === 'try'}">다음엔 이렇게 써볼게요</button>
+                    <button type="button" class="tnote-choice${r === 'skip' ? ' on' : ''}" data-i="${i}" data-choice="skip" aria-pressed="${r === 'skip'}">괜찮아요</button>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+
+    const closingEl = document.getElementById('teacherClosing');
+    if (corr.closing) { closingEl.textContent = corr.closing; closingEl.hidden = false; }
+}
+
+function flashEl(el) {
+    if (!el) return;
+    el.classList.remove('flash');
+    void el.offsetWidth;
+    el.classList.add('flash');
+}
+
+// 하이라이트 ↔ 설명 연결
+document.getElementById('teacherPaper').addEventListener('click', e => {
+    const m = e.target.closest('.tmark');
+    if (!m) return;
+    const note = document.getElementById('tnote-' + m.dataset.i);
+    if (note) { note.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); flashEl(note); }
+});
+document.getElementById('teacherPaper').addEventListener('keydown', e => {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('tmark')) { e.preventDefault(); e.target.click(); }
+});
+document.getElementById('teacherNotes').addEventListener('click', e => {
+    const btn = e.target.closest('.tnote-choice');
+    if (btn) { recordTeacherChoice(Number(btn.dataset.i), btn.dataset.choice); return; }
+    const num = e.target.closest('.tnote-num');
+    if (num) flashEl(document.querySelector(`#teacherPaper .tmark[data-i="${num.parentElement.dataset.i}"]`));
+});
+
+// "써볼게요 / 괜찮아요" — 원문은 그대로 두고 의사만 저장 (같은 버튼을 다시 누르면 취소)
+function recordTeacherChoice(i, choice) {
+    if (!teacherState || !teacherState.corr) return;
+    const { log, corr } = teacherState;
+    corr.responses = corr.responses || {};
+    const prev = corr.responses[i] && corr.responses[i].choice;
+    const next = prev === choice ? null : choice;
+    if (next) corr.responses[i] = { choice: next }; else delete corr.responses[i];
+
+    document.querySelectorAll(`.tnote-choice[data-i="${i}"]`).forEach(b => {
+        const on = b.dataset.choice === next;
+        b.classList.toggle('on', on);
+        b.setAttribute('aria-pressed', String(on));
+    });
+    updateDoc(doc(db, 'logs', log.id), {
+        [`aiCorrection.responses.${i}`]: next ? { choice: next, at: serverTimestamp() } : null
+    }).catch(err => console.warn('[AI 교정 선생님] 선택 기록 실패:', err.code || err));
+}
+
+function closeTeacherModal(action) {
+    const modal = document.getElementById('teacherModal');
+    if (!modal.classList.contains('show')) return;
+    modal.classList.remove('show');
+    modal.setAttribute('aria-hidden', 'true');
+    if (!teacherState) return;
+    const { log, corr, openedAt } = teacherState;
+    teacherState = null;
+    if (action === 'hide_today' && currentUser) teacherStore(`qlog_teacher_hide_${currentUser.uid}`, localDateKey());
+    if (corr) {
+        updateDoc(doc(db, 'logs', log.id), {
+            'aiCorrection.lastAction': action,                       // 'close' | 'hide_today'
+            'aiCorrection.totalDwellMs': increment(Date.now() - openedAt)   // 팝업을 보고 있던 시간(ms) 누적
+        }).catch(err => console.warn('[AI 교정 선생님] 닫기 기록 실패:', err.code || err));
+    }
+}
+
+document.getElementById('teacherCloseBtn').addEventListener('click', () => closeTeacherModal('close'));
+document.getElementById('teacherHideTodayBtn').addEventListener('click', () => closeTeacherModal('hide_today'));
+document.getElementById('teacherModal').addEventListener('click', e => {
+    if (e.target.id === 'teacherModal') closeTeacherModal('close');
+});
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeTeacherModal('close');
+});
 
 // ── textarea ──────────────────────────────────
 document.getElementById('text').addEventListener('keydown', e => {
@@ -3105,6 +3837,17 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
             tags: [...autoTags, ...manualTags],
             date: logDate,
             isBackdate: isBackdate,
+            // ── [실험 조건 기록] 분석 시 그룹·AI 노출 여부를 일기 단위로 확인하기 위함 ──
+            experiment: {
+                group: userGroup,                          // 'A' | 'B' | 'C' | 'ALL'
+                aiOffToday: isAiOffToday(),                // 첫날·마지막 날(AI 차단일) 여부
+                questionEnabled: aiAllowed('question'),
+                teacherEnabled: aiAllowed('teacher'),
+                teacherShownBeforeWriting: teacherSeenToday(),   // 오늘 쓰기 전에 어제 첨삭을 봤는지 (B·ALL)
+                model: GEMINI_MODEL,
+                aiQuestionUsed: aiQuestionLog.length,      // 도움받기 사용 횟수
+                aiQuestionLog: aiQuestionLog.slice(0, AI_HELP_MAX),
+            },
             metrics: {
                 timeToFirst: safeTimeToFirst,
                 writingDuration: safeWritingDuration,
@@ -4789,7 +5532,6 @@ function showDayLogs(year, month, day) {
     });
 }
 </script>
-<script src="gemini-config.js"></script>
 
 <!-- 스트릭 팝업 -->
 <div class="streak-modal" id="streakModal" onclick="if(event.target===this)window.closeStreakModal()">
@@ -4848,6 +5590,30 @@ function showDayLogs(year, month, day) {
         <div class="nickname-edit-btns">
             <button class="nickname-cancel-btn" onclick="closeNicknameEdit()">취소</button>
             <button class="nickname-save-btn" onclick="saveNickname()">저장</button>
+        </div>
+    </div>
+</div>
+
+<!-- ★ AI 교정 선생님 (B그룹·ALL만, 접속 시 어제 일기 첨삭) -->
+<div class="teacher-modal" id="teacherModal" aria-hidden="true">
+    <div class="teacher-sheet" role="dialog" aria-modal="true" aria-labelledby="teacherTitle">
+        <div class="teacher-grip" aria-hidden="true"></div>
+        <div class="teacher-head">
+            <div class="teacher-head-text">
+                <div class="teacher-kicker">✏️ AI 교정 선생님</div>
+                <div class="teacher-title" id="teacherTitle">어제 일기를 같이 봐요</div>
+                <div class="teacher-date"><span id="teacherMood"></span> <span id="teacherDate"></span></div>
+            </div>
+            <div class="teacher-stamp" id="teacherStamp" hidden aria-label="참 잘했어요 도장">참<br>잘했어요</div>
+        </div>
+        <div class="teacher-praise" id="teacherPraise" hidden></div>
+        <div class="teacher-paper" id="teacherPaper"></div>
+        <div class="teacher-status" id="teacherStatus" role="status" aria-live="polite" hidden></div>
+        <div class="teacher-notes" id="teacherNotes"></div>
+        <div class="teacher-closing" id="teacherClosing" hidden></div>
+        <div class="teacher-actions">
+            <button type="button" class="teacher-hide-btn" id="teacherHideTodayBtn">오늘 하루 보지 않기</button>
+            <button type="button" class="teacher-close-btn" id="teacherCloseBtn">닫기</button>
         </div>
     </div>
 </div>
