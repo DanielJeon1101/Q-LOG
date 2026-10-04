@@ -3028,6 +3028,7 @@ function applyGroupUI() {
 // ═══════════════════════════════════════════════════════════════════
 // [A그룹] AI 질문 (작성 중 도움받기) — 1학기 원래 기능 복구
 // ───────────────────────────────────────────────────────────────────
+const QUESTION_PROMPT_VERSION = 'question-v1';   // ★ 질문 프롬프트를 고칠 때마다 question-v2, v3… 로 올릴 것 (일기마다 함께 저장됨)
 const AI_HELP_MAX = 2;          // 일기당 최대 2회
 let aiHelpCount   = AI_HELP_MAX;
 let aiQuestionLog = [];         // 이번 일기에서 받은 질문 기록 → 저장 시 함께 기록(분석 변수)
@@ -3168,7 +3169,7 @@ document.getElementById('aiHelpBtn').addEventListener('click', callGeminiHelp);
 //   일기를 수정하면(sourceHash 불일치) 새로 첨삭함.
 // · 팝업: "닫기" = 이번 접속에서만 닫힘 / "오늘 하루 보지 않기" = 오늘 자정까지 안 뜸
 // ───────────────────────────────────────────────────────────────────
-const TEACHER_PROMPT_VERSION = 'teacher-v1';
+const TEACHER_PROMPT_VERSION = 'teacher-v1';   // ★ 첨삭 프롬프트를 고칠 때마다 teacher-v2, v3… 로 올릴 것
 const TEACHER_MIN_CHARS      = 30;   // 이보다 짧은 일기는 첨삭하지 않음 (짧으면 제안 품질이 불안정)
 const TEACHER_MAX_ITEMS      = 3;    // 선생님 빨간 펜은 최대 3군데까지
 const TEACHER_TYPES          = ['구체적인 낱말로', '군더더기 줄이기', '또렷하게 말하기'];
@@ -3310,7 +3311,10 @@ async function maybeShowTeacher() {
 
     openTeacherModal(log);
     const hash = hashText(log.text);
-    let corr = (log.aiCorrection && log.aiCorrection.sourceHash === hash) ? log.aiCorrection : null;
+    // 저장된 첨삭을 다시 쓰는 조건: 일기 본문이 그대로이고(sourceHash), 프롬프트 버전도 같을 때.
+    // → 프롬프트를 고친 뒤 TEACHER_PROMPT_VERSION 을 올리면 새 프롬프트로 다시 첨삭함 (실험 기간에는 절대 바꾸지 말 것)
+    const cached = log.aiCorrection;
+    let corr = (cached && cached.sourceHash === hash && cached.version === TEACHER_PROMPT_VERSION) ? cached : null;
 
     if (!corr) {
         try {
@@ -3845,6 +3849,8 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
                 teacherEnabled: aiAllowed('teacher'),
                 teacherShownBeforeWriting: teacherSeenToday(),   // 오늘 쓰기 전에 어제 첨삭을 봤는지 (B·ALL)
                 model: GEMINI_MODEL,
+                questionPromptVersion: QUESTION_PROMPT_VERSION,
+                teacherPromptVersion: TEACHER_PROMPT_VERSION,
                 aiQuestionUsed: aiQuestionLog.length,      // 도움받기 사용 횟수
                 aiQuestionLog: aiQuestionLog.slice(0, AI_HELP_MAX),
             },
