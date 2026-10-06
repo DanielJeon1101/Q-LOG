@@ -1939,6 +1939,162 @@ body.dark-mode .teacher-status.good   { background: #12301f; color: #7ee2a8; }
 body.dark-mode .teacher-status.care   { background: #0f2a3a; color: #8fd3ff; }
 body.dark-mode .teacher-close-btn { background: #444; }
 </style>
+<style>
+/* ═══════════════════════════════════════════════
+   실험 참여 도장판 — 카페 쿠폰처럼: 에스프레소 잉크 도장 + 절취선
+═══════════════════════════════════════════════ */
+.study-card {
+    --ink: #4a2c1d;        /* 에스프레소 잉크 (도장·제목) */
+    --ink-soft: #7b5a46;
+    --crema: #b9771f;      /* 크레마 (오늘·현재 보상 강조) */
+    --crema-tint: rgba(185,119,31,0.12);
+    --paper: #fbf6ee;      /* 쿠폰 종이 */
+    --rule: #e7dccb;       /* 크라프트 선 */
+    --muted: #a8a097;
+    --text: #1f1a17;
+    --sub: #6f665e;
+    --stamp-ring: rgba(251,246,238,0.5);
+    margin: 12px 16px;
+    filter: drop-shadow(0 2px 6px rgba(74,44,29,0.10));
+    color: var(--text);
+    text-align: left;      /* 화면 전체의 가운데 정렬을 덮어씀 */
+}
+.study-card[hidden] { display: none; }
+.study-top, .study-bottom { padding: 18px 18px 16px; position: relative; }
+/* 절취선 양 끝의 반원 홈: 투명하게 뚫어서 뒤 배경이 보이게 함 (페이지 배경색과 무관) */
+.study-top {
+    border-radius: 20px 20px 0 0;
+    background:
+        radial-gradient(circle at 0 100%, transparent 9px, var(--paper) 9.5px) left / 51% 100% no-repeat,
+        radial-gradient(circle at 100% 100%, transparent 9px, var(--paper) 9.5px) right / 51% 100% no-repeat;
+}
+.study-top::after {
+    content: ''; position: absolute; left: 16px; right: 16px; bottom: 0;
+    border-top: 1.5px dashed var(--rule);
+}
+.study-bottom {
+    border-radius: 0 0 20px 20px;
+    padding-top: 16px;
+    background:
+        radial-gradient(circle at 0 0, transparent 9px, var(--paper) 9.5px) left / 51% 100% no-repeat,
+        radial-gradient(circle at 100% 0, transparent 9px, var(--paper) 9.5px) right / 51% 100% no-repeat;
+}
+.study-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.study-title { margin: 0; font-size: 17px; font-weight: 800; letter-spacing: -0.4px; color: var(--ink); }
+.study-count { font-size: 13px; font-weight: 700; color: var(--sub); white-space: nowrap; }
+.study-count b { font-size: 22px; font-weight: 800; color: var(--ink); margin-right: 1px; }
+.study-status { margin: 6px 0 16px; font-size: 13.5px; line-height: 1.55; color: var(--text); word-break: keep-all; }
+
+.study-stamps {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    column-gap: 4px; row-gap: 20px; justify-items: center;
+    padding-bottom: 10px;
+}
+.stamp {
+    position: relative; width: 100%; max-width: 40px; aspect-ratio: 1;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12.5px; font-weight: 700; letter-spacing: -0.3px;
+    transform: rotate(var(--tilt, 0deg));
+    box-sizing: border-box;
+}
+.stamp-num { color: var(--muted); }
+.stamp.is-future { border: 1.5px solid var(--rule); }
+.stamp.is-done { background: var(--ink); color: var(--paper); }
+.stamp.is-done::before {
+    content: ''; position: absolute; inset: 3px; border-radius: 50%;
+    border: 1.2px solid var(--stamp-ring);
+}
+.stamp.is-done svg { width: 60%; height: 60%; }
+.stamp.is-today, .stamp.is-grace { border: 2px dashed var(--crema); }
+.stamp.is-today .stamp-num, .stamp.is-grace .stamp-num { color: var(--crema); }
+.stamp.is-missed { background: var(--rule); }
+.stamp.is-missed .stamp-num { color: var(--muted); text-decoration: line-through; }
+.stamp.is-last { outline: 1.5px solid var(--ink-soft); outline-offset: 3px; }
+.stamp-tag {
+    position: absolute; top: calc(100% + 5px); left: 50%;
+    transform: translateX(-50%) rotate(calc(-1 * var(--tilt, 0deg)));
+    font-size: 10.5px; font-weight: 800; white-space: nowrap; color: var(--crema);
+}
+.stamp.is-last .stamp-tag { color: var(--ink-soft); }
+.stamp.is-new { animation: stampLand 0.5s cubic-bezier(0.2,1.4,0.4,1) both; }
+@keyframes stampLand {
+    from { transform: rotate(var(--tilt, 0deg)) scale(1.6); opacity: 0; }
+    to   { transform: rotate(var(--tilt, 0deg)) scale(1);   opacity: 1; }
+}
+.study-nudge {
+    margin: 10px 0 0; padding: 9px 12px; border-radius: 12px;
+    background: var(--crema-tint); color: var(--ink);
+    font-size: 12.5px; font-weight: 600; line-height: 1.5; word-break: keep-all;
+}
+
+.study-tiers { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.tier {
+    display: grid; grid-template-columns: 78px 1fr auto; align-items: start; gap: 8px;
+    padding: 10px 10px 10px 12px; border-radius: 12px; font-size: 13px;
+}
+.tier-miss { color: var(--sub); font-weight: 700; padding-top: 1px; white-space: nowrap; }
+.tier-name { color: var(--text); font-weight: 700; line-height: 1.45; word-break: keep-all; }
+.tier-name small { display: block; margin-top: 2px; font-size: 11.5px; font-weight: 600; color: var(--sub); }
+.tier-tag {
+    font-size: 11px; font-weight: 800; white-space: nowrap;
+    color: var(--paper); background: var(--crema);
+    padding: 3px 8px; border-radius: 20px;
+}
+.tier.is-current { background: var(--crema-tint); box-shadow: inset 3px 0 0 var(--crema); }
+.tier.is-lost .tier-name, .tier.is-lost .tier-miss { color: var(--muted); }
+.tier.is-lost .tier-name { text-decoration: line-through; }
+.study-tier-note { margin: 8px 2px 0; font-size: 12px; line-height: 1.5; color: var(--sub); word-break: keep-all; }
+.study-must { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 14px; font-size: 12.5px; }
+.study-must-title { font-weight: 800; color: var(--ink); margin-right: 2px; }
+.study-check {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 10px; border-radius: 20px; border: 1px solid var(--rule);
+    color: var(--sub); font-weight: 700;
+}
+.study-check::before {
+    content: ''; width: 13px; height: 13px; border-radius: 50%; box-sizing: border-box;
+    border: 1.5px solid var(--muted);
+}
+.study-check.is-on { color: var(--ink); border-color: var(--ink-soft); }
+.study-check.is-on::before {
+    border-color: var(--ink);
+    background: var(--ink) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 6.2l2 2 4-4.4' fill='none' stroke='%23fbf6ee' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 100% no-repeat;
+}
+.study-survey {
+    display: block; margin-top: 12px; padding: 13px; border-radius: 14px;
+    text-align: center; text-decoration: none;
+    background: var(--ink); color: var(--paper); font-size: 14px; font-weight: 800;
+}
+.study-survey:focus-visible { outline: 2px solid var(--crema); outline-offset: 2px; }
+.study-foot { margin: 12px 2px 0; font-size: 11.5px; line-height: 1.5; color: var(--sub); }
+
+/* 글쓰기 화면: 도장 기준 안내 */
+.study-char-hint { margin-top: 6px; font-size: 12px; font-weight: 700; color: #b9771f; }
+.study-char-hint.is-ok { color: #4a2c1d; }
+.study-char-hint[hidden] { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+    .stamp.is-new { animation: none; }
+}
+
+body.dark-mode .study-card {
+    --ink: #e8cba9;
+    --ink-soft: #c7a788;
+    --crema: #e3a54a;
+    --crema-tint: rgba(227,165,74,0.14);
+    --paper: #26211d;
+    --rule: #3d352e;
+    --muted: #776f67;
+    --text: #efe8e1;
+    --sub: #aba196;
+    --stamp-ring: rgba(38,33,29,0.45);
+    filter: none;
+}
+body.dark-mode .stamp.is-done { color: #26211d; }
+body.dark-mode .study-char-hint { color: #e3a54a; }
+body.dark-mode .study-char-hint.is-ok { color: #e8cba9; }
+</style>
 </head>
 
 <body>
@@ -1990,6 +2146,9 @@ body.dark-mode .teacher-close-btn { background: #444; }
     <!-- ★ 주간 리포트 (조건부 표시) -->
     <div id="weeklyReportCard" style="display:none;"></div>
 
+    <!-- ★ 실험 참여 도장판 (users 문서에 studyStart가 있는 계정만) -->
+    <section class="study-card" id="studyGauge" hidden aria-label="14일 일기 도장판"></section>
+
     <div class="plant-widget" id="plantWidget" onclick="window.showPlantModal()" style="display:none;">
         <div class="plant-big-emoji" id="plantEmoji">🌰</div>
         <div class="plant-info">
@@ -2037,7 +2196,7 @@ body.dark-mode .teacher-close-btn { background: #444; }
                     <button class="ai-help-btn" id="aiHelpBtn" title="AI 질문 도움받기">
                         <span class="ai-icon">✦</span>
                         <span id="aiHelpLabel">도움받기</span>
-                        <span class="ai-help-count" id="aiHelpCount">(2/2)</span>
+                        <span class="ai-help-count" id="aiHelpCount"></span>
                     </button>
                 </div>
             </div>
@@ -2054,6 +2213,7 @@ body.dark-mode .teacher-close-btn { background: #444; }
                     <div class="write-char-progress-bar" id="writeCharBar" style="width:0%"></div>
                 </div>
             </div>
+            <div class="study-char-hint" id="studyCharHint" hidden></div>
         </div>
         <div class="write-tag-box">
             <div class="write-tag-label">태그</div>
@@ -2287,7 +2447,7 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/fire
 import { getAuth, onAuthStateChanged, signOut, updateProfile }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
-    getFirestore, collection, addDoc, getDocs, getDoc,
+    getFirestore, collection, addDoc, getDocs, getDoc, setDoc,
     deleteDoc, doc, updateDoc, query, where, serverTimestamp, increment
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
@@ -2381,13 +2541,14 @@ onAuthStateChanged(auth, async (user) => {
     }
     renderProfile();
     if (user) {
-        // 로그인 시 식물 위젯 표시
+        // 화분은 숨김 — 기분에 따라 시드는 화분이 일기 내용에 영향을 줄 수 있어, 작성 일수만 세는 도장판으로 대체
         const pw = document.getElementById('plantWidget');
-        if (pw) pw.style.display = '';
+        if (pw) pw.style.display = 'none';
         // ★ 실험 그룹과 일기를 동시에 불러온 뒤, B그룹이면 어제 일기 첨삭 팝업 확인
         await Promise.all([loadUserGroup(user), loadLogs()]);
         if (currentUser && currentUser.uid === user.uid) maybeShowTeacher();
     } else {
+        logsLoadedUid = null;
         resetUserGroup();
         teacherCheckedUid = null;
         logs = []; renderLogs();
@@ -2436,6 +2597,7 @@ window.go = function(id, view) {
         if (typeof renderLogs === 'function') {
             renderLogs();
         }
+        renderStudyGauge();
 
         // 3. 홈 화면 최상단으로 즉시 이동
         window.scrollTo({ top: 0, behavior: 'instant' });
@@ -2460,9 +2622,10 @@ window.go = function(id, view) {
         _nonTypedInsertChars = 0;
         _typedInsertChars    = 0;
         // ── Gemini 상태 초기화 ──
-        aiHelpCount = AI_HELP_MAX;
         aiQuestionLog = [];
         updateAiHelpBtn();
+        refreshAiUsage().then(updateAiHelpBtn);   // ★ 오늘 남은 AI 질문 횟수 (서버 기록 기준)
+        updateStudyCharHint();
         document.getElementById('aiResponseArea').innerHTML = '';
         document.getElementById('aiStuckPopup').style.display = 'none';
         applyGroupUI();   // ★ 실험 그룹에 따라 도움받기 버튼 표시/숨김
@@ -2785,6 +2948,7 @@ document.getElementById('dateBtnToday').addEventListener('click', () => {
     document.getElementById('dateBtnYesterday').classList.remove('active');
     updateWriteDateLabel();
     updateWriteAvailability();
+    applyGroupUI(); updateAiHelpBtn(); updateStudyCharHint();   // AI 차단일·도장 기준은 일기 날짜 기준
 });
 document.getElementById('dateBtnYesterday').addEventListener('click', () => {
     selectedWriteDate = 'yesterday';
@@ -2792,6 +2956,7 @@ document.getElementById('dateBtnYesterday').addEventListener('click', () => {
     document.getElementById('dateBtnToday').classList.remove('active');
     updateWriteDateLabel();
     updateWriteAvailability();
+    applyGroupUI(); updateAiHelpBtn(); updateStudyCharHint();
 });
 
 window.selectMood = function(m) {
@@ -2808,6 +2973,7 @@ window.selectMood = function(m) {
     window.go('write');
     updateWriteAvailability();
     document.getElementById('text').value = '';
+    updateStudyCharHint();
     document.getElementById('aiSuggestion').innerHTML = '';
     document.getElementById('tagInput').value = '';
     autoTags = new Set(); manualTags = new Set(); renderTagList();
@@ -2844,11 +3010,14 @@ window.selectMood = function(m) {
 //           .github/workflows/deploy.yml 이 배포 직전에 gemini-config.js 를 만들어서 올림
 //   - Google Cloud Console 에는 키를 저장한 게 아니라 "웹사이트(HTTP referrer) 제한"을 걸어둔 것.
 //     로컬(Live Server)에서 테스트하려면 그 제한 목록에 http://127.0.0.1:5500/* 와 http://localhost:5500/* 를 추가해야 함.
-// · 모델: gemini-2.5-flash 는 2026-10-16 종료 예정 → 공식 대체 모델 gemini-3.5-flash 로 교체.
-//   실험 기간 중에는 모델을 바꾸지 말 것(바꾸면 그룹 간·날짜 간 비교가 깨짐). 일기마다 모델명을 같이 저장함.
+// · 모델: 질문과 첨삭을 따로 정할 수 있음. 기본은 둘 다 gemini-3.5-flash-lite (안정 버전, 종료일 미발표).
+//   Lite의 생각 수준은 minimal·low·medium만 지원(high 없음). 지금 설정: 질문 MINIMAL, 첨삭 LOW.
+//   파일럿에서 첨삭 품질을 gemini-3.5-flash 와 비교해 보고 10/16에 확정 → 실험 기간에는 절대 바꾸지 말 것.
+//   일기·첨삭마다 사용한 모델명을 같이 저장함.
 //   Gemini 3.x 권장사항: temperature 등 샘플링 값은 기본값 유지, thinkingBudget 대신 thinkingLevel 사용.
 // ───────────────────────────────────────────────────────────────────
-const GEMINI_MODEL = window.GEMINI_MODEL || 'gemini-3.5-flash';
+const QUESTION_MODEL = window.QUESTION_MODEL || 'gemini-3.5-flash-lite';   // ★ AI 질문(도움받기) 모델
+const TEACHER_MODEL  = window.TEACHER_MODEL  || 'gemini-3.5-flash-lite';   // ★ AI 교정 선생님 모델
 function getGeminiKey() {
     // 모듈 로드 시점이 아니라 "호출 시점"에 읽음 → gemini-config.js 로드 순서와 무관하게 동작
     return window.GEMINI_KEY || '';
@@ -2875,14 +3044,14 @@ function escapeHtml(s) {
 }
 
 // Gemini 호출 공통 함수 — 실패 시 err.kind 로 원인을 구분해서 던짐
-async function callGemini({ prompt, thinkingLevel = 'MINIMAL', maxOutputTokens = 1024, json = false }) {
+async function callGemini({ model, prompt, thinkingLevel = 'MINIMAL', maxOutputTokens = 1024, json = false }) {
     const key = getGeminiKey();
     if (!key) {
         const e = new Error('Gemini API 키가 없습니다 (window.GEMINI_KEY 비어 있음)');
         e.kind = 'no_key';
         throw e;
     }
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(key)}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
     const generationConfig = { maxOutputTokens, thinkingConfig: { thinkingLevel } };
     if (json) generationConfig.responseMimeType = 'application/json';
 
@@ -2953,7 +3122,9 @@ function geminiErrorMessage(err) {
 // [실험 그룹]
 // Firestore 의 users/{uid} 문서를 연구자가 콘솔에서 직접 만들어 지정함.
 //   group      : 'A' | 'B' | 'C' | 'ALL'
-//   aiOffDates : ['2026-10-19', '2026-11-01']   ← 이 날짜에는 그룹과 상관없이 AI 전부 꺼짐 (첫날·마지막 날 측정용)
+//   aiOffDates : ['2026-10-19', '2026-11-01']   ← 이 날짜의 일기에는 그룹과 상관없이 AI 전부 꺼짐 (첫날·마지막 날 측정용)
+//   studyStart : '2026-10-19'   ← 있으면 메인에 14일 도장판(보상 게이지)을 보여줌 (참여자·테스트 계정)
+//   postSurveyDone : true       ← 연구자가 사후 설문 응답을 확인한 뒤 체크 (보상 필수 조건)
 // A = AI 질문(작성 중 도움받기) / B = AI 교정 선생님(접속 시 어제 일기 첨삭) / C = AI 없음(통제군)
 // ALL = 둘 다 (팀원 테스트·경진대회 시연용 계정에만 지정)
 // 문서가 없거나 group 값이 이상하면 C(AI 없음) → 그룹 배정 전 기준 글을 AI 없이 쓰게 하기 위함.
@@ -2968,6 +3139,8 @@ const GROUP_FEATURES = {
 const DEFAULT_GROUP = 'C';
 let userGroup      = DEFAULT_GROUP;
 let userAiOffDates = [];
+let userStudyStart = null;        // 'YYYY-MM-DD' — 있으면 도장판 표시
+let userPostSurveyDone = false;
 
 function isLocalDev() {
     return ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
@@ -2978,16 +3151,31 @@ function localDateKey(d = new Date()) {
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
 }
-function isAiOffToday() {
-    return userAiOffDates.includes(localDateKey());
+function isAiOffDate(key) {
+    return userAiOffDates.includes(key);
 }
+function isAiOffToday() {
+    return isAiOffDate(localDateKey());
+}
+// 지금 글쓰기 화면에서 쓰는 일기의 날짜 ('어제' 버튼이면 어제)
+function writeTargetDateKey() {
+    const d = new Date();
+    if (selectedWriteDate === 'yesterday') d.setDate(d.getDate() - 1);
+    return localDateKey(d);
+}
+// AI 차단일은 "그 날짜의 일기"에 적용:
+//   질문 → 지금 쓰는 일기의 날짜 기준. 11/2에 '어제' 버튼으로 11/1 일기를 써도 AI가 꺼져 있어야 사후 측정이 오염되지 않음
+//   첨삭 → 팝업을 보는 오늘 기준
 function aiAllowed(feature) {
-    return !!(GROUP_FEATURES[userGroup] && GROUP_FEATURES[userGroup][feature]) && !isAiOffToday();
+    if (!(GROUP_FEATURES[userGroup] && GROUP_FEATURES[userGroup][feature])) return false;
+    return !isAiOffDate(feature === 'question' ? writeTargetDateKey() : localDateKey());
 }
 
 async function loadUserGroup(user) {
     userGroup = DEFAULT_GROUP;
     userAiOffDates = [];
+    userStudyStart = null;
+    userPostSurveyDone = false;
     try {
         const snap = await getDoc(doc(db, 'users', user.uid));
         if (snap.exists()) {
@@ -2995,6 +3183,9 @@ async function loadUserGroup(user) {
             const g = String(d.group || '').trim().toUpperCase();
             if (GROUP_FEATURES[g]) userGroup = g;
             if (Array.isArray(d.aiOffDates)) userAiOffDates = d.aiOffDates.map(v => String(v).trim());
+            const start = String(d.studyStart || '').trim();
+            if (/^\d{4}-\d{2}-\d{2}$/.test(start)) userStudyStart = start;
+            userPostSurveyDone = d.postSurveyDone === true;
         }
     } catch (err) {
         console.warn('[실험 그룹] users 문서를 읽지 못해 C(AI 없음)로 처리합니다. Firestore 규칙을 확인하세요.', err.code || err);
@@ -3004,13 +3195,17 @@ async function loadUserGroup(user) {
         const q = (new URLSearchParams(location.search).get('group') || '').toUpperCase();
         if (GROUP_FEATURES[q]) userGroup = q;
     }
-    console.info(`[실험 그룹] ${userGroup}${isAiOffToday() ? ' (오늘은 AI 끔)' : ''}`);
+    console.info(`[실험 그룹] ${userGroup}${isAiOffToday() ? ' (오늘은 AI 끔)' : ''}${userStudyStart ? ` · 도장판 시작 ${userStudyStart}` : ''}`);
     applyGroupUI();
+    renderStudyGauge();
 }
 function resetUserGroup() {
     userGroup = DEFAULT_GROUP;
     userAiOffDates = [];
+    userStudyStart = null;
+    userPostSurveyDone = false;
     applyGroupUI();
+    renderStudyGauge();
 }
 
 // 그룹 설정을 화면에 반영 (도움받기 버튼 + 10초 막힘 팝업)
@@ -3026,11 +3221,58 @@ function applyGroupUI() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+// [AI 하루 사용 한도] — 지웠다 다시 쓰기·새로고침으로 토큰을 계속 쓰는 것을 막음
+// Firestore aiUsage/{uid}_{YYYY-MM-DD} 문서에 그날 "성공한" 호출 수를 셈 (일기를 지워도 줄지 않음).
+// 실패한 호출(오류·한도 초과 등)은 세지 않음. ALL(팀·시연) 계정은 프롬프트 테스트를 위해 제한 없음.
+// 사용 기록을 읽지 못하면(규칙 미설정 등) A·B 계정은 AI를 막음 → 비용 보호가 우선.
+// 한계: 키가 배포 파일에 보이므로 키를 직접 빼 가면 우회 가능. 진짜 상한은 AI Studio 월 지출 한도.
+// ───────────────────────────────────────────────────────────────────
+const AI_DAILY_LIMIT = { question: 4, teacher: 2 };   // ★ 하루 최대 횟수 (질문 4번, 첨삭 2번)
+const AI_LIMIT_EXEMPT_GROUPS = ['ALL'];
+let aiUsage = { key: null, uid: null, question: 0, teacher: 0, state: 'idle' };   // state: idle | loading | ok | error
+
+function aiLimitExempt() {
+    return AI_LIMIT_EXEMPT_GROUPS.includes(userGroup);
+}
+function aiUsageRef(key) {
+    return doc(db, 'aiUsage', `${currentUser.uid}_${key}`);
+}
+async function refreshAiUsage(force = false) {
+    if (!currentUser) return aiUsage;
+    const uid = currentUser.uid;
+    const key = localDateKey();
+    if (!force && aiUsage.state === 'ok' && aiUsage.key === key && aiUsage.uid === uid) return aiUsage;
+    aiUsage = { key, uid, question: 0, teacher: 0, state: 'loading' };
+    try {
+        const snap = await getDoc(aiUsageRef(key));
+        const d = snap.exists() ? snap.data() : {};
+        aiUsage = { key, uid, question: Number(d.question) || 0, teacher: Number(d.teacher) || 0, state: 'ok' };
+    } catch (err) {
+        console.warn('[AI 사용 한도] 사용 기록을 읽지 못했습니다. Firestore 규칙에 aiUsage가 있는지 확인하세요.', err.code || err);
+        aiUsage = { key, uid, question: 0, teacher: 0, state: 'error' };
+    }
+    return aiUsage;
+}
+function aiRemaining(kind) {
+    if (aiLimitExempt()) return Infinity;
+    if (aiUsage.state !== 'ok' || aiUsage.key !== localDateKey()) return 0;
+    return Math.max(0, AI_DAILY_LIMIT[kind] - aiUsage[kind]);
+}
+async function recordAiUse(kind) {
+    if (!currentUser) return;
+    const key = localDateKey();
+    if (aiUsage.state === 'ok' && aiUsage.key === key) aiUsage[kind] += 1;
+    try {
+        await setDoc(aiUsageRef(key), { uid: currentUser.uid, date: key, [kind]: increment(1) }, { merge: true });
+    } catch (err) {
+        console.warn('[AI 사용 한도] 사용 기록을 저장하지 못했습니다:', err.code || err);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // [A그룹] AI 질문 (작성 중 도움받기) — 1학기 원래 기능 복구
 // ───────────────────────────────────────────────────────────────────
 const QUESTION_PROMPT_VERSION = 'question-v1';   // ★ 질문 프롬프트를 고칠 때마다 question-v2, v3… 로 올릴 것 (일기마다 함께 저장됨)
-const AI_HELP_MAX = 2;          // 일기당 최대 2회
-let aiHelpCount   = AI_HELP_MAX;
 let aiQuestionLog = [];         // 이번 일기에서 받은 질문 기록 → 저장 시 함께 기록(분석 변수)
 let idleTimer     = null;
 
@@ -3038,14 +3280,22 @@ function updateAiHelpBtn() {
     const btn   = document.getElementById('aiHelpBtn');
     const count = document.getElementById('aiHelpCount');
     const label = document.getElementById('aiHelpLabel');
-    count.innerText = `(${aiHelpCount}/${AI_HELP_MAX})`;
-    if (aiHelpCount <= 0) {
-        btn.disabled = true;
-        label.innerText = '다음 일기에서';
-    } else {
+    if (aiLimitExempt()) {                         // ALL(팀) 계정: 횟수 제한 없음
+        count.innerText = '';
         btn.disabled = false;
         label.innerText = '도움받기';
+        return;
     }
+    if (aiUsage.state !== 'ok') {                  // 오늘 사용 기록을 확인하는 중이거나 실패
+        count.innerText = '';
+        btn.disabled = true;
+        label.innerText = aiUsage.state === 'error' ? '지금은 사용 불가' : '도움받기';
+        return;
+    }
+    const left = aiRemaining('question');
+    count.innerText = `(${left}/${AI_DAILY_LIMIT.question})`;
+    btn.disabled = left <= 0;
+    label.innerText = left <= 0 ? '내일 다시' : '도움받기';
 }
 
 // 10초 idle 감지 → 팝업 표시
@@ -3057,7 +3307,7 @@ function resetIdleTimer() {
     // 텍스트가 10자 이상 입력된 상태에서만 팝업 표시
     if (text.trim().length < 10) return;
     idleTimer = setTimeout(() => {
-        if (aiHelpCount > 0 && aiAllowed('question')) {
+        if (aiRemaining('question') > 0 && aiAllowed('question')) {
             document.getElementById('aiStuckPopup').style.display = 'block';
         }
     }, 10000); // 10초
@@ -3083,22 +3333,30 @@ async function callGeminiHelp() {
     const text = document.getElementById('text').value.trim();
     const btn  = document.getElementById('aiHelpBtn');
 
-    if (aiHelpCount <= 0) return;
     if (!text) { alert('먼저 글을 조금 써보세요 ✏️'); return; }
 
     document.getElementById('aiStuckPopup').style.display = 'none';
 
-    // 위기 표현이 있으면 질문을 만들지 않고 상담 안내만 표시
+    // 위기 표현이 있으면 질문을 만들지 않고 상담 안내만 표시 (API를 부르지 않으므로 횟수에 넣지 않음)
     if (containsCrisis(text)) {
         showAiResponse('💙 마음 건강 안내', CRISIS_MESSAGE, 'background:linear-gradient(135deg,#0ea5e9,#0284c7);');
         aiQuestionLog.push({ question: '[crisis]', at: Date.now(), textLen: text.length });
-        aiHelpCount--;
+        return;
+    }
+
+    // 하루 한도 확인 (서버 기록 기준 — 일기를 지웠다 다시 써도 줄지 않음)
+    btn.disabled = true;
+    await refreshAiUsage();
+    if (aiRemaining('question') <= 0) {
+        showAiResponse('ℹ️ 안내', aiUsage.state === 'error'
+            ? '지금은 AI 질문을 쓸 수 없어요. 잠시 후 다시 시도해 주세요.'
+            : `오늘 AI 질문을 모두 썼어요. 하루 ${AI_DAILY_LIMIT.question}번까지 쓸 수 있고, 내일 다시 쓸 수 있어요.`,
+            'background:linear-gradient(135deg,#6b7280,#4b5563);');
         updateAiHelpBtn();
         return;
     }
 
     // 로딩 상태
-    btn.disabled = true;
     document.getElementById('aiHelpLabel').innerHTML = '<span class="ai-loading"></span>';
 
     // ★ 프롬프트: 인간친화적 + 법적 안전장치 포함 (1학기 4가지 전략 프롬프트 그대로)
@@ -3132,7 +3390,7 @@ async function callGeminiHelp() {
         4번: 다음번에 비슷한 상황이 오면 어떻게 해보고 싶으신가요?`;
 
     try {
-        const raw = await callGemini({ prompt, thinkingLevel: 'MINIMAL', maxOutputTokens: 1024 });
+        const raw = await callGemini({ model: QUESTION_MODEL, prompt, thinkingLevel: 'MINIMAL', maxOutputTokens: 1024 });
         // 모델이 따옴표나 줄바꿈을 붙이는 경우 정리
         const question = raw.split('\n').map(s => s.trim()).filter(Boolean)[0].replace(/^["'“”]+|["'“”]+$/g, '');
 
@@ -3140,8 +3398,8 @@ async function callGeminiHelp() {
         showAiResponse('✦ AI 추가 질문', question);
         aiQuestionLog.push({ question, at: Date.now(), textLen: text.length });
 
-        // 사용 횟수 차감
-        aiHelpCount--;
+        // 성공한 호출만 오늘 사용 횟수에 기록
+        await recordAiUse('question');
         updateAiHelpBtn();
         resetIdleTimer();
 
@@ -3275,6 +3533,7 @@ function locateTeacherItems(text, rawItems) {
 
 async function generateTeacherCorrection(text) {
     const raw = await callGemini({
+        model: TEACHER_MODEL,
         prompt: buildTeacherPrompt(text),
         thinkingLevel: 'LOW',
         maxOutputTokens: 4096,
@@ -3309,19 +3568,31 @@ async function maybeShowTeacher() {
     const log = findLogForOffset(1);              // 어제 날짜 일기
     if (!log || !log.text || log.text.trim().length < TEACHER_MIN_CHARS) return;
 
-    openTeacherModal(log);
     const hash = hashText(log.text);
     // 저장된 첨삭을 다시 쓰는 조건: 일기 본문이 그대로이고(sourceHash), 프롬프트 버전도 같을 때.
     // → 프롬프트를 고친 뒤 TEACHER_PROMPT_VERSION 을 올리면 새 프롬프트로 다시 첨삭함 (실험 기간에는 절대 바꾸지 말 것)
     const cached = log.aiCorrection;
     let corr = (cached && cached.sourceHash === hash && cached.version === TEACHER_PROMPT_VERSION) ? cached : null;
+    const crisis = !corr && containsCrisis(log.text);
 
+    // 새로 만들어야 하면 오늘 첨삭 한도부터 확인 (지웠다 다시 쓰기로 첨삭을 계속 만드는 것을 막음)
+    if (!corr && !crisis) {
+        await refreshAiUsage();
+        if (!currentUser || currentUser.uid !== uid) return;
+        if (aiRemaining('teacher') <= 0) {
+            console.info('[AI 교정 선생님] 오늘 첨삭 한도에 도달했거나 사용 기록을 확인하지 못해 건너뜁니다.');
+            return;
+        }
+    }
+
+    openTeacherModal(log);
     if (!corr) {
         try {
-            if (containsCrisis(log.text)) {
+            if (crisis) {
                 corr = { crisis: true, praise: '', closing: '', items: [], rawItemCount: 0 };
             } else {
                 corr = await generateTeacherCorrection(log.text);
+                await recordAiUse('teacher');   // 성공한 첨삭만 오늘 사용 횟수에 기록
             }
         } catch (err) {
             console.error('[AI 교정 선생님] 첨삭 생성 실패:', err.kind, err);
@@ -3330,7 +3601,7 @@ async function maybeShowTeacher() {
         }
         Object.assign(corr, {
             version: TEACHER_PROMPT_VERSION,
-            model: GEMINI_MODEL,
+            model: TEACHER_MODEL,
             sourceHash: hash,
             group: userGroup,
             viewCount: 0,
@@ -3522,6 +3793,209 @@ document.getElementById('teacherModal').addEventListener('click', e => {
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape') closeTeacherModal('close');
 });
+
+// ═══════════════════════════════════════════════════════════════════
+// [실험 참여 도장판] — 화분 대신 메인에 표시. 작성 "일수"만 셈 (글의 수준은 보여주지 않음)
+// users/{uid}.studyStart 가 있는 계정에만 보임. 세 그룹 모두 똑같이 보임 → 그룹 비교에 영향 없음.
+// 인정 규칙 (참여자 공지와 반드시 같게 유지할 것):
+//   · 그 날짜의 일기가 100자 이상 (앞뒤 공백 제외, 글쓰기 화면 글자 수와 같은 기준)
+//   · 놓친 날은 다음 날 '어제' 버튼으로 채워도 인정 (다음 날 23:59까지)
+//   · 그 기한 안에 상세 화면에서 이어 써서 100자를 넘겨도 인정. 기한이 지난 뒤 늘린 것은 인정 안 함
+//   · 보상은 마지막 날 일기 + 사후 설문(연구자가 users 문서에 postSurveyDone: true)을 모두 마쳐야 지급
+// ───────────────────────────────────────────────────────────────────
+const STUDY_DAYS      = 14;
+const STUDY_MIN_CHARS = 100;      // ★ 하루 인정 최소 글자 수
+const POST_SURVEY_URL = '';       // ★ 사후 설문 링크. 넣으면 마지막 날부터 도장판에 '사후 설문 하기' 버튼이 생김
+const REWARD_BRAND    = '메가MGC커피';
+const REWARD_TIERS = [            // ★ 결석 일수별 보상 (가격은 표시하지 않음)
+    { maxMiss: 0,        miss: '결석 0일',      name: '버터버터 뜯어먹는 식빵 + 아.아(ICE) 브런치 세트', extra: '신세계 상품권 1만원 추첨에도 들어가요' },
+    { maxMiss: 1,        miss: '결석 1일',      name: '더블 아아 세트' },
+    { maxMiss: Infinity, miss: '결석 2일 이상', name: '아.아(ICE)' },
+];
+const WEEKDAY_KO = ['일', '월', '화', '수', '목', '금', '토'];
+let logsLoadedUid = null;   // 일기를 다 불러온 계정 — 불러오기 전에는 도장판을 그리지 않음 (지난 날이 잠깐 '결석'으로 보이는 것 방지)
+
+function countStudyChars(text) {
+    return String(text || '').trim().length;
+}
+function keyToDate(key, addDays = 0) {
+    const [y, m, d] = key.split('-').map(Number);
+    return new Date(y, m - 1, d + addDays);
+}
+function studyDayKeys() {
+    return Array.from({ length: STUDY_DAYS }, (_, i) => localDateKey(keyToDate(userStudyStart, i)));
+}
+// 그 날짜 일기를 인정받을 수 있는 마지막 순간 = 다음 날이 끝나는 때 (그다음 날 0시)
+function dayDeadline(key) {
+    return keyToDate(key, 2);
+}
+function studyActiveFor(key) {
+    if (!userStudyStart) return false;
+    const keys = studyDayKeys();
+    return key >= keys[0] && key <= keys[keys.length - 1];
+}
+function studyLogFor(key) {
+    return logs
+        .filter(l => localDateKey(l.date instanceof Date ? l.date : new Date(l.date)) === key)
+        .sort((a, b) => countStudyChars(b.text) - countStudyChars(a.text))[0] || null;
+}
+function studyDayCounted(log, key) {
+    if (!log) return false;
+    if (log.studyCounted === true) return true;
+    if (log.studyCounted === false) return false;
+    // 이 기능 이전에 쓴 일기: 지금 글자 수로 판단하되, 기한이 지난 뒤 고친 일기는 제외
+    const editedLate = !!(log.updatedAt && log.updatedAt >= dayDeadline(key));
+    return countStudyChars(log.text) >= STUDY_MIN_CHARS && !editedLate;
+}
+function computeStudyProgress() {
+    const now   = new Date();
+    const today = localDateKey(now);
+    const days = studyDayKeys().map((key, i) => {
+        const log = studyLogFor(key);
+        const ok = studyDayCounted(log, key);
+        let state;
+        if (ok) state = 'done';
+        else if (key > today) state = 'future';
+        else if (now < dayDeadline(key)) state = key === today ? 'today' : 'grace';
+        else state = 'missed';
+        return { key, i, log, ok, state, chars: log ? countStudyChars(log.text) : 0,
+                 month: Number(key.slice(5, 7)), day: Number(key.slice(8)) };
+    });
+    const first = days[0], last = days[STUDY_DAYS - 1];
+    const missed = days.filter(d => d.state === 'missed').length;
+    return {
+        days, first, last, missed,
+        done: days.filter(d => d.ok).length,
+        started: today >= first.key,
+        finished: now >= dayDeadline(last.key),
+        todayDay: days.find(d => d.key === today) || null,
+        graceDays: days.filter(d => d.state === 'grace'),
+        tier: REWARD_TIERS.find(t => missed <= t.maxMiss),
+        tierIndex: REWARD_TIERS.findIndex(t => missed <= t.maxMiss),
+    };
+}
+
+const STAMP_BEAN_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="12" rx="6.2" ry="8.6" transform="rotate(32 12 12)" fill="currentColor"/><path d="M15.6 5.6c-2.3 1.5-1.4 4.2-3.3 6.3s-4.2 2.1-4.6 4.6" fill="none" stroke="var(--ink)" stroke-width="1.5" stroke-linecap="round"/></svg>';
+
+function stampHtml(d, isLast, isNew) {
+    const tilt = ((d.i * 37) % 13) - 6;   // 손으로 찍은 듯 조금씩 다른 기울기 (항상 같은 값)
+    const tag = isLast ? '마지막' : d.state === 'today' ? '오늘' : d.state === 'grace' ? '어제' : '';
+    const label = { done: '도장 찍힘', today: '오늘, 아직 비어 있음', grace: '오늘 안에 채울 수 있음', missed: '결석', future: '예정' }[d.state];
+    const num = (d.i === 0 || d.day === 1) ? `${d.month}/${d.day}` : String(d.day);
+    return `<div class="stamp is-${d.state}${isLast ? ' is-last' : ''}${isNew ? ' is-new' : ''}" role="listitem"
+                 style="--tilt:${tilt}deg" aria-label="${d.month}월 ${d.day}일, ${label}">
+                ${d.state === 'done' ? STAMP_BEAN_SVG : `<span class="stamp-num">${num}</span>`}
+                ${tag ? `<span class="stamp-tag">${tag}</span>` : ''}
+            </div>`;
+}
+
+function studyStatusText(p) {
+    const f = p.first, l = p.last;
+    if (!p.started) {
+        const wd = WEEKDAY_KO[keyToDate(f.key).getDay()];
+        return `${f.month}월 ${f.day}일(${wd})부터 14일 동안, 하루 ${STUDY_MIN_CHARS}자 이상 쓰면 도장이 하나씩 찍혀요.`;
+    }
+    if (p.finished) {
+        if (!l.ok) return '마지막 날 일기가 빠져 이번 보상은 받을 수 없어요. 함께해 주셔서 고마워요.';
+        if (!userPostSurveyDone) return '마지막 날까지 다 썼어요. 사후 설문을 마치면 보상이 확정돼요.';
+        return '14일을 마쳤어요. 아래 표시된 보상을 실험이 끝난 뒤 보내 드려요.';
+    }
+    const t = p.todayDay;
+    if (!t) {   // 마지막 날 다음 날 (어제 버튼으로 마지막 날을 채울 수 있는 날)
+        return l.ok ? '마지막 날까지 다 썼어요. 사후 설문을 마치면 보상이 확정돼요.'
+                    : `마지막 날(${l.month}/${l.day}) 일기가 비어 있어요. 오늘 안에 '어제' 버튼으로 쓰면 인정돼요.`;
+    }
+    if (t.ok) return `${t.i + 1}일째 도장을 찍었어요.`;
+    if (t.log) return `오늘 일기가 ${t.chars}자예요. 상세 화면에서 ${STUDY_MIN_CHARS - t.chars}자만 더 이어 쓰면 도장이 찍혀요.`;
+    return `오늘 일기를 ${STUDY_MIN_CHARS}자 이상 쓰면 ${t.i + 1}일째 도장이 찍혀요.`;
+}
+
+function studyTierNote(p) {
+    if (p.finished) return '';
+    if (p.missed === 0) return `하루라도 빠지면 '${REWARD_TIERS[1].name}' 단계로 내려가요.`;
+    if (p.missed === 1) return `한 번 더 빠지면 '${REWARD_TIERS[2].name}' 단계로 내려가요.`;
+    return '여기서 더 빠져도, 마지막 날 일기와 사후 설문까지 마치면 보상은 꼭 받아요.';
+}
+
+function renderStudyGauge() {
+    const box = document.getElementById('studyGauge');
+    if (!box) return;
+    if (!currentUser || !userStudyStart) { box.hidden = true; box.innerHTML = ''; return; }
+    if (logsLoadedUid !== currentUser.uid) return;
+    const p = computeStudyProgress();
+
+    // 새로 찍힌 도장 한 번만 애니메이션 — 홈 화면이 보일 때만 기록해서, 저장 후 홈으로 돌아온 순간에 찍히게 함
+    let isNewIdx = -1;
+    const homeVisible = document.getElementById('home')?.classList.contains('active');
+    if (homeVisible) try {
+        const k = `qlog_stamps_${currentUser.uid}_${userStudyStart}`;
+        const prev = Number(localStorage.getItem(k));
+        if (Number.isFinite(prev) && localStorage.getItem(k) !== null && p.done > prev) {
+            const doneDays = p.days.filter(d => d.ok);
+            isNewIdx = doneDays.reduce((a, d) => (d.log && (!a || d.log.date > a.log.date) ? d : a), null)?.i ?? -1;
+        }
+        localStorage.setItem(k, String(p.done));
+    } catch {}
+
+    const nudges = p.graceDays
+        .filter(d => !p.finished && d !== p.last)
+        .map(d => d.log
+            ? `${d.month}/${d.day} 일기가 ${d.chars}자예요. 오늘 안에 상세 화면에서 이어 쓰면 도장이 찍혀요.`
+            : `${d.month}/${d.day} 도장이 비어 있어요. 오늘 안에 '어제' 버튼으로 쓰면 찍혀요.`);
+
+    const tiers = REWARD_TIERS.map((t, i) => {
+        const lost = p.started && i < p.tierIndex;
+        const current = i === p.tierIndex && !(p.finished && !p.last.ok);
+        const tag = !current ? '' : !p.started ? '목표' : p.finished ? '받을 보상' : '지금 이대로면';
+        return `<li class="tier${current ? ' is-current' : ''}${lost ? ' is-lost' : ''}">
+                    <span class="tier-miss">${t.miss}</span>
+                    <span class="tier-name">${escapeHtml(t.name)}${t.extra ? `<small>${escapeHtml(t.extra)}</small>` : ''}</span>
+                    ${tag ? `<span class="tier-tag">${tag}</span>` : ''}
+                </li>`;
+    }).join('');
+
+    const today = localDateKey();
+    const showSurvey = POST_SURVEY_URL && today >= p.last.key && !userPostSurveyDone;
+    const note = studyTierNote(p);
+
+    box.innerHTML = `
+        <div class="study-top">
+            <div class="study-head">
+                <h3 class="study-title">14일 일기 도장판</h3>
+                <div class="study-count"><b>${p.done}</b>/${STUDY_DAYS}</div>
+            </div>
+            <p class="study-status">${escapeHtml(studyStatusText(p))}</p>
+            <div class="study-stamps" role="list" aria-label="날짜별 도장">
+                ${p.days.map(d => stampHtml(d, d === p.last, d.i === isNewIdx)).join('')}
+            </div>
+            ${nudges.map(n => `<p class="study-nudge">${escapeHtml(n)}</p>`).join('')}
+        </div>
+        <div class="study-bottom">
+            <ul class="study-tiers" aria-label="결석 일수별 보상">${tiers}</ul>
+            ${note ? `<p class="study-tier-note">${escapeHtml(note)}</p>` : ''}
+            <div class="study-must">
+                <span class="study-must-title">받으려면 꼭</span>
+                <span class="study-check${p.last.ok ? ' is-on' : ''}">마지막 날(${p.last.month}/${p.last.day}) 일기</span>
+                <span class="study-check${userPostSurveyDone ? ' is-on' : ''}">사후 설문</span>
+            </div>
+            ${showSurvey ? `<a class="study-survey" href="${escapeHtml(POST_SURVEY_URL)}" target="_blank" rel="noopener">사후 설문 하기</a>` : ''}
+            <p class="study-foot">보상은 실험이 끝난 뒤 ${REWARD_BRAND} 기프티콘으로 보내 드려요.</p>
+        </div>`;
+    box.hidden = false;
+}
+
+// 글쓰기 화면: 지금 쓰는 일기가 도장 기준을 넘었는지 알려줌 (실험 기간 날짜의 일기에만)
+function updateStudyCharHint() {
+    const el = document.getElementById('studyCharHint');
+    if (!el) return;
+    if (!currentUser || !studyActiveFor(writeTargetDateKey())) { el.hidden = true; return; }
+    const n = countStudyChars(document.getElementById('text')?.value);
+    const ok = n >= STUDY_MIN_CHARS;
+    el.classList.toggle('is-ok', ok);
+    el.textContent = ok ? `도장 기준 ${STUDY_MIN_CHARS}자를 넘었어요` : `${STUDY_MIN_CHARS}자를 넘기면 도장이 찍혀요 (지금 ${n}자)`;
+    el.hidden = false;
+}
+document.getElementById('text').addEventListener('input', updateStudyCharHint);
 
 // ── textarea ──────────────────────────────────
 document.getElementById('text').addEventListener('keydown', e => {
@@ -3841,18 +4315,21 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
             tags: [...autoTags, ...manualTags],
             date: logDate,
             isBackdate: isBackdate,
+            // ── [도장판] 저장 시점(그 날짜의 인정 기한 안)에 100자 이상이면 인정. 한 번 인정되면 유지 ──
+            studyCounted: countStudyChars(text) >= STUDY_MIN_CHARS,
             // ── [실험 조건 기록] 분석 시 그룹·AI 노출 여부를 일기 단위로 확인하기 위함 ──
             experiment: {
                 group: userGroup,                          // 'A' | 'B' | 'C' | 'ALL'
-                aiOffToday: isAiOffToday(),                // 첫날·마지막 날(AI 차단일) 여부
+                aiOffToday: isAiOffDate(writeTargetDateKey()),   // 이 일기의 날짜가 AI 차단일(첫날·마지막 날)인지
                 questionEnabled: aiAllowed('question'),
                 teacherEnabled: aiAllowed('teacher'),
                 teacherShownBeforeWriting: teacherSeenToday(),   // 오늘 쓰기 전에 어제 첨삭을 봤는지 (B·ALL)
-                model: GEMINI_MODEL,
+                questionModel: QUESTION_MODEL,
+                teacherModel: TEACHER_MODEL,
                 questionPromptVersion: QUESTION_PROMPT_VERSION,
                 teacherPromptVersion: TEACHER_PROMPT_VERSION,
                 aiQuestionUsed: aiQuestionLog.length,      // 도움받기 사용 횟수
-                aiQuestionLog: aiQuestionLog.slice(0, AI_HELP_MAX),
+                aiQuestionLog: aiQuestionLog.slice(0, 20),
             },
             metrics: {
                 timeToFirst: safeTimeToFirst,
@@ -3907,7 +4384,9 @@ async function loadLogs() {
             updatedAt: d.data().updatedAt?.toDate()  || null
         }));
         logs.sort((a, b) => b.date - a.date);
+        logsLoadedUid = currentUser.uid;
         renderLogs();
+        renderStudyGauge();
         qlogNewFeatures(logs, currentUser);
     } catch (err) {
         console.error("불러오기 실패:", err);
@@ -4087,12 +4566,22 @@ document.getElementById('detailSaveEditBtn').addEventListener('click', async () 
 
     try {
         const now = new Date();
-        await updateDoc(doc(db, "logs", currentDetailLog.id), {
-            text: newText,
-            updatedAt: serverTimestamp()
-        });
+        const editPatch = { text: newText, updatedAt: serverTimestamp() };
+        // [실험 분석] 처음 고칠 때 원문을 originalText로 한 번만 남김. B그룹이 첨삭을 본 뒤 어제 일기를 고쳐도 원문으로 분석 가능
+        if (currentDetailLog.originalText == null && newText !== currentDetailLog.text) {
+            editPatch.originalText = currentDetailLog.text;
+        }
+        if (currentDetailLog.aiCorrection) editPatch.editedAfterCorrection = true;   // 첨삭이 붙은 뒤에 고친 일기
+        // [도장판] 그 날짜의 인정 기한(다음 날 23:59) 안에 이어 써서 100자를 넘기면 인정. 기한 뒤에 늘린 건 인정 안 함
+        const logDate = currentDetailLog.date instanceof Date ? currentDetailLog.date : new Date(currentDetailLog.date);
+        if (now < dayDeadline(localDateKey(logDate)) && countStudyChars(newText) >= STUDY_MIN_CHARS) {
+            editPatch.studyCounted = true;
+        }
+        await updateDoc(doc(db, "logs", currentDetailLog.id), editPatch);
 
         // 로컬 상태도 즉시 업데이트
+        if (editPatch.studyCounted) currentDetailLog.studyCounted = true;
+        if (editPatch.originalText != null) currentDetailLog.originalText = editPatch.originalText;
         currentDetailLog.text = newText;
         currentDetailLog.updatedAt = now;
 
