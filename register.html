@@ -1,4 +1,12 @@
 <!DOCTYPE html>
+<!--
+  ★ 배포 전에 바꿀 곳 (Ctrl+F로 찾기)
+    [팀 이름]            예: 컴퓨터정보과 ○○팀
+    [지도교수 이름]
+    [연구 책임자 이름]
+    [연구 책임자 이메일]
+  ★ 보관 기한(2026년 12월 31일)은 모집 설문의 동의 문구와 반드시 같게 둔다.
+-->
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -12,7 +20,9 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;          /* 약관을 펼쳐도 위가 잘리지 않고 스크롤되도록 */
+            padding: 24px 0;
+            box-sizing: border-box;
         }
         .join-container {
             background: white;
@@ -21,18 +31,20 @@
             width: 85%;
             max-width: 400px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            box-sizing: border-box;
         }
-        h2 { text-align: center; margin-bottom: 25px; }
+        h2 { text-align: center; margin: 0 0 25px; }
         .input-group { margin-bottom: 15px; text-align: left; }
         .input-group label { display: block; font-size: 14px; margin-bottom: 5px; color: #555; }
-        input {
+        .input-group input {
             width: 100%;
             padding: 12px;
             border-radius: 10px;
             border: 1px solid #ddd;
             box-sizing: border-box;
+            font-size: 15px;
         }
-        button {
+        #submit {
             width: 100%;
             padding: 15px;
             border-radius: 10px;
@@ -52,118 +64,87 @@
             color: #888;
             text-decoration: none;
         }
-        /* --- 약관 동의 UI 스타일 --- */
-        .terms-group {
-            margin: 20px 0;
-            text-align: left;
-            background: #f9fafb;
-            padding: 15px;
-            border-radius: 12px;
-            border: 1px solid #e5e8eb;
-        }
 
-        .checkbox-container {
+        /* --- 약관 동의 --- */
+        .terms-container { margin: 22px 0 8px; text-align: left; }
+        .terms-intro {
+            font-size: 12.5px;
+            color: #6b7684;
+            line-height: 1.55;
+            margin: 0 0 12px;
+        }
+        .term-all {
             display: flex;
-            align-items: flex-start;
-            margin-bottom: 12px;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: #f2f4f6;
+            font-size: 15px;
+            font-weight: 700;
+            color: #191f28;
             cursor: pointer;
+            margin-bottom: 6px;
+        }
+        .term-item {
+            border-bottom: 1px solid #f2f4f6;
+            padding: 8px 2px;
+        }
+        .term-item:last-child { border-bottom: none; }
+        .term-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+        .term-header label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
             font-size: 14px;
-            color: #333;
-        }
-
-        .checkbox-container:last-child {
-            margin-bottom: 0;
-        }
-
-        .checkbox-container input {
-            width: auto;
-            margin: 2px 10px 0 0;
+            color: #333d4b;
             cursor: pointer;
-            accent-color: black; /* 체크박스 색상 통일 */
-        }
-
-        .terms-highlight {
-            font-weight: bold;
-            color: #e53e3e; /* [필수] 강조 */
-        }
-
-        .terms-optional {
-            font-weight: bold;
-            color: #3182f6; /* [선택] 강조 */
-        }
-
-        .terms-desc {
-            display: block;
-            font-size: 12px;
-            color: #8b95a1;
-            margin-top: 4px;
-            margin-left: 24px;
+            flex-grow: 1;
             line-height: 1.4;
         }
-        /* 약관 그룹 컨테이너 */
-.terms-container {
-    margin: 24px 0;
-    text-align: left;
-}
-
-.term-item {
-    margin-bottom: 12px;
-    border-bottom: 1px solid #f2f4f6;
-    padding-bottom: 8px;
-}
-
-.term-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: pointer;
-}
-
-.term-header label {
-    display: flex;
-    align-items: center;
-    font-size: 14px;
-    cursor: pointer;
-    flex-grow: 1;
-}
-
-.term-header input {
-    width: 18px;
-    height: 18px;
-    margin-right: 10px;
-    accent-color: #3182f6; /* 토스 블루 */
-}
-
-/* 상세보기 버튼 */
-.view-detail {
-    font-size: 12px;
-    color: #8b95a1;
-    text-decoration: underline;
-    background: none;
-    border: none;
-    padding: 5px;
-}
-
-/* 접혀있는 상세 내용 */
-.term-content {
-    display: none; /* 기본은 숨김 */
-    font-size: 12px;
-    color: #4e5968;
-    background: #f9fafb;
-    padding: 12px;
-    border-radius: 8px;
-    margin-top: 8px;
-    line-height: 1.6;
-    max-height: 150px;
-    overflow-y: auto;
-}
-
-.term-content.show {
-    display: block;
-}
-
-.required-tag { color: #f04452; font-weight: bold; margin-right: 4px; }
-.optional-tag { color: #3182f6; font-weight: bold; margin-right: 4px; }
+        .term-all input,
+        .term-header input {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+            flex-shrink: 0;
+            accent-color: black;
+            cursor: pointer;
+        }
+        .required-tag { color: #f04452; font-weight: bold; margin-right: 4px; }
+        .view-detail {
+            font-size: 12.5px;
+            color: #8b95a1;
+            text-decoration: underline;
+            background: none;
+            border: none;
+            padding: 6px 4px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .term-content {
+            display: none;
+            font-size: 13px;
+            color: #4e5968;
+            background: #f9fafb;
+            padding: 12px 14px;
+            border-radius: 8px;
+            margin-top: 8px;
+            line-height: 1.6;
+            max-height: 240px;
+            overflow-y: auto;
+        }
+        .term-content.show { display: block; }
+        .term-content p { margin: 0 0 8px; }
+        .term-content ul { margin: 0; padding-left: 18px; }
+        .term-content li { margin-bottom: 6px; }
+        .term-content li:last-child { margin-bottom: 0; }
+        .term-content b { color: #333d4b; }
     </style>
     <style>
         /* 🌙 다크모드 */
@@ -174,49 +155,150 @@
         }
         body.dark-mode h2 { color: #e8eaed !important; }
         body.dark-mode .input-group label { color: #9aa0a6 !important; }
-        body.dark-mode input {
+        body.dark-mode .input-group input {
             background: #2a2a2a !important;
             border-color: #3c4043 !important;
             color: #e8eaed !important;
         }
         body.dark-mode .back-link { color: #9aa0a6 !important; }
+        body.dark-mode .terms-intro { color: #9aa0a6; }
+        body.dark-mode .term-all { background: #2a2a2a; color: #e8eaed; }
+        body.dark-mode .term-item { border-bottom-color: #2f3134; }
+        body.dark-mode .term-header label { color: #dadce0; }
+        body.dark-mode .term-all input,
+        body.dark-mode .term-header input { accent-color: #e8eaed; }
+        body.dark-mode .view-detail { color: #9aa0a6; }
+        body.dark-mode .term-content { background: #262626; color: #bdc1c6; }
+        body.dark-mode .term-content b { color: #e8eaed; }
+        body.dark-mode .required-tag { color: #ff6b78; }
+        body.dark-mode #submit { background: #e8eaed; color: #121212; }
     </style>
 </head>
-<body class="">
+<body>
 <script>if(localStorage.getItem('qlog_dark')==='1')document.body.classList.add('dark-mode');</script>
 
 <div class="join-container">
     <h2>회원가입</h2>
-        
-        <div class="input-group">
-            <label>이메일</label>
-            <input type="email" placeholder="example@mail.com" id="email" >
+
+    <div class="input-group">
+        <label for="email">이메일</label>
+        <input type="email" placeholder="example@mail.com" id="email" autocomplete="email">
+    </div>
+    <div class="input-group">
+        <label for="password">비밀번호</label>
+        <input type="password" placeholder="비밀번호를 입력하세요" id="password" autocomplete="new-password">
+    </div>
+
+    <div class="terms-container">
+        <p class="terms-intro">Q-Log는 동서울대학교 여백이 캡스톤 디자인 연구를 위해 운영하는 일기 앱입니다. 만 19세 이상만 가입할 수 있고, 아래 항목에 모두 동의해야 가입할 수 있습니다.</p>
+
+        <label class="term-all">
+            <input type="checkbox" id="term-all">
+            <span>전체 동의</span>
+        </label>
+
+        <div class="term-item">
+            <div class="term-header">
+                <label><input type="checkbox" class="term-check" id="term-age"><span><span class="required-tag">[필수]</span>만 19세 이상입니다</span></label>
+            </div>
         </div>
-        <div class="input-group">
-            <label>비밀번호</label>
-            <input type="password" placeholder="비밀번호를 입력하세요" id="password" >
+
+        <div class="term-item">
+            <div class="term-header">
+                <label><input type="checkbox" class="term-check" id="term-service"><span><span class="required-tag">[필수]</span>서비스 이용약관</span></label>
+                <button type="button" class="view-detail" aria-expanded="false" aria-controls="detail-service">보기</button>
+            </div>
+            <div class="term-content" id="detail-service">
+                <ul>
+                    <li>Q-Log는 동서울대학교 여백이 캡스톤 디자인 연구를 위해 운영하는 일기 앱입니다.</li>
+                    <li>만 19세 이상만 가입할 수 있습니다.</li>
+                    <li>다른 사람의 이름·연락처 같은 개인정보나 법에 어긋나는 내용은 쓰지 마세요.</li>
+                    <li>AI가 만든 질문과 첨삭은 참고용이며, 내용이 맞다고 보장하지 않습니다.</li>
+                    <li>연구가 끝나면 서비스를 종료할 수 있으며, 종료하기 전에 알려 드립니다.</li>
+                </ul>
+            </div>
         </div>
-        <div>
-            <div class="terms-group">
-    <label class="checkbox-container">
-        <input type="checkbox" id="term-required" required>
-        <span><span class="terms-highlight">[필수]</span> Q-log 서비스 이용약관 및 개인정보 처리방침 동의</span>
-    </label>
-    
-    <label class="checkbox-container">
-        <input type="checkbox" id="term-optional">
-        <div>
-            <span class="terms-optional">[피]</span> 연구 목적의 일기 데이터 제공 동의
-            <span class="terms-desc">
-                ※ 2학기 캡스톤 연구 목적을 위해, 작성하신 일기의 '텍스트'가 익명화 처리되어 외부 언어 분석 API(ETRI)로 전송될 수 있습니다.
-            </span>
+
+        <div class="term-item">
+            <div class="term-header">
+                <label><input type="checkbox" class="term-check" id="term-privacy"><span><span class="required-tag">[필수]</span>개인정보 수집·이용</span></label>
+                <button type="button" class="view-detail" aria-expanded="false" aria-controls="detail-privacy">보기</button>
+            </div>
+            <div class="term-content" id="detail-privacy">
+                <ul>
+                    <li><b>수집 항목:</b> 이메일, 비밀번호(암호화되어 저장되며 연구팀도 볼 수 없음), 일기(본문, 처음 쓴 글, 기분, 태그, 날짜), 작성 과정 기록(작성 시간, 글자 수, 타자 간격, 지운 횟수 등), AI 기능 이용 기록(받은 질문과 첨삭, 반영 여부, 본 시간)</li>
+                    <li><b>이용 목적:</b> 일기 저장과 조회, 연구 분석, 참여 확인(도장판·보상)</li>
+                    <li><b>보유 기간:</b> 2026년 12월 31일까지 보관한 뒤 파기합니다. 탈퇴를 요청하면 바로 지웁니다.</li>
+                    <li><b>처리 위탁:</b> Google Firebase(로그인, 일기 저장). 일기는 서울 리전에 저장되고, 로그인 정보는 Google의 해외 서버에서 처리될 수 있습니다.</li>
+                    <li>동의를 거부할 수 있으며, 거부하면 가입할 수 없습니다.</li>
+                </ul>
+            </div>
         </div>
-    </label>
-</div>
-        <button type="button" id="submit">가입완료</button>
-    </form>
+
+        <div class="term-item">
+            <div class="term-header">
+                <label><input type="checkbox" class="term-check" id="term-research"><span><span class="required-tag">[필수]</span>연구 참여 및 연구 목적 이용</span></label>
+                <button type="button" class="view-detail" aria-expanded="false" aria-controls="detail-research">보기</button>
+            </div>
+            <div class="term-content" id="detail-research">
+                <ul>
+                    <li><b>연구명:</b> 일기 쓰기와 글쓰기 습관에 관한 연구 (지도교수 신영석)</li>
+                    <li><b>기간:</b> 2026년 10월 12일(월)–10월 25일(일), 사후 설문 포함 10월 말까지</li>
+                    <li><b>하는 일:</b> 14일 동안 매일 일기를 씁니다. 첫날과 마지막 날은 안내하는 주제로 300자 이상 씁니다.</li>
+                    <li>참여자마다 앱에서 보이는 기능이 다를 수 있습니다. 연구가 끝나면 연구 목적과 기능 구성을 알려 드립니다.</li>
+                    <li>일기 원문과 앱 사용 기록은 연구팀 PC로 내려받아 형태소 분석 프로그램(Kiwi, 컴퓨터 안에서만 동작)으로 분석합니다. 분석 파일에는 이메일 대신 참여자 번호를 씁니다.</li>
+                    <li>결과는 통계로만 발표합니다. 포스터나 발표에 일기 일부를 예로 들 때는 이름·장소처럼 알아볼 수 있는 내용을 지우고 짧게만 씁니다.</li>
+                    <li>모집 설문으로 선정된 참여자의 기록만 분석에 씁니다.</li>
+                    <li>언제든 그만둘 수 있고 불이익은 없습니다. 요청하면 기록을 지웁니다. 다만 이미 통계로 합쳐진 결과는 되돌릴 수 없습니다.</li>
+                    <li><b>문의:</b> 전현우 (hyunw0921@gmail.com)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="term-item">
+            <div class="term-header">
+                <label><input type="checkbox" class="term-check" id="term-transfer"><span><span class="required-tag">[필수]</span>개인정보 국외 이전 (Google)</span></label>
+                <button type="button" class="view-detail" aria-expanded="false" aria-controls="detail-transfer">보기</button>
+            </div>
+            <div class="term-content" id="detail-transfer">
+                <ul>
+                    <li><b>이전받는 곳:</b> Google LLC (Gemini API, Firebase 인증)</li>
+                    <li><b>이전 국가:</b> 미국 등 Google이 시설을 둔 국가</li>
+                    <li><b>이전 항목:</b> AI 기능을 쓸 때의 일기 본문(쓰고 있는 내용 포함)과 고른 기분, 로그인 이메일. AI 기능에는 이메일이나 이름을 보내지 않습니다.</li>
+                    <li><b>이전 시기와 방법:</b> AI 질문이나 첨삭을 만들 때마다, 그리고 로그인할 때 암호화된 통신으로 보냅니다.</li>
+                    <li><b>이용 목적:</b> AI 질문·첨삭 생성, 로그인 처리</li>
+                    <li><b>보유 기간:</b> 유료 API 약관에 따라 Google은 일기 내용을 자사 서비스 개선(AI 학습)에 쓰지 않으며, 정책 위반 감시를 위해 제한된 기간만 기록합니다.</li>
+                    <li>참여자마다 AI 기능이 켜지는지가 달라, 일기 내용이 실제로 전송되지 않을 수도 있습니다.</li>
+                    <li>일기에 다른 사람의 이름·연락처, 건강 정보 같은 민감한 내용은 쓰지 않기를 권합니다.</li>
+                    <li>동의를 거부할 수 있으며, 거부하면 가입할 수 없습니다.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <button type="button" id="submit">가입완료</button>
     <a href="index.html" class="back-link">돌아가기</a>
-</div>  
+</div>
+
+<!-- 약관 펼치기·전체 동의: Firebase를 불러오지 못해도 동작하도록 일반 스크립트로 둔다 -->
+<script>
+(function () {
+    const all = document.getElementById('term-all');
+    const checks = Array.from(document.querySelectorAll('.term-check'));
+    all.addEventListener('change', () => checks.forEach(c => { c.checked = all.checked; }));
+    checks.forEach(c => c.addEventListener('change', () => { all.checked = checks.every(x => x.checked); }));
+
+    document.querySelectorAll('.view-detail').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const box = document.getElementById(btn.getAttribute('aria-controls'));
+            const open = box.classList.toggle('show');
+            btn.setAttribute('aria-expanded', String(open));
+            btn.textContent = open ? '닫기' : '보기';
+        });
+    });
+})();
+</script>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -266,8 +348,11 @@ document.getElementById('submit').addEventListener('click', function(event) {
     return;
   }
 
-  if (!document.getElementById('term-required').checked) {
-    alert('필수 약관에 동의해주세요.');
+  // 필수 항목(나이 확인 + 약관 4개)을 하나라도 체크하지 않으면 가입하지 않음
+  const missing = Array.from(document.querySelectorAll('.term-check')).filter(c => !c.checked);
+  if (missing.length) {
+    alert('필수 항목에 모두 동의해 주세요.');
+    missing[0].focus();
     return;
   }
 
