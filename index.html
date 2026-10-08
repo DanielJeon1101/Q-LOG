@@ -10,10 +10,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <!-- ★ Gemini 키 (로컬: .gitignore 처리된 파일 / 배포: GitHub Actions가 Secret으로 생성). 모듈보다 먼저 로드 -->
 <script src="gemini-config.js"></script>
-<!-- AI 교정 선생님 손글씨 서체 -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap">
 
 <style>
 * { box-sizing: border-box; }
@@ -1772,7 +1768,7 @@ body.dark-mode .writing-analysis-bar-wrap { background: #333; }
     flex-shrink: 0; width: 70px; height: 70px; border-radius: 50%;
     border: 3px solid #d6453a; color: #d6453a;
     box-shadow: inset 0 0 0 2px rgba(214,69,58,0.22);
-    font-family: 'Gaegu', 'Segoe UI', sans-serif; font-weight: 700; font-size: 16px; line-height: 1.05;
+    font-weight: 800; font-size: 13.5px; line-height: 1.2; letter-spacing: -0.3px;
     display: flex; align-items: center; justify-content: center; text-align: center;
     transform: rotate(-12deg); opacity: 0.88; margin: 4px 6px 0 0;
     animation: teacherStampIn 0.45s cubic-bezier(0.2,1.4,0.4,1) both;
@@ -1783,8 +1779,8 @@ body.dark-mode .writing-analysis-bar-wrap { background: #333; }
 }
 
 .teacher-praise {
-    font-family: 'Gaegu', 'Segoe UI', sans-serif;
-    font-size: 19px; line-height: 1.4; color: #c2362c;
+    font-size: 16px; line-height: 1.6; font-weight: 700; letter-spacing: -0.2px;
+    color: #c2362c; word-break: keep-all;
     margin: 0 0 12px;
 }
 
@@ -1814,10 +1810,18 @@ body.dark-mode .writing-analysis-bar-wrap { background: #333; }
 .tmark.flash { animation: teacherMarkFlash 1s ease; }
 @keyframes teacherMarkFlash { from { background-color: rgba(214,69,58,0.35); } to { background-color: transparent; } }
 .tmark-num {
-    font-family: 'Gaegu', 'Segoe UI', sans-serif; font-weight: 700;
-    color: #d6453a; font-size: 14px; line-height: 0;
+    font-weight: 800;
+    color: #d6453a; font-size: 12px; line-height: 0;
     vertical-align: super; margin-left: 1px;
 }
+/* '이번에 이렇게 바꿀게요'로 일기에 반영된 부분: 빨간 물결 대신 초록 밑줄 */
+.tmark.is-applied {
+    background: linear-gradient(transparent 58%, rgba(18,160,110,0.16) 58%);
+    text-decoration: underline solid #12a06e;
+    text-decoration-thickness: 2px;
+}
+.tmark.is-applied .tmark-num { color: #0f8a5f; }
+.tmark.is-applied:focus-visible { outline-color: #12a06e; }
 
 .teacher-status {
     margin-top: 12px; padding: 12px 14px; border-radius: 12px;
@@ -1847,10 +1851,12 @@ body.dark-mode .writing-analysis-bar-wrap { background: #333; }
     to   { box-shadow: 0 0 0 0 rgba(214,69,58,0); }
 }
 .tnote-num {
-    font-family: 'Gaegu', 'Segoe UI', sans-serif; font-weight: 700;
-    font-size: 24px; line-height: 1; color: #d6453a;
-    flex-shrink: 0; padding-top: 2px; cursor: pointer;
+    font-weight: 800;
+    font-size: 20px; line-height: 1; color: #d6453a;
+    flex-shrink: 0; padding-top: 3px; cursor: pointer;
 }
+.tnote.is-applied { border-color: #bfe6d5; background: #f7fcfa; }
+.tnote.is-applied .tnote-num { color: #0f8a5f; }
 .tnote-body { flex: 1; min-width: 0; }
 .tnote-type {
     display: inline-block; font-size: 11px; font-weight: 700;
@@ -1858,14 +1864,18 @@ body.dark-mode .writing-analysis-bar-wrap { background: #333; }
     padding: 2px 8px; border-radius: 10px; margin-bottom: 6px;
 }
 .tnote-fix { font-size: 15px; line-height: 1.6; color: #191f28; word-break: keep-all; overflow-wrap: anywhere; }
-.tnote-from { color: #8b95a1; text-decoration: line-through; text-decoration-color: #d6453a; text-decoration-thickness: 2px; }
+.tnote-from { color: #a3abb4; }   /* 바꾸기 전 표현: 취소선 없이 흐리게만 */
 .tnote-arrow { color: #d6453a; font-weight: 700; margin: 0 6px; }
 .tnote-to { color: #c2362c; font-weight: 700; }
-.tnote-reason {
-    font-family: 'Gaegu', 'Segoe UI', sans-serif;
-    font-size: 17px; line-height: 1.4; color: #6b3a2e; margin-top: 6px;
+.tslot {   /* [먹은 음식] 같은 빈칸 */
+    display: inline-block; padding: 0 6px; margin: 0 1px;
+    border: 1.5px dashed #e7a39c; border-radius: 6px;
+    font-weight: 600; line-height: 1.5;
 }
-.tnote-choices { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.tnote-reason {
+    font-size: 14.5px; line-height: 1.6; color: #5f4038; margin-top: 6px; word-break: keep-all;
+}
+.tnote-choices { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; }
 .tnote-choice {
     margin: 0; padding: 7px 12px; min-height: 34px;
     border-radius: 20px; border: 1.5px solid transparent;
@@ -1873,13 +1883,32 @@ body.dark-mode .writing-analysis-bar-wrap { background: #333; }
     font-size: 12.5px; font-weight: 700; cursor: pointer;
     transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
-.tnote-choice.on[data-choice="try"]  { background: #fdecea; color: #c2362c; border-color: #f3b6b0; }
-.tnote-choice.on[data-choice="skip"] { background: #eef0f3; color: #333d4b; border-color: #d1d6db; }
+.tnote-choice:disabled { opacity: 0.45; cursor: not-allowed; }
+.tnote-choice[data-act="apply"], .tnote-choice[data-act="fill-ok"] { background: #d6453a; color: #fff; }
+.tnote-choice.on[data-act="skip"] { background: #eef0f3; color: #333d4b; border-color: #d1d6db; }
+.tnote-applied {
+    display: inline-flex; align-items: center; min-height: 34px; padding: 0 12px;
+    border-radius: 20px; background: #e3f5ec; color: #0b7550;
+    font-size: 12.5px; font-weight: 800;
+}
+/* 빈칸 채우기 */
+.tfill {
+    margin-top: 10px; padding: 10px 12px;
+    border-radius: 12px; background: #fff7f6; border: 1px dashed #f0b3ac;
+}
+.tfill-hint { font-size: 12px; color: #8a6159; margin-bottom: 4px; }
+.tfill-line { font-size: 15px; line-height: 2.2; color: #191f28; word-break: keep-all; }
+.tfill-input {
+    width: 7.5em; max-width: 70%; margin: 0 2px; padding: 3px 8px;
+    border: 1.5px solid #e7a39c; border-radius: 8px; background: #fff;
+    font: inherit; font-size: 15px; color: #191f28; line-height: 1.5;
+}
+.tfill-input:focus { outline: none; border-color: #d6453a; box-shadow: 0 0 0 3px rgba(214,69,58,0.15); }
+.tfill .tnote-choices { margin-top: 6px; }
 
 .teacher-closing {
-    font-family: 'Gaegu', 'Segoe UI', sans-serif;
-    font-size: 18px; line-height: 1.4; color: #c2362c;
-    text-align: right; margin-top: 14px;
+    font-size: 15px; line-height: 1.6; font-weight: 700; color: #c2362c;
+    text-align: right; margin-top: 14px; word-break: keep-all;
 }
 
 .teacher-actions {
@@ -1931,8 +1960,20 @@ body.dark-mode .tnote-to { color: #ff8a7f; }
 body.dark-mode .tnote-reason { color: #f2b8ad; }
 body.dark-mode .tnote-type { background: #3a1f1d; color: #ff8a7f; }
 body.dark-mode .tnote-choice { background: #2f2f2f; color: #b0b8c1; }
-body.dark-mode .tnote-choice.on[data-choice="try"]  { background: #3a1f1d; color: #ff8a7f; border-color: #6b2b26; }
-body.dark-mode .tnote-choice.on[data-choice="skip"] { background: #333; color: #e8eaed; border-color: #4a4a4a; }
+body.dark-mode .tnote-choice[data-act="apply"],
+body.dark-mode .tnote-choice[data-act="fill-ok"] { background: #c4473d; color: #fff; }
+body.dark-mode .tnote-choice.on[data-act="skip"] { background: #333; color: #e8eaed; border-color: #4a4a4a; }
+body.dark-mode .tnote-from { color: #737b84; }
+body.dark-mode .tslot { border-color: #8a4a44; }
+body.dark-mode .tnote-applied { background: #123326; color: #7fdcb2; }
+body.dark-mode .tnote.is-applied { background: #1f2a25; border-color: #2c4a3d; }
+body.dark-mode .tnote.is-applied .tnote-num,
+body.dark-mode .tmark.is-applied .tmark-num { color: #6fd3a6; }
+body.dark-mode .tmark.is-applied { background: linear-gradient(transparent 58%, rgba(111,211,166,0.16) 58%); text-decoration-color: #6fd3a6; }
+body.dark-mode .tfill { background: #2a2020; border-color: #6b3a35; }
+body.dark-mode .tfill-hint { color: #c9a29b; }
+body.dark-mode .tfill-line { color: #e8eaed; }
+body.dark-mode .tfill-input { background: #1f1f1f; color: #e8eaed; border-color: #8a4a44; }
 body.dark-mode .teacher-status        { background: #3a2a12; color: #f5c27a; }
 body.dark-mode .teacher-status.error  { background: #2a2a2a; color: #b0b8c1; }
 body.dark-mode .teacher-status.good   { background: #12301f; color: #7ee2a8; }
@@ -2094,6 +2135,68 @@ body.dark-mode .study-card {
 body.dark-mode .stamp.is-done { color: #26211d; }
 body.dark-mode .study-char-hint { color: #e3a54a; }
 body.dark-mode .study-char-hint.is-ok { color: #e8cba9; }
+
+/* ═══════════════════════════════════════════════
+   무성의한 글 경고 (저장 직전)
+═══════════════════════════════════════════════ */
+.effort-modal {
+    position: fixed; inset: 0; z-index: 9997;
+    background: rgba(25,31,40,0.55);
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.effort-modal.show { opacity: 1; pointer-events: auto; }
+.effort-dialog {
+    width: 100%; max-width: 340px;
+    background: #fff; border-radius: 20px;
+    padding: 24px 20px 12px; text-align: left;
+    transform: scale(0.96); transition: transform 0.2s;
+}
+.effort-modal.show .effort-dialog { transform: scale(1); }
+.effort-icon {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: #fff4e5; color: #e67700;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 900; margin-bottom: 12px;
+}
+.effort-title {
+    margin: 0 0 10px; font-size: 17px; font-weight: 800; line-height: 1.45;
+    letter-spacing: -0.4px; color: #191f28; word-break: keep-all;
+}
+.effort-reasons { margin: 0 0 12px; padding: 0; list-style: none; }
+.effort-reasons li {
+    position: relative; padding-left: 14px; margin-bottom: 4px;
+    font-size: 14px; line-height: 1.6; color: #4e5968; word-break: keep-all;
+}
+.effort-reasons li::before {
+    content: ''; position: absolute; left: 2px; top: 0.72em;
+    width: 5px; height: 5px; border-radius: 50%; background: #e67700;
+}
+.effort-stamp {
+    margin: 0 0 12px; padding: 10px 12px; border-radius: 10px;
+    background: #fff4e5; color: #9a4d00;
+    font-size: 13px; font-weight: 600; line-height: 1.5; word-break: keep-all;
+}
+.effort-stamp[hidden] { display: none; }
+.effort-actions { display: flex; flex-direction: column; gap: 2px; margin-top: 16px; }
+.effort-rewrite {
+    margin: 0; padding: 14px; border: none; border-radius: 14px;
+    background: #191f28; color: #fff; font-size: 15px; font-weight: 700; cursor: pointer;
+}
+.effort-anyway {
+    margin: 0; padding: 12px; border: none; background: transparent;
+    color: #8b95a1; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.effort-rewrite:focus-visible, .effort-anyway:focus-visible { outline: 2px solid #e67700; outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+    .effort-modal, .effort-dialog { transition: none; }
+}
+body.dark-mode .effort-dialog { background: #1f1f1f; }
+body.dark-mode .effort-title { color: #e8eaed; }
+body.dark-mode .effort-reasons li { color: #b0b8c1; }
+body.dark-mode .effort-icon,
+body.dark-mode .effort-stamp { background: #3a2a12; color: #f5c27a; }
+body.dark-mode .effort-rewrite { background: #e8eaed; color: #191f28; }
 </style>
 </head>
 
@@ -2372,14 +2475,6 @@ body.dark-mode .study-char-hint.is-ok { color: #e8cba9; }
             <div style="flex:1;"><div class="profile-menu-label">비밀번호 변경</div></div>
             <span class="profile-menu-arrow">›</span>
         </div>
-        <div class="profile-menu-item" id="notifSettingCard" onclick="location.href='settings.html'" style="margin-bottom:10px;">
-            <span class="profile-menu-icon">🔔</span>
-            <div style="flex:1;">
-                <div class="profile-menu-label">알림 설정</div>
-                <div style="font-size:12px;color:#8b95a1;" id="notifSettingDesc"></div>
-            </div>
-            <span class="profile-menu-arrow">›</span>
-        </div>
         <div class="profile-menu-item" onclick="window.go('myWriting')" style="margin-bottom:20px;">
             <span class="profile-menu-icon">📊</span>
             <div style="flex:1;"><div class="profile-menu-label">나의 작성 통계</div></div>
@@ -2623,6 +2718,7 @@ window.go = function(id, view) {
         _typedInsertChars    = 0;
         // ── Gemini 상태 초기화 ──
         aiQuestionLog = [];
+        effortWarnCount = 0;
         updateAiHelpBtn();
         refreshAiUsage().then(updateAiHelpBtn);   // ★ 오늘 남은 AI 질문 횟수 (서버 기록 기준)
         updateStudyCharHint();
@@ -3270,10 +3366,11 @@ async function recordAiUse(kind) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// [A그룹] AI 질문 (작성 중 도움받기) — 1학기 원래 기능 복구
+// [A그룹] AI 질문 (작성 중 도움받기) — 1학기 기능 + question-v2부터 어휘 밀도를 올리는 질문
 // ───────────────────────────────────────────────────────────────────
-const QUESTION_PROMPT_VERSION = 'question-v1';   // ★ 질문 프롬프트를 고칠 때마다 question-v2, v3… 로 올릴 것 (일기마다 함께 저장됨)
+const QUESTION_PROMPT_VERSION = 'question-v2';   // ★ 질문 프롬프트를 고칠 때마다 question-v3, v4… 로 올릴 것 (일기마다 함께 저장됨)
 let aiQuestionLog = [];         // 이번 일기에서 받은 질문 기록 → 저장 시 함께 기록(분석 변수)
+let effortWarnCount = 0;        // 이번 글쓰기에서 '무성의한 글' 경고를 본 횟수 → 저장 시 quality.warnCount
 let idleTimer     = null;
 
 function updateAiHelpBtn() {
@@ -3327,6 +3424,54 @@ function showAiResponse(label, message, style = '') {
         </div>`;
 }
 
+// ★ AI 질문 프롬프트 (question-v2, 10/8 중간발표 피드백 반영)
+// 목표: 답을 쓰면 일기에 '뜻을 가진 낱말'(내용어: NNG·VV·VA·MAG·MM)이 늘어나는 질문 하나.
+// v1(감정·활동·원인·계획 4전략)은 감정과 이유를 물어 '~해서 ~한 것 같다'처럼 조사·어미가 많은 답을 끌어냈음.
+// v2는 막연한 말(그거·좋았다·놀았다)을 구체적인 대상·장소·동작으로 바꾸게 묻고,
+// 이유·계획·감정·숫자(SN은 분모에만 들어감)·예/아니오 질문은 금지. v1 원문은 git 기록에 있음.
+function buildQuestionPrompt(text, mood) {
+    return `너는 일기 글쓰기 코치다. 사용자가 일기를 쓰다가 막혀서 '도움받기'를 눌렀다.
+목표: 답을 쓰면 일기에 뜻을 가진 낱말(구체적인 명사·동사·형용사·부사)이 늘어나는 질문 한 문장을 만든다.
+
+[일기에서 짚을 곳 — 1번부터 찾아서 처음 보이는 하나만]
+1. 막연한 말: '그거', '거기', '뭔가', '그런 거', '이것저것'처럼 가리키는 대상이 흐린 말 → 그것이 정확히 무엇이었는지 묻는다
+2. 뭉뚱그린 평가: '좋았다', '재밌었다', '힘들었다', '별로였다'처럼 어땠는지만 있는 말 → 무엇이 그랬는지, 그 대상(물건·음식·장소·사람·행동)을 묻는다
+3. 한 줄로 끝낸 사건: '친구랑 놀았다', '공부했다', '밥 먹었다'처럼 장면이 비어 있는 말 → 그 장면 속 장소·물건·동작을 묻는다
+4. 셋 다 없으면: 일기에서 가장 중요해 보이는 장면에서 아직 쓰지 않은 대상 하나를 묻는다
+
+[질문 규칙]
+- 일기에 실제로 나온 낱말이나 장면을 짚어서 묻는다. 아무 일기에나 붙는 질문은 쓰지 않는다
+- 답이 대상의 이름이나 구체적인 동작이 되도록 '무엇', '어떤', '어디'로 묻는다. 예/아니오로 답하는 질문은 쓰지 않는다
+- 이유(왜), 앞으로의 계획·다짐, 기분이나 감정 자체, 숫자(몇 시·몇 개·몇 명·얼마)는 묻지 않는다
+- 감정이 담긴 일기라도 감정을 캐묻지 말고, 그 감정이 생긴 장면 속 대상을 묻는다
+- 맞춤법·띄어쓰기·구어체·문장 길이를 지적하지 않는다. 평가나 훈계도 하지 않는다
+- '밀도', '낱말', '품사', '구체적으로' 같은 말을 쓰지 않는다
+- 일기에 없는 사실을 지어내지 않는다
+
+[출력]
+- 질문 한 문장만. 번호·설명·따옴표 없이
+- 따뜻한 ~요체, "?"로 끝냄, 15~50자
+- 일기에 자살·자해·죽고 싶다는 표현이 있으면 질문 대신 이것만 출력: "${CRISIS_MESSAGE}"
+
+[좋은 질문 — 그대로 베끼지 말 것]
+- 일기 "그거 때문에 하루 종일 신경 쓰였다" → 하루 종일 신경 쓰이게 한 그 일은 무엇이었나요?
+- 일기 "점심이 진짜 맛있었다" → 그렇게 맛있었던 점심에는 무엇을 먹었나요?
+- 일기 "친구랑 놀았다" → 친구와 어디에서 무엇을 하며 놀았나요?
+
+[나쁜 질문]
+- 그때 기분이 어땠나요? → 감정만 물어서 '좋았다' 한마디로 끝난다
+- 왜 그렇게 느꼈나요? → 이유를 물어서 '~해서 ~한 것 같다'처럼 문법 말만 늘어난다
+- 몇 시에 일어났나요? → 숫자를 묻는다
+- 오늘 하루는 어땠나요? → 이 일기를 읽지 않아도 할 수 있는 질문이다
+
+오늘 고른 기분: ${mood || '😐'} (어조만 맞추고, 기분은 묻지 않는다)
+
+[일기]
+"""
+${text}
+"""`;
+}
+
 // Gemini API 호출
 async function callGeminiHelp() {
     if (!aiAllowed('question')) return;
@@ -3359,35 +3504,8 @@ async function callGeminiHelp() {
     // 로딩 상태
     document.getElementById('aiHelpLabel').innerHTML = '<span class="ai-loading"></span>';
 
-    // ★ 프롬프트: 인간친화적 + 법적 안전장치 포함 (1학기 4가지 전략 프롬프트 그대로)
-    const prompt = `당신은 따뜻한 일기 글쓰기 코치입니다.
-        사용자의 현재 감정 상태: ${selectedMood || '😐'}
-
-        아래 일기를 읽고, 다음 4가지 전략 중 지금 이 일기에 가장 적합한 전략 하나를 선택하여 질문 한 문장을 만드세요.
-
-        [전략 목록]
-        1. 감정 탐색: 일기에 감정 표현은 있지만 깊이가 부족할 때 → 그 감정을 구체적으로 묻는 질문
-        2. 활동 탐색: 사건이나 행동 위주로만 서술됐을 때 → 구체적인 사실이나 행동을 묻는 질문
-        3. 심층 후속 질문: 감정의 원인이 불명확하거나 복잡할 때 → 감정의 진짜 이유를 파고드는 질문
-        4. 미래 계획 탐색: 문제나 고민이 명확히 드러났을 때 → 앞으로의 대처나 해결책을 묻는 질문
-
-        [일기 내용]
-        ${text}
-
-        [출력 규칙 - 반드시 지킬 것]
-        - 선택한 전략 번호나 이름은 출력하지 마
-        - 질문 한 문장만 출력
-        - "?"로 끝낼 것
-        - 한국어, 15자~45자
-        - 따뜻하고 비판적이지 않은 어조
-        - 위기 표현(자살, 자해, 죽고싶다)이 있으면
-        질문 대신 이것만 출력: "${CRISIS_MESSAGE}"
-
-        [각 전략별 좋은 예시]
-        1번: 그 순간 가장 크게 느껴진 감정이 무엇이었나요?
-        2번: 오늘 집에 오자마자 어떤 행동을 했나요?
-        3번: 노력이 안 보인다는 느낌이 언제부터 쌓여온 것 같나요?
-        4번: 다음번에 비슷한 상황이 오면 어떻게 해보고 싶으신가요?`;
+    // ★ 프롬프트는 위 buildQuestionPrompt 에 있음 (고치면 QUESTION_PROMPT_VERSION 을 올릴 것)
+    const prompt = buildQuestionPrompt(text, selectedMood);
 
     try {
         const raw = await callGemini({ model: QUESTION_MODEL, prompt, thinkingLevel: 'MINIMAL', maxOutputTokens: 1024 });
@@ -3421,10 +3539,12 @@ document.getElementById('aiHelpBtn').addEventListener('click', callGeminiHelp);
 // [B그룹] AI 교정 선생님 — 접속 시 "어제 쓴 일기"를 빨간 펜 첨삭처럼 보여줌
 // · 목표 지표: 어휘 밀도 = 내용어 ÷ 전체 형태소 (원미진 외, 2017 / Kiwi 태그 분류 기준)
 //   내용어: NNG·VV·VA·MAG·MM  /  기능어: NNB·NP·MAJ·VX·VCP·XSN·J*·E*
-// · 원문 일기는 절대 수정하지 않음. 사용자는 제안마다 "써볼게요/괜찮아요" 의사만 남기고, 그 기록만 저장.
+// · 제안마다 "이번에 이렇게 바꿀게요 / 괜찮아요". 바꾸기를 누르면 일기 본문(text)이 실제로 바뀜(되돌리기 가능).
+//   ★ 처음 쓴 글은 originalText 에 한 번만 저장되고 다시는 덮어쓰지 않음 → 분석은 반드시 originalText ?? text 로 할 것.
+//   반영 여부는 aiApplied(true/false), 제안별 기록은 aiCorrection.responses 에 남음.
 // · 첨삭 결과는 해당 일기 문서의 aiCorrection 필드에 1회 저장(캐시) → 다시 열어도 API를 또 부르지 않고,
 //   참여자가 정확히 어떤 피드백을 봤는지 연구자가 나중에 확인할 수 있음.
-//   일기를 수정하면(sourceHash 불일치) 새로 첨삭함.
+//   본문이 첨삭받은 글(sourceHash) 또는 제안을 반영한 글(appliedTextHash)과 같으면 재사용, 직접 고치면 새로 첨삭함.
 // · 팝업: "닫기" = 이번 접속에서만 닫힘 / "오늘 하루 보지 않기" = 오늘 자정까지 안 뜸
 // ───────────────────────────────────────────────────────────────────
 const TEACHER_PROMPT_VERSION = 'teacher-v1';   // ★ 첨삭 프롬프트를 고칠 때마다 teacher-v2, v3… 로 올릴 것
@@ -3568,11 +3688,14 @@ async function maybeShowTeacher() {
     const log = findLogForOffset(1);              // 어제 날짜 일기
     if (!log || !log.text || log.text.trim().length < TEACHER_MIN_CHARS) return;
 
-    const hash = hashText(log.text);
+    const sourceText = log.text;
+    const hash = hashText(sourceText);
     // 저장된 첨삭을 다시 쓰는 조건: 일기 본문이 그대로이고(sourceHash), 프롬프트 버전도 같을 때.
     // → 프롬프트를 고친 뒤 TEACHER_PROMPT_VERSION 을 올리면 새 프롬프트로 다시 첨삭함 (실험 기간에는 절대 바꾸지 말 것)
+    // 제안을 반영해 본문이 바뀐 경우(appliedTextHash)도 같은 첨삭으로 봄 → 반영했다고 첨삭을 새로 만들지 않음
     const cached = log.aiCorrection;
-    let corr = (cached && cached.sourceHash === hash && cached.version === TEACHER_PROMPT_VERSION) ? cached : null;
+    let corr = (cached && cached.version === TEACHER_PROMPT_VERSION &&
+                (cached.sourceHash === hash || cached.appliedTextHash === hash)) ? cached : null;
     const crisis = !corr && containsCrisis(log.text);
 
     // 새로 만들어야 하면 오늘 첨삭 한도부터 확인 (지웠다 다시 쓰기로 첨삭을 계속 만드는 것을 막음)
@@ -3603,6 +3726,7 @@ async function maybeShowTeacher() {
             version: TEACHER_PROMPT_VERSION,
             model: TEACHER_MODEL,
             sourceHash: hash,
+            sourceText,           // 첨삭받은 그 글 (제안을 반영·되돌릴 때 기준이 되는 글)
             group: userGroup,
             viewCount: 0,
             totalDwellMs: 0,
@@ -3664,6 +3788,160 @@ function renderTeacherError(err) {
     st.hidden = false;
 }
 
+// ── 제안 반영 ("이번에 이렇게 바꿀게요") ───────────────────────────
+// 첨삭받은 글(sourceText) + 제안 목록 + 참여자 선택(responses)으로 지금 보여줄 본문을 매번 새로 계산한다.
+// → 반영·되돌리기를 몇 번 해도 본문이 꼬이지 않음. 처음 쓴 글은 originalText 에 한 번만 저장(분석용).
+const TEACHER_SLOT_RE = /\[([^\[\]\n]{1,20})\]/g;   // 제안 속 빈칸 예: [먹은 음식]
+
+function teacherSourceText(log, corr) {
+    if (typeof corr.sourceText === 'string') return corr.sourceText;
+    return hashText(log.text) === corr.sourceHash ? log.text : null;   // sourceText 를 저장하기 전에 만든 첨삭
+}
+// 기준 글에서 제 위치를 찾은 제안만 차례로 넘김 (화면과 본문 계산이 같은 기준을 씀)
+function forEachTeacherItem(src, items, fn) {
+    let cur = 0;
+    (items || []).forEach((it, i) => {
+        if (!it || !Number.isInteger(it.start) || it.start < cur || src.slice(it.start, it.end) !== it.original) return;
+        fn(it, i, cur);
+        cur = it.end;
+    });
+    return cur;
+}
+function isApplied(resp) {
+    return !!(resp && resp.choice === 'apply' && typeof resp.text === 'string');
+}
+function buildTeacherText(src, items, responses) {
+    let out = '';
+    const end = forEachTeacherItem(src, items, (it, i, cur) => {
+        out += src.slice(cur, it.start) + (isApplied(responses && responses[i]) ? responses[i].text : it.original);
+    });
+    return out + src.slice(end);
+}
+// 지금 본문이 첨삭 화면이 아는 상태와 같을 때만 반영·되돌리기 허용 (상세 화면에서 직접 고친 뒤면 막음)
+function teacherCanApply(log, corr) {
+    const src = teacherSourceText(log, corr);
+    return src !== null && buildTeacherText(src, corr.items, corr.responses || {}) === log.text;
+}
+function splitTeacherSlots(s) {
+    const parts = [];
+    let last = 0, m;
+    TEACHER_SLOT_RE.lastIndex = 0;
+    while ((m = TEACHER_SLOT_RE.exec(s))) {
+        if (m.index > last) parts.push({ text: s.slice(last, m.index) });
+        parts.push({ slot: m[1].trim() });
+        last = m.index + m[0].length;
+    }
+    if (last < s.length) parts.push({ text: s.slice(last) });
+    return parts;
+}
+// 빈칸을 채운 말의 받침에 맞춰 바로 뒤 조사를 고침 (피자을 → 피자를, 책가 → 책이)
+const JOSA_PAIRS = [['으로', '로'], ['이랑', '랑'], ['을', '를'], ['이', '가'], ['은', '는'], ['과', '와']];
+function fixJosa(word, next) {
+    const w = String(word || '').trim();
+    if (!w || !next) return next;
+    const code = w.charCodeAt(w.length - 1);
+    if (code < 0xAC00 || code > 0xD7A3) return next;          // 마지막 글자가 한글이 아니면 그대로
+    const jong = (code - 0xAC00) % 28;                          // 0이면 받침 없음, 8이면 ㄹ 받침
+    for (const [withB, noB] of JOSA_PAIRS) {
+        const cur = next.startsWith(withB) ? withB : next.startsWith(noB) ? noB : null;
+        if (!cur) continue;
+        const after = next.charAt(cur.length);
+        // 조사 뒤가 한글이면 조사가 아닐 수 있음 (이었다·이다 등) → 건드리지 않음
+        if (after && /[가-힣]/.test(after) && !(withB === '으로' && after === '서')) return next;
+        let pick = jong ? withB : noB;
+        if (withB === '으로' && jong === 8) pick = '로';
+        return pick + next.slice(cur.length);
+    }
+    return next;
+}
+function suggestionHtml(s) {
+    return splitTeacherSlots(s).map(p => p.slot != null
+        ? `<span class="tslot">${escapeHtml(p.slot)}</span>`
+        : escapeHtml(p.text)).join('');
+}
+
+function renderTeacherPaper(log, corr) {
+    const paper = document.getElementById('teacherPaper');
+    if (!teacherCanApply(log, corr)) { paper.textContent = log.text; return; }   // 직접 고친 뒤: 지금 본문만
+    const src = teacherSourceText(log, corr);
+    const responses = corr.responses || {};
+    // 원문은 escape 후 구간만 감쌈 → 일기 내용이 HTML로 해석되지 않음
+    let html = '';
+    const end = forEachTeacherItem(src, corr.items, (it, i, cur) => {
+        const applied = isApplied(responses[i]);
+        html += escapeHtml(src.slice(cur, it.start));
+        html += `<mark class="tmark${applied ? ' is-applied' : ''}" data-i="${i}" tabindex="0">${escapeHtml(applied ? responses[i].text : it.original)}<sup class="tmark-num">${CIRCLED[i]}</sup></mark>`;
+    });
+    html += escapeHtml(src.slice(end));
+    paper.innerHTML = html;
+}
+
+function renderTeacherNotes(log, corr) {
+    const notes = document.getElementById('teacherNotes');
+    // 빈칸에 쓰던 글자는 다시 그려도 남도록 잠깐 보관
+    const typed = {};
+    notes.querySelectorAll('.tfill-input').forEach(x => { typed[`${x.dataset.i}:${x.dataset.k}`] = x.value; });
+
+    const responses = corr.responses || {};
+    const editing = (teacherState && teacherState.editing) || new Set();
+    const canApply = teacherCanApply(log, corr);
+    const src = teacherSourceText(log, corr);
+    const valid = new Set();
+    if (src !== null) forEachTeacherItem(src, corr.items, (it, i) => valid.add(i));
+
+    notes.innerHTML = (corr.items || []).map((it, i) => {
+        if (!valid.has(i)) return '';
+        const resp = responses[i];
+        const applied = isApplied(resp);
+        let actions;
+        if (applied) {
+            actions = `
+                <div class="tnote-choices">
+                    <span class="tnote-applied">✓ 일기에 반영했어요</span>
+                    <button type="button" class="tnote-choice" data-i="${i}" data-act="undo"${canApply ? '' : ' disabled'}>되돌리기</button>
+                </div>`;
+        } else if (editing.has(i) && canApply) {
+            const parts = splitTeacherSlots(it.suggestion);
+            actions = `
+                <div class="tfill" data-i="${i}">
+                    <div class="tfill-hint">빈칸을 내 말로 채우면 일기에 들어가요</div>
+                    <div class="tfill-line">${parts.map((p, k) => p.slot != null
+                        ? `<input class="tfill-input" type="text" data-i="${i}" data-k="${k}" placeholder="${escapeHtml(p.slot)}" aria-label="${escapeHtml(p.slot)}" maxlength="30" autocomplete="off">`
+                        : `<span data-orig="${escapeHtml(p.text)}">${escapeHtml(p.text)}</span>`).join('')}</div>
+                    <div class="tnote-choices">
+                        <button type="button" class="tnote-choice" data-i="${i}" data-act="fill-ok" disabled>바꾸기</button>
+                        <button type="button" class="tnote-choice" data-i="${i}" data-act="fill-cancel">취소</button>
+                    </div>
+                </div>`;
+        } else {
+            const skipOn = !!(resp && resp.choice === 'skip');
+            actions = `
+                <div class="tnote-choices" role="group" aria-label="${i + 1}번 제안">
+                    <button type="button" class="tnote-choice" data-i="${i}" data-act="apply"${canApply ? '' : ' disabled'}>이번에 이렇게 바꿀게요</button>
+                    <button type="button" class="tnote-choice${skipOn ? ' on' : ''}" data-i="${i}" data-act="skip" aria-pressed="${skipOn}">괜찮아요</button>
+                </div>`;
+        }
+        return `
+        <div class="tnote${applied ? ' is-applied' : ''}" id="tnote-${i}" data-i="${i}">
+            <div class="tnote-num">${CIRCLED[i]}</div>
+            <div class="tnote-body">
+                ${it.type ? `<div class="tnote-type">${escapeHtml(it.type)}</div>` : ''}
+                <div class="tnote-fix"><span class="tnote-from">${escapeHtml(it.original)}</span><span class="tnote-arrow">→</span><span class="tnote-to">${applied ? escapeHtml(resp.text) : suggestionHtml(it.suggestion)}</span></div>
+                ${it.reason ? `<div class="tnote-reason">${escapeHtml(it.reason)}</div>` : ''}
+                ${actions}
+            </div>
+        </div>`;
+    }).join('');
+
+    notes.querySelectorAll('.tfill').forEach(box => {
+        box.querySelectorAll('.tfill-input').forEach(x => {
+            const v = typed[`${x.dataset.i}:${x.dataset.k}`];
+            if (v) x.value = v;
+        });
+        updateFillOk(box);
+    });
+}
+
 function renderTeacher(log, corr) {
     const st = document.getElementById('teacherStatus');
     const paper = document.getElementById('teacherPaper');
@@ -3678,48 +3956,26 @@ function renderTeacher(log, corr) {
         return;
     }
 
-    // 원문 + 빨간 펜 하이라이트 (원문은 escape 후 구간만 감쌈 → 일기 내용이 HTML로 해석되지 않음)
-    const text = log.text;
-    const items = corr.items || [];
-    let html = '', cur = 0;
-    items.forEach((it, i) => {
-        if (it.start < cur || text.slice(it.start, it.end) !== it.original) return;  // 안전장치
-        html += escapeHtml(text.slice(cur, it.start));
-        html += `<mark class="tmark" data-i="${i}" tabindex="0">${escapeHtml(it.original)}<sup class="tmark-num">${CIRCLED[i]}</sup></mark>`;
-        cur = it.end;
-    });
-    html += escapeHtml(text.slice(cur));
-    paper.innerHTML = html;
+    renderTeacherPaper(log, corr);
 
     const praiseEl = document.getElementById('teacherPraise');
     if (corr.praise) { praiseEl.textContent = corr.praise; praiseEl.hidden = false; }
     document.getElementById('teacherStamp').hidden = false;
 
+    const items = corr.items || [];
     if (!items.length) {
         st.className = 'teacher-status good';
         st.textContent = '어제 일기는 고칠 곳 없이 또렷했어요! 👏';
+        st.hidden = false;
+    } else if (!teacherCanApply(log, corr)) {
+        st.className = 'teacher-status error';
+        st.textContent = '일기를 직접 고친 뒤라 여기서는 바꿀 수 없어요. 제안은 참고만 해 주세요.';
         st.hidden = false;
     } else {
         st.hidden = true;
     }
 
-    const responses = corr.responses || {};
-    notes.innerHTML = items.map((it, i) => {
-        const r = responses[i] && responses[i].choice;
-        return `
-        <div class="tnote" id="tnote-${i}" data-i="${i}">
-            <div class="tnote-num">${CIRCLED[i]}</div>
-            <div class="tnote-body">
-                ${it.type ? `<div class="tnote-type">${escapeHtml(it.type)}</div>` : ''}
-                <div class="tnote-fix"><span class="tnote-from">${escapeHtml(it.original)}</span><span class="tnote-arrow">→</span><span class="tnote-to">${escapeHtml(it.suggestion)}</span></div>
-                ${it.reason ? `<div class="tnote-reason">${escapeHtml(it.reason)}</div>` : ''}
-                <div class="tnote-choices" role="group" aria-label="${i + 1}번 제안에 대한 생각">
-                    <button type="button" class="tnote-choice${r === 'try' ? ' on' : ''}" data-i="${i}" data-choice="try" aria-pressed="${r === 'try'}">다음엔 이렇게 써볼게요</button>
-                    <button type="button" class="tnote-choice${r === 'skip' ? ' on' : ''}" data-i="${i}" data-choice="skip" aria-pressed="${r === 'skip'}">괜찮아요</button>
-                </div>
-            </div>
-        </div>`;
-    }).join('');
+    renderTeacherNotes(log, corr);
 
     const closingEl = document.getElementById('teacherClosing');
     if (corr.closing) { closingEl.textContent = corr.closing; closingEl.hidden = false; }
@@ -3732,6 +3988,16 @@ function flashEl(el) {
     el.classList.add('flash');
 }
 
+function updateFillOk(box) {
+    const ok = box.querySelector('[data-act="fill-ok"]');
+    if (ok) ok.disabled = [...box.querySelectorAll('.tfill-input')].some(x => !x.value.trim());
+    // 빈칸 바로 뒤 조사를 채운 말에 맞춰 미리 보여줌
+    box.querySelectorAll('.tfill-input').forEach(x => {
+        const nextEl = x.nextElementSibling;
+        if (nextEl && nextEl.dataset.orig != null) nextEl.textContent = fixJosa(x.value, nextEl.dataset.orig);
+    });
+}
+
 // 하이라이트 ↔ 설명 연결
 document.getElementById('teacherPaper').addEventListener('click', e => {
     const m = e.target.closest('.tmark');
@@ -3742,30 +4008,133 @@ document.getElementById('teacherPaper').addEventListener('click', e => {
 document.getElementById('teacherPaper').addEventListener('keydown', e => {
     if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('tmark')) { e.preventDefault(); e.target.click(); }
 });
-document.getElementById('teacherNotes').addEventListener('click', e => {
-    const btn = e.target.closest('.tnote-choice');
-    if (btn) { recordTeacherChoice(Number(btn.dataset.i), btn.dataset.choice); return; }
+const teacherNotesEl = document.getElementById('teacherNotes');
+teacherNotesEl.addEventListener('click', e => {
+    const btn = e.target.closest('[data-act]');
+    if (btn) { if (!btn.disabled) onTeacherAction(Number(btn.dataset.i), btn.dataset.act, btn); return; }
     const num = e.target.closest('.tnote-num');
     if (num) flashEl(document.querySelector(`#teacherPaper .tmark[data-i="${num.parentElement.dataset.i}"]`));
 });
+teacherNotesEl.addEventListener('input', e => {
+    const box = e.target.closest('.tfill');
+    if (box) updateFillOk(box);
+});
+teacherNotesEl.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' || !e.target.classList.contains('tfill-input')) return;
+    e.preventDefault();
+    const ok = e.target.closest('.tfill').querySelector('[data-act="fill-ok"]');
+    if (ok && !ok.disabled) ok.click();
+});
 
-// "써볼게요 / 괜찮아요" — 원문은 그대로 두고 의사만 저장 (같은 버튼을 다시 누르면 취소)
-function recordTeacherChoice(i, choice) {
+function onTeacherAction(i, act, btn) {
     if (!teacherState || !teacherState.corr) return;
     const { log, corr } = teacherState;
-    corr.responses = corr.responses || {};
-    const prev = corr.responses[i] && corr.responses[i].choice;
-    const next = prev === choice ? null : choice;
-    if (next) corr.responses[i] = { choice: next }; else delete corr.responses[i];
+    const it = (corr.items || [])[i];
+    if (!it) return;
+    teacherState.editing = teacherState.editing || new Set();
 
-    document.querySelectorAll(`.tnote-choice[data-i="${i}"]`).forEach(b => {
-        const on = b.dataset.choice === next;
-        b.classList.toggle('on', on);
-        b.setAttribute('aria-pressed', String(on));
-    });
+    if (act === 'skip') { toggleTeacherSkip(i); return; }
+    if (act === 'fill-cancel') { teacherState.editing.delete(i); renderTeacherNotes(log, corr); return; }
+    if (act === 'apply') {
+        if (splitTeacherSlots(it.suggestion).some(p => p.slot != null)) {
+            // 빈칸이 있는 제안은 참여자가 직접 채워야 반영 (AI가 일기에 없는 사실을 지어 넣지 않게)
+            teacherState.editing.add(i);
+            renderTeacherNotes(log, corr);
+            const first = document.querySelector(`#tnote-${i} .tfill-input`);
+            if (first) first.focus();
+            return;
+        }
+        setTeacherApplied(i, it.suggestion);
+        return;
+    }
+    if (act === 'fill-ok') {
+        const box = btn.closest('.tfill');
+        const vals = {};
+        box.querySelectorAll('.tfill-input').forEach(x => { vals[x.dataset.k] = x.value.trim(); });
+        const parts = splitTeacherSlots(it.suggestion);
+        if (parts.some((p, k) => p.slot != null && !vals[k])) return;
+        const pieces = parts.map((p, k) => p.slot != null ? vals[k] : p.text);
+        for (let k = 0; k < parts.length - 1; k++) {
+            if (parts[k].slot != null && parts[k + 1].slot == null) pieces[k + 1] = fixJosa(vals[k], pieces[k + 1]);
+        }
+        teacherState.editing.delete(i);
+        setTeacherApplied(i, pieces.join(''));
+        return;
+    }
+    if (act === 'undo') setTeacherApplied(i, null);
+}
+
+// "괜찮아요" — 본문은 그대로, 의사만 저장 (같은 버튼을 다시 누르면 취소)
+function toggleTeacherSkip(i) {
+    const { log, corr } = teacherState;
+    corr.responses = corr.responses || {};
+    const on = !(corr.responses[i] && corr.responses[i].choice === 'skip');
+    if (on) corr.responses[i] = { choice: 'skip' }; else delete corr.responses[i];
+    renderTeacherNotes(log, corr);
     updateDoc(doc(db, 'logs', log.id), {
-        [`aiCorrection.responses.${i}`]: next ? { choice: next, at: serverTimestamp() } : null
+        [`aiCorrection.responses.${i}`]: on ? { choice: 'skip', at: serverTimestamp() } : null
     }).catch(err => console.warn('[AI 교정 선생님] 선택 기록 실패:', err.code || err));
+}
+
+// "이번에 이렇게 바꿀게요"(insertText = 넣을 문장) / "되돌리기"(insertText = null)
+// 일기 본문(text)을 바꾸고, 처음 쓴 글은 originalText 에 한 번만 남긴다.
+async function setTeacherApplied(i, insertText) {
+    if (!teacherState || !teacherState.corr || teacherState.busy) return;
+    const { log, corr } = teacherState;
+    if (!teacherCanApply(log, corr)) { renderTeacher(log, corr); return; }
+    const src = teacherSourceText(log, corr);
+    corr.responses = corr.responses || {};
+    const before = {
+        text: log.text, originalText: log.originalText, aiApplied: log.aiApplied,
+        resp: corr.responses[i], sourceText: corr.sourceText, appliedTextHash: corr.appliedTextHash,
+    };
+
+    if (insertText === null) delete corr.responses[i];
+    else corr.responses[i] = { choice: 'apply', text: insertText };
+    const newText    = buildTeacherText(src, corr.items, corr.responses);
+    const anyApplied = Object.values(corr.responses).some(isApplied);
+    const patch = {
+        text: newText,
+        aiApplied: anyApplied,                      // 이 일기에 AI 제안이 하나라도 들어가 있는지
+        aiAppliedAt: serverTimestamp(),
+        [`aiCorrection.responses.${i}`]: insertText === null ? null : { choice: 'apply', text: insertText, at: serverTimestamp() },
+        'aiCorrection.appliedTextHash': hashText(newText),
+    };
+    if (log.originalText == null) patch.originalText = src;            // ★ 처음 쓴 글 (분석용, 한 번만)
+    if (typeof corr.sourceText !== 'string') patch['aiCorrection.sourceText'] = src;
+
+    // 화면부터 바꿈
+    log.text = newText;
+    if (log.originalText == null) log.originalText = src;
+    log.aiApplied = anyApplied;
+    corr.sourceText = src;
+    corr.appliedTextHash = patch['aiCorrection.appliedTextHash'];
+    renderTeacher(log, corr);
+    renderLogs();
+    flashEl(document.querySelector(`#teacherPaper .tmark[data-i="${i}"]`));
+
+    teacherState.busy = true;
+    try {
+        await updateDoc(doc(db, 'logs', log.id), patch);
+    } catch (err) {
+        console.warn('[AI 교정 선생님] 반영 저장 실패:', err.code || err);
+        log.text = before.text;
+        log.originalText = before.originalText;
+        log.aiApplied = before.aiApplied;
+        if (before.resp === undefined) delete corr.responses[i]; else corr.responses[i] = before.resp;
+        corr.sourceText = before.sourceText;
+        corr.appliedTextHash = before.appliedTextHash;
+        renderLogs();
+        if (teacherState && teacherState.log === log) {
+            renderTeacher(log, corr);
+            const st = document.getElementById('teacherStatus');
+            st.className = 'teacher-status error';
+            st.textContent = '일기에 반영하지 못했어요. 잠시 후 다시 눌러 주세요.';
+            st.hidden = false;
+        }
+    } finally {
+        if (teacherState && teacherState.log === log) teacherState.busy = false;
+    }
 }
 
 function closeTeacherModal(action) {
@@ -3798,7 +4167,8 @@ document.addEventListener('keydown', e => {
 // [실험 참여 도장판] — 화분 대신 메인에 표시. 작성 "일수"만 셈 (글의 수준은 보여주지 않음)
 // users/{uid}.studyStart 가 있는 계정에만 보임. 세 그룹 모두 똑같이 보임 → 그룹 비교에 영향 없음.
 // 인정 규칙 (참여자 공지와 반드시 같게 유지할 것):
-//   · 그 날짜의 일기가 100자 이상 (앞뒤 공백 제외, 글쓰기 화면 글자 수와 같은 기준)
+//   · 그 날짜의 일기가 100자 이상 (앞뒤 공백 제외. ㅋㅋ·ㅎㅎ 같은 자음·모음, 같은 글자 4번째부터,
+//     두 번 이상 나온 같은 문장은 빼고 셈 → countStudyChars)
 //   · 놓친 날은 다음 날 '어제' 버튼으로 채워도 인정 (다음 날 23:59까지)
 //   · 그 기한 안에 상세 화면에서 이어 써서 100자를 넘겨도 인정. 기한이 지난 뒤 늘린 것은 인정 안 함
 //   · 보상은 마지막 날 일기 + 사후 설문(연구자가 users 문서에 postSurveyDone: true)을 모두 마쳐야 지급
@@ -3815,8 +4185,114 @@ const REWARD_TIERS = [            // ★ 결석 일수별 보상 (가격은 표�
 const WEEKDAY_KO = ['일', '월', '화', '수', '목', '금', '토'];
 let logsLoadedUid = null;   // 일기를 다 불러온 계정 — 불러오기 전에는 도장판을 그리지 않음 (지난 날이 잠깐 '결석'으로 보이는 것 방지)
 
+// ── [무성의한 글] 도장 기준 글자 수 + 저장 전 경고 ─────────────────────────
+// 도장 기준 글자 수 = ㅋㅋ·ㅎㅎ·ㅠㅠ 같은 자음·모음, 같은 글자 4번째부터, 두 번째 이상 나온 같은 문장을 빼고 센 길이
+// (공백 포함, 앞뒤 공백 제외). 보통 일기는 화면 글자 수와 거의 같고, 채우기용 글자만 빠진다.
+const JAMO_RE       = /[ㄱ-ㆎ]/g;           // 한글 호환 자모: ㄱ-ㅎ, ㅏ-ㅣ
+const SENT_CHUNK_RE = /[^.!?。\n]+[.!?。\n]*/g;      // 문장 단위 조각 (끝의 문장부호·줄바꿈 포함)
+const EFFORT_CHECK_VERSION = 'effort-v1';            // ★ 아래 기준을 바꾸면 올릴 것 (일기마다 함께 저장됨)
+const EFFORT_FLAG_TEXT = {
+    jamo:   'ㅋㅋ·ㅎㅎ처럼 자음·모음만 쓴 부분이 많아요',
+    repeat: '같은 문장이나 구절이 여러 번 반복돼요',
+    run:    '같은 글자가 길게 이어져요',
+};
+function sentenceKey(chunk) { return chunk.replace(/[\s.!?。]+/g, ''); }
+function effectiveStudyText(text) {
+    const t = String(text || '').replace(JAMO_RE, '').replace(/(.)\1{3,}/gu, '$1$1$1');
+    const seen = new Set();
+    return (t.match(SENT_CHUNK_RE) || []).filter(chunk => {
+        const key = sentenceKey(chunk);
+        if (key.length < 4) return true;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    }).join('').replace(/\s+/g, ' ').trim();
+}
+// 4글자 조각 기준 반복 정도. novel = 처음 나온 조각 수 + 3 (보통 일기는 글자 수와 거의 같음)
+function repeatProfile(chars) {
+    if (chars.length < 40) return { uniq4: 1, novel: chars.length };
+    const grams = new Set();
+    for (let i = 0; i + 4 <= chars.length; i++) grams.add(chars.slice(i, i + 4).join(''));
+    return { uniq4: grams.size / (chars.length - 3), novel: grams.size + 3 };
+}
 function countStudyChars(text) {
+    const eff = effectiveStudyText(text);
+    // 문장부호 없이 통째로 붙여 넣은 반복은 문장 단위로 안 걸리므로, 조각이 많이 겹치면 새 조각만 셈
+    const rp = repeatProfile([...eff.replace(/\s+/g, '')]);
+    return rp.uniq4 < 0.6 ? Math.min(eff.length, rp.novel) : eff.length;
+}
+function rawStudyChars(text) {
     return String(text || '').trim().length;
+}
+// 저장 직전 검사: 걸리면 경고 팝업 (다시 쓰기 / 그래도 저장). 짧은 글 자체는 문제 삼지 않음
+function assessEffort(text) {
+    const raw = String(text || '');
+    const compact = raw.replace(/\s+/g, '');
+    const n = [...compact].length;
+    const jamo = (compact.match(JAMO_RE) || []).length;
+    const noJamo = [...compact.replace(JAMO_RE, '')];
+    const collapsed = [...noJamo.join('').replace(/(.)\1{3,}/gu, '$1$1$1')];   // 같은 글자 연속은 3개까지만
+    const runExcess = noJamo.length - collapsed.length;
+    // 문장부호 없이 붙여 넣은 반복까지 잡기: 4글자 조각 중 서로 다른 조각의 비율 (보통 일기는 0.95 이상)
+    const uniq4 = repeatProfile(collapsed).uniq4;
+    // 같은 문장이 두 번 이상 나온 비율
+    const seen = new Set();
+    let dupChars = 0, keyChars = 0;
+    (raw.match(SENT_CHUNK_RE) || []).forEach(chunk => {
+        const key = sentenceKey(chunk).replace(JAMO_RE, '');
+        if (key.length < 4) return;
+        keyChars += key.length;
+        if (seen.has(key)) dupChars += key.length; else seen.add(key);
+    });
+    const dupShare = keyChars ? dupChars / keyChars : 0;
+
+    const flags = [];
+    if (n >= 10 && jamo / n >= 0.2)                flags.push('jamo');
+    if (uniq4 < 0.6 || dupShare >= 0.3)            flags.push('repeat');
+    if (n >= 10 && runExcess / n >= 0.2)           flags.push('run');
+    const r2 = v => Math.round(v * 100) / 100;
+    return {
+        flags,
+        effectiveChars: countStudyChars(raw),
+        rawChars: rawStudyChars(raw),
+        jamoShare: n ? r2(jamo / n) : 0,
+        uniq4: r2(uniq4),
+        dupShare: r2(dupShare),
+        checkVersion: EFFORT_CHECK_VERSION,
+    };
+}
+// 경고 팝업 → true(그래도 저장) / false(다시 쓰기)
+function confirmLowEffort(effort, dateKey) {
+    return new Promise(resolve => {
+        const modal  = document.getElementById('effortModal');
+        const again  = document.getElementById('effortRewriteBtn');
+        const anyway = document.getElementById('effortAnywayBtn');
+        document.getElementById('effortReasons').innerHTML =
+            effort.flags.map(f => `<li>${escapeHtml(EFFORT_FLAG_TEXT[f])}</li>`).join('');
+        const stampNote = document.getElementById('effortStampNote');
+        const stampLost = !!(currentUser && dateKey && studyActiveFor(dateKey) && effort.effectiveChars < STUDY_MIN_CHARS);
+        stampNote.textContent = stampLost
+            ? `이런 부분을 빼면 ${effort.effectiveChars}자라서, 이대로 저장하면 도장이 찍히지 않아요.`
+            : '';
+        stampNote.hidden = !stampLost;
+        modal.classList.add('show');
+        modal.setAttribute('aria-hidden', 'false');
+        const onKey = e => { if (e.key === 'Escape') { e.stopPropagation(); done(false); } };
+        const onBackdrop = e => { if (e.target === modal) done(false); };
+        function done(ok) {
+            modal.classList.remove('show');
+            modal.setAttribute('aria-hidden', 'true');
+            again.onclick = anyway.onclick = null;
+            document.removeEventListener('keydown', onKey, true);
+            modal.removeEventListener('click', onBackdrop);
+            resolve(ok);
+        }
+        again.onclick  = () => done(false);
+        anyway.onclick = () => done(true);
+        document.addEventListener('keydown', onKey, true);
+        modal.addEventListener('click', onBackdrop);
+        setTimeout(() => again.focus({ preventScroll: true }), 30);
+    });
 }
 function keyToDate(key, addDays = 0) {
     const [y, m, d] = key.split('-').map(Number);
@@ -3989,10 +4465,14 @@ function updateStudyCharHint() {
     const el = document.getElementById('studyCharHint');
     if (!el) return;
     if (!currentUser || !studyActiveFor(writeTargetDateKey())) { el.hidden = true; return; }
-    const n = countStudyChars(document.getElementById('text')?.value);
+    const value = document.getElementById('text')?.value;
+    const n = countStudyChars(value);
+    const excluded = rawStudyChars(value) > n;   // ㅋㅋ·반복처럼 빼고 센 글자가 있음
     const ok = n >= STUDY_MIN_CHARS;
     el.classList.toggle('is-ok', ok);
-    el.textContent = ok ? `도장 기준 ${STUDY_MIN_CHARS}자를 넘었어요` : `${STUDY_MIN_CHARS}자를 넘기면 도장이 찍혀요 (지금 ${n}자)`;
+    el.textContent = ok
+        ? `도장 기준 ${STUDY_MIN_CHARS}자를 넘었어요`
+        : `${STUDY_MIN_CHARS}자를 넘기면 도장이 찍혀요 (지금 ${n}자${excluded ? ', ㅋㅋ·반복 제외' : ''})`;
     el.hidden = false;
 }
 document.getElementById('text').addEventListener('input', updateStudyCharHint);
@@ -4118,6 +4598,16 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     const text = document.getElementById('text').value.trim();
     if (!text)        return alert("내용을 입력해주세요.");
     if (!currentUser) return alert("로그인이 필요합니다.");
+
+    // ── [무성의한 글 경고] ㅋㅋ·ㅎㅎ 채우기, 같은 문장 반복, 같은 글자 연속이면 저장 전에 확인 ──
+    const effort = assessEffort(text);
+    if (effort.flags.length) {
+        effortWarnCount += 1;
+        if (!(await confirmLowEffort(effort, writeTargetDateKey()))) {
+            document.getElementById('text').focus();
+            return;
+        }
+    }
 
     // ── 하루 1편 제한 최종 확인 (중복 저장 방지) ──
     // 최신 데이터 기준으로 다시 한번 확인한 뒤 저장을 진행한다.
@@ -4316,7 +4806,20 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
             date: logDate,
             isBackdate: isBackdate,
             // ── [도장판] 저장 시점(그 날짜의 인정 기한 안)에 100자 이상이면 인정. 한 번 인정되면 유지 ──
-            studyCounted: countStudyChars(text) >= STUDY_MIN_CHARS,
+            //    (ㅋㅋ·ㅎㅎ, 같은 글자 4번째부터, 반복된 문장은 빼고 셈)
+            studyCounted: effort.effectiveChars >= STUDY_MIN_CHARS,
+            // ── [무성의한 글 검사] 분석에서 제외할 일기를 고르기 위한 기록 ──
+            quality: {
+                flags: effort.flags,                 // 'jamo' | 'repeat' | 'run' — 비어 있으면 통과
+                savedAfterWarning: effort.flags.length > 0,   // 경고를 보고도 '그래도 저장'을 눌렀는지
+                warnCount: effortWarnCount,          // 이번 글쓰기에서 경고를 본 횟수 (고쳐 쓴 뒤 통과했으면 1 이상, flags는 빈 배열)
+                effectiveChars: effort.effectiveChars,
+                rawChars: effort.rawChars,
+                jamoShare: effort.jamoShare,
+                uniq4: effort.uniq4,
+                dupShare: effort.dupShare,
+                checkVersion: effort.checkVersion,
+            },
             // ── [실험 조건 기록] 분석 시 그룹·AI 노출 여부를 일기 단위로 확인하기 위함 ──
             experiment: {
                 group: userGroup,                          // 'A' | 'B' | 'C' | 'ALL'
@@ -4352,6 +4855,7 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
             }
         });
         document.getElementById('text').value = "";
+        effortWarnCount = 0;
         autoTags = new Set(); manualTags = new Set(); renderTagList();
         const _sumEl = document.getElementById('dailySummaryInput');
         const _sumTxt = _sumEl ? _sumEl.value.trim() : '';
@@ -4561,20 +5065,36 @@ document.getElementById('detailSaveEditBtn').addEventListener('click', async () 
     if (!newText) { alert('내용을 입력해주세요.'); return; }
     if (!currentDetailLog) return;
 
+    // [무성의한 글 경고] 글쓰기 화면과 같은 기준
+    const editLogDate = currentDetailLog.date instanceof Date ? currentDetailLog.date : new Date(currentDetailLog.date);
+    const editEffort = assessEffort(newText);
+    // 도장 안내는 아직 도장이 없고 인정 기한 안인 일기에만 (이미 찍힌 도장은 고쳐도 지워지지 않음)
+    const editKey = localDateKey(editLogDate);
+    const stampKey = (!currentDetailLog.studyCounted && new Date() < dayDeadline(editKey)) ? editKey : null;
+    if (editEffort.flags.length && !(await confirmLowEffort(editEffort, stampKey))) {
+        document.getElementById('detailEditArea').focus();
+        return;
+    }
+
     const saveBtn = document.getElementById('detailSaveEditBtn');
     saveBtn.disabled = true; saveBtn.textContent = '저장 중...';
 
     try {
         const now = new Date();
-        const editPatch = { text: newText, updatedAt: serverTimestamp() };
+        const editPatch = {
+            text: newText, updatedAt: serverTimestamp(),
+            // 고친 글의 검사 결과 (처음 저장 때의 quality 는 그대로 둠)
+            editQuality: { flags: editEffort.flags, savedAfterWarning: editEffort.flags.length > 0,
+                           effectiveChars: editEffort.effectiveChars, rawChars: editEffort.rawChars,
+                           checkVersion: editEffort.checkVersion },
+        };
         // [실험 분석] 처음 고칠 때 원문을 originalText로 한 번만 남김. B그룹이 첨삭을 본 뒤 어제 일기를 고쳐도 원문으로 분석 가능
         if (currentDetailLog.originalText == null && newText !== currentDetailLog.text) {
             editPatch.originalText = currentDetailLog.text;
         }
         if (currentDetailLog.aiCorrection) editPatch.editedAfterCorrection = true;   // 첨삭이 붙은 뒤에 고친 일기
         // [도장판] 그 날짜의 인정 기한(다음 날 23:59) 안에 이어 써서 100자를 넘기면 인정. 기한 뒤에 늘린 건 인정 안 함
-        const logDate = currentDetailLog.date instanceof Date ? currentDetailLog.date : new Date(currentDetailLog.date);
-        if (now < dayDeadline(localDateKey(logDate)) && countStudyChars(newText) >= STUDY_MIN_CHARS) {
+        if (now < dayDeadline(localDateKey(editLogDate)) && editEffort.effectiveChars >= STUDY_MIN_CHARS) {
             editPatch.studyCounted = true;
         }
         await updateDoc(doc(db, "logs", currentDetailLog.id), editPatch);
@@ -5321,31 +5841,6 @@ function renderCalendar() {
     initMultiTagSearch();
 }
 
-// ── 알림 설정 상태 요약 표시 ──────────────────
-function renderNotifDesc() {
-    const desc = document.getElementById('notifSettingDesc');
-    if (!desc) return;
-    try {
-        const raw = localStorage.getItem('qlog_notification_settings');
-        if (!raw) { desc.textContent = '알림 꺼짐'; return; }
-        const s = JSON.parse(raw);
-        if (!s.enabled || !s.days || s.days.length === 0) { desc.textContent = '알림 꺼짐'; return; }
-        const dayNames = ['일','월','화','수','목','금','토'];
-        const daysStr  = [...s.days].sort((a,b)=>a-b).map(d=>dayNames[d]).join(', ');
-        const h = s.hour ?? 21;
-        const m = s.minute ?? 0;
-        const ampm = h < 12 ? '오전' : '오후';
-        const h12  = h % 12 === 0 ? 12 : h % 12;
-        desc.textContent = `${daysStr} · ${ampm} ${h12}:${String(m).padStart(2,'0')}`;
-    } catch { desc.textContent = '알림 꺼짐'; }
-}
-// 프로필 탭 진입 시마다 새로고침
-const _origGo = window.go;
-window.go = function(id) {
-    _origGo(id);
-    if (id === 'profile') renderNotifDesc();
-};
-renderNotifDesc();
 
 // ── 다중 태그 검색
 
@@ -6109,6 +6604,20 @@ function showDayLogs(year, month, day) {
         <div class="teacher-actions">
             <button type="button" class="teacher-hide-btn" id="teacherHideTodayBtn">오늘 하루 보지 않기</button>
             <button type="button" class="teacher-close-btn" id="teacherCloseBtn">닫기</button>
+        </div>
+    </div>
+</div>
+
+<!-- ★ 무성의한 글 경고 (저장 직전) -->
+<div class="effort-modal" id="effortModal" aria-hidden="true">
+    <div class="effort-dialog" role="alertdialog" aria-modal="true" aria-labelledby="effortTitle" aria-describedby="effortReasons">
+        <div class="effort-icon" aria-hidden="true">!</div>
+        <h3 class="effort-title" id="effortTitle">무성의한 글은 대상에서 제외될 수 있어요!</h3>
+        <ul class="effort-reasons" id="effortReasons"></ul>
+        <p class="effort-stamp" id="effortStampNote" hidden></p>
+        <div class="effort-actions">
+            <button type="button" class="effort-rewrite" id="effortRewriteBtn">다시 쓰기</button>
+            <button type="button" class="effort-anyway" id="effortAnywayBtn">그래도 저장</button>
         </div>
     </div>
 </div>
