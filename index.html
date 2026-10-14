@@ -2731,6 +2731,7 @@ window.go = function(id, view) {
         // ── [안전장치] 질문/감정 테마가 비어 있으면 채워줌 ──
         // (감정 선택 없이 진입했거나, 렌더 타이밍 문제로 비어 있는 경우 대비)
         ensureWriteQuestion();
+        applyTopicQuestion();   // ★ 첫날·마지막 날이면 질문 칸에 정해진 주제를 보여줌
         // ── 하루 1편 제한 확인 ──
         updateWriteAvailability();
     }
@@ -3046,7 +3047,7 @@ document.getElementById('dateBtnToday').addEventListener('click', () => {
     document.getElementById('dateBtnYesterday').classList.remove('active');
     updateWriteDateLabel();
     updateWriteAvailability();
-    applyGroupUI(); updateAiHelpBtn(); updateStudyCharHint();   // AI 차단일·도장 기준은 일기 날짜 기준
+    applyGroupUI(); updateAiHelpBtn(); updateStudyCharHint(); applyTopicQuestion();   // AI 차단일·도장 기준·주제는 일기 날짜 기준
 });
 document.getElementById('dateBtnYesterday').addEventListener('click', () => {
     selectedWriteDate = 'yesterday';
@@ -3054,7 +3055,7 @@ document.getElementById('dateBtnYesterday').addEventListener('click', () => {
     document.getElementById('dateBtnToday').classList.remove('active');
     updateWriteDateLabel();
     updateWriteAvailability();
-    applyGroupUI(); updateAiHelpBtn(); updateStudyCharHint();
+    applyGroupUI(); updateAiHelpBtn(); updateStudyCharHint(); applyTopicQuestion();
 });
 
 window.selectMood = function(m) {
@@ -3179,6 +3180,7 @@ async function callGemini({ model, prompt, thinkingLevel = 'MINIMAL', maxOutputT
         if (res.status === 403 && /refer/i.test(msg))                         e.kind = 'referrer';
         else if (res.status === 400 && /API_KEY_INVALID|API key not valid/i.test(msg)) e.kind = 'key';
         else if (res.status === 403)                                           e.kind = 'key';
+        else if (res.status === 402)                                           e.kind = 'billing';   // 선불 잔액 소진 → AI Studio에서 충전
         else if (res.status === 404)                                           e.kind = 'model';
         else if (res.status === 429)                                           e.kind = 'quota';
         else                                                                   e.kind = 'unknown';
@@ -3211,6 +3213,7 @@ function geminiErrorMessage(err) {
         case 'key':      return 'AI 키가 올바르지 않거나 권한이 없어요.';
         case 'model':    return 'AI 모델을 찾을 수 없어요. (모델 종료 여부 확인)';
         case 'quota':    return '지금은 AI 사용량이 많아요. 잠시 후 다시 시도해 주세요.';
+        case 'billing':  return '지금은 AI를 쓸 수 없어요. 잠시 후 다시 시도해 주세요.';   // 402: 선불 잔액 소진 (콘솔에 billing 으로 찍힘)
         case 'network':  return '인터넷 연결을 확인해 주세요.';
         default:         return '잠시 후 다시 시도해주세요.';
     }
@@ -3220,7 +3223,8 @@ function geminiErrorMessage(err) {
 // [실험 그룹]
 // Firestore 의 users/{uid} 문서를 연구자가 콘솔에서 직접 만들어 지정함.
 //   group      : 'ALL' | 'C'   ← 이번 실험(10/14–10/27)은 이 두 그룹만 씀
-//   aiOffDates : ['2026-10-14', '2026-10-27']   ← 이 날짜의 일기에는 그룹과 상관없이 AI 전부 꺼짐 (첫날·마지막 날 측정용)
+//   aiOffDates : ['2026-10-14', '2026-10-27', '2026-10-28']   ← 배열(array) 유형, 항목은 문자열. 연도부터 적을 것
+//                이 날짜에는 그룹과 상관없이 AI 꺼짐 (첫날·마지막 날 측정용. 10-28은 마지막 날 일기가 교정 팝업으로 바뀌지 않게)
 //   studyStart : '2026-10-14'   ← 있으면 메인에 14일 도장판(보상 게이지)을 보여줌 (참여자·테스트 계정)
 //   postSurveyDone : true       ← 연구자가 사후 설문 응답을 확인한 뒤 체크 (보상 필수 조건)
 // ALL = AI 질문 + AI 교정 선생님 (실험군, 하루 한도 적용) / C = AI 없음(통제군)
@@ -3254,6 +3258,12 @@ function localDateKey(d = new Date()) {
 function isAiOffDate(key) {
     return userAiOffDates.includes(key);
 }
+// 콘솔에서 넣은 날짜 값을 'YYYY-MM-DD' 로 맞춤 → '2026-10-9', '2026.10.09', timestamp 유형도 읽힘. 연도가 없으면('10-13') 못 읽음
+function toDateKey(v) {
+    if (v && typeof v.toDate === 'function') return localDateKey(v.toDate());
+    const m = String(v ?? '').trim().match(/^(\d{4})\D+(\d{1,2})\D+(\d{1,2})$/);
+    return m ? `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}` : null;
+}
 function isAiOffToday() {
     return isAiOffDate(localDateKey());
 }
@@ -3282,9 +3292,19 @@ async function loadUserGroup(user) {
             const d = snap.data();
             const g = String(d.group || '').trim().toUpperCase();
             if (GROUP_FEATURES[g]) userGroup = g;
-            if (Array.isArray(d.aiOffDates)) userAiOffDates = d.aiOffDates.map(v => String(v).trim());
-            const start = String(d.studyStart || '').trim();
-            if (/^\d{4}-\d{2}-\d{2}$/.test(start)) userStudyStart = start;
+            else if (g) console.warn(`[실험 그룹] group 값 '${d.group}'을 알 수 없어 C로 처리합니다. (ALL·C·TEAM·A·B 중 하나)`);
+            // aiOffDates 는 배열이 정석이지만, 문자열 하나('2026-10-13' 또는 쉼표로 여러 개)나 timestamp 로 넣어도 읽음
+            const rawOff = d.aiOffDates;
+            const offList = Array.isArray(rawOff) ? rawOff
+                          : (rawOff && typeof rawOff.toDate === 'function') ? [rawOff]
+                          : (typeof rawOff === 'string') ? rawOff.replace(/[\[\]"'“”‘’]/g, ' ').split(/[,\s]+/).filter(Boolean) : [];
+            userAiOffDates = offList.map(toDateKey).filter(Boolean);
+            if (offList.length !== userAiOffDates.length) {
+                console.warn('[실험 그룹] aiOffDates 중 읽지 못한 값이 있습니다. 2026-10-14 처럼 연도부터 적으세요:', rawOff);
+            }
+            const start = toDateKey(d.studyStart);
+            if (start) userStudyStart = start;
+            else if (d.studyStart) console.warn('[실험 그룹] studyStart 를 읽지 못했습니다. 2026-10-14 처럼 적으세요:', d.studyStart);
             userPostSurveyDone = d.postSurveyDone === true;
         }
     } catch (err) {
@@ -3295,9 +3315,12 @@ async function loadUserGroup(user) {
         const q = (new URLSearchParams(location.search).get('group') || '').toUpperCase();
         if (GROUP_FEATURES[q]) userGroup = q;
     }
-    console.info(`[실험 그룹] ${userGroup}${isAiOffToday() ? ' (오늘은 AI 끔)' : ''}${userStudyStart ? ` · 도장판 시작 ${userStudyStart}` : ''}`);
+    console.info(`[실험 그룹] ${userGroup}${isAiOffToday() ? ' (오늘은 AI 끔)' : ''}${userStudyStart ? ` · 도장판 시작 ${userStudyStart}` : ''}` +
+                 ` · AI 끄는 날 ${userAiOffDates.length ? userAiOffDates.join(', ') : '없음'}`);
     applyGroupUI();
     renderStudyGauge();
+    applyTopicQuestion();
+    updateStudyCharHint();
 }
 function resetUserGroup() {
     userGroup = DEFAULT_GROUP;
@@ -3371,9 +3394,10 @@ async function recordAiUse(kind) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// [A그룹] AI 질문 (작성 중 도움받기) — 1학기 기능 + question-v2부터 어휘 밀도를 올리는 질문
+// [A그룹·ALL] AI 질문 (작성 중 도움받기) — 1학기 기능 + question-v2부터 어휘 밀도를 올리는 질문, question-v3(10/13)부터 막힌 곳을 짚는 질문
 // ───────────────────────────────────────────────────────────────────
-const QUESTION_PROMPT_VERSION = 'question-v2';   // ★ 질문 프롬프트를 고칠 때마다 question-v3, v4… 로 올릴 것 (일기마다 함께 저장됨)
+// ★ 지금 버전: question-v3. 10/14 시험에서 문제가 나오면 'question-v2'로 바꾸기만 하면 옛 프롬프트로 돌아감 (실험 시작 후에는 절대 바꾸지 말 것)
+const QUESTION_PROMPT_VERSION = 'question-v3';   // 일기마다 함께 저장됨
 let aiQuestionLog = [];         // 이번 일기에서 받은 질문 기록 → 저장 시 함께 기록(분석 변수)
 let effortWarnCount = 0;        // 이번 글쓰기에서 '무성의한 글' 경고를 본 횟수 → 저장 시 quality.warnCount
 let idleTimer     = null;
@@ -3430,11 +3454,75 @@ function showAiResponse(label, message, style = '') {
 }
 
 // ★ AI 질문 프롬프트 (question-v2, 10/8 중간발표 피드백 반영)
-// 목표: 답을 쓰면 일기에 '뜻을 가진 낱말'(내용어: NNG·VV·VA·MAG·MM)이 늘어나는 질문 하나.
+// 목표: 답을 쓰면 일기에 '뜻을 가진 낱말'(명사·동사·형용사·부사)이 늘어나는 질문 하나. 측정 규칙은 qlog_assign.py 기준.
 // v1(감정·활동·원인·계획 4전략)은 감정과 이유를 물어 '~해서 ~한 것 같다'처럼 조사·어미가 많은 답을 끌어냈음.
 // v2는 막연한 말(그거·좋았다·놀았다)을 구체적인 대상·장소·동작으로 바꾸게 묻고,
-// 이유·계획·감정·숫자(SN은 분모에만 들어감)·예/아니오 질문은 금지. v1 원문은 git 기록에 있음.
-function buildQuestionPrompt(text, mood) {
+// 이유·계획·감정·숫자(숫자 자체는 측정에서 빠짐)·예/아니오 질문은 금지. v1 원문은 git 기록에 있음.
+function buildQuestionPrompt(text, mood, asked = []) {
+    return QUESTION_PROMPT_VERSION === 'question-v2'
+        ? buildQuestionPromptV2(text, mood)
+        : buildQuestionPromptV3(text, mood, asked);
+}
+
+// ★ AI 질문 프롬프트 (question-v3, 10/13 실험 직전 개선)
+// v2 대비 ① 사용자가 막힌 곳(마지막 두세 문장)을 먼저 짚음 → 답이 글 끝에 이어 붙어 '질문 직후 덧붙인 부분'으로 측정됨
+//        ② 이번 일기에서 이미 한 질문과 같은 대상을 다시 묻지 않음 (도움받기를 여러 번 눌러도 다른 대상을 짚음)
+//        ③ 대상의 이름과 그 모습(생김새·소리·맛·동작)을 함께 떠올리게 함 → 밀도와 함께 어휘 다양도·세련도도 오르는 쪽
+//        출력 형식(질문 한 문장)은 v2와 같음
+function buildQuestionPromptV3(text, mood, asked = []) {
+    const askedList = asked.length ? asked.map(q => `- ${q}`).join('\n') : '(없음)';
+    return `너는 일기 글쓰기 코치다. 사용자가 일기를 쓰다가 막혀서 '도움받기'를 눌렀다.
+목표: 사용자가 이어서 쓸 한두 문장에 뜻을 가진 낱말(대상의 이름, 정확한 동작, 생김새·소리·맛 같은 감각 표현)이 늘어나는 질문 한 문장을 만든다.
+
+[어디를 짚을지]
+- 먼저 일기의 마지막 두세 문장을 본다. 사용자는 지금 그 뒤를 이어 쓰려다 막혔다
+- 그 부분에서 아래 1→4 순서로 처음 보이는 하나를 짚는다. 마지막 부분에 없을 때만 앞부분에서 같은 순서로 찾는다
+1. 막연한 말: '그거', '거기', '뭔가', '그런 거', '이것저것'처럼 가리키는 대상이 흐린 말 → 그것이 정확히 무엇이었는지
+2. 뭉뚱그린 평가: '좋았다', '재밌었다', '힘들었다', '별로였다'처럼 어땠는지만 있는 말 → 무엇이 그랬는지, 그 대상과 모습
+3. 한 줄로 끝낸 사건: '친구랑 놀았다', '공부했다', '밥 먹었다'처럼 장면이 비어 있는 말 → 그 장면의 장소·물건·동작
+4. 셋 다 없으면: 가장 최근 장면에서 아직 쓰지 않은 대상 하나 (보이거나 들린 것, 손에 든 물건, 먹은 것, 다른 사람의 행동)
+
+[질문 규칙]
+- 일기에 실제로 나온 낱말이나 장면을 짚어서 묻는다. 아무 일기에나 붙는 질문은 쓰지 않는다
+- '무엇', '어떤', '어디'로 묻고, 대상의 이름과 그 모습을 함께 떠올리게 한다
+- 예/아니오로 답하는 질문, 이유(왜), 앞으로의 계획·다짐, 기분이나 감정 자체, 숫자(몇 시·몇 개·몇 명·얼마)는 묻지 않는다
+- 감정이 담긴 일기라도 감정을 캐묻지 말고, 그 감정이 생긴 장면 속 대상을 묻는다
+- 아래 [이미 한 질문]과 같은 대상이나 비슷한 질문은 다시 하지 않는다
+- 맞춤법·띄어쓰기·구어체·문장 길이를 지적하지 않는다. 평가나 훈계도 하지 않는다
+- '밀도', '낱말', '품사', '구체적으로', '자세히' 같은 말을 쓰지 않는다
+- 일기에 없는 사실을 지어내지 않는다
+
+[출력]
+- 질문 한 문장만. 번호·설명·따옴표 없이
+- 따뜻한 ~요체, "?"로 끝냄, 15~50자
+- 일기에 자살·자해·죽고 싶다는 표현이 있으면 질문 대신 이것만 출력: "${CRISIS_MESSAGE}"
+
+[좋은 질문 — 그대로 베끼지 말 것]
+- "그거 때문에 하루 종일 신경 쓰였다" → 하루 종일 신경 쓰이게 한 그 일은 무엇이었나요?
+- "점심이 진짜 맛있었다" → 그렇게 맛있었던 점심은 어떤 음식이었고, 어떤 맛이 났나요?
+- "친구랑 놀았다" → 친구와 어디에서 무엇을 하며 놀았나요?
+- "도서관에서 과제를 했다" → 도서관에서 붙잡고 있던 과제는 어떤 내용이었나요?
+
+[나쁜 질문]
+- 그때 기분이 어땠나요? → 감정만 물어서 '좋았다' 한마디로 끝난다
+- 왜 그렇게 느꼈나요? → 이유를 물어서 '~해서 ~한 것 같다'처럼 문법 말만 늘어난다
+- 몇 시에 일어났나요? → 숫자를 묻는다
+- 오늘 하루는 어땠나요? → 이 일기를 읽지 않아도 할 수 있는 질문이다
+- 그 이야기를 좀 더 써 볼까요? → 무엇을 쓸지 알려 주지 않는다
+
+[이미 한 질문]
+${askedList}
+
+오늘 고른 기분: ${mood || '😐'} (어조만 맞추고, 기분은 묻지 않는다)
+
+[일기]
+"""
+${text}
+"""`;
+}
+
+// question-v2 (10/8–10/13 파일럿에서 쓴 버전). QUESTION_PROMPT_VERSION 을 'question-v2'로 바꾸면 이걸 씀
+function buildQuestionPromptV2(text, mood) {
     return `너는 일기 글쓰기 코치다. 사용자가 일기를 쓰다가 막혀서 '도움받기'를 눌렀다.
 목표: 답을 쓰면 일기에 뜻을 가진 낱말(구체적인 명사·동사·형용사·부사)이 늘어나는 질문 한 문장을 만든다.
 
@@ -3510,7 +3598,8 @@ async function callGeminiHelp() {
     document.getElementById('aiHelpLabel').innerHTML = '<span class="ai-loading"></span>';
 
     // ★ 프롬프트는 위 buildQuestionPrompt 에 있음 (고치면 QUESTION_PROMPT_VERSION 을 올릴 것)
-    const prompt = buildQuestionPrompt(text, selectedMood);
+    const asked  = aiQuestionLog.filter(q => q.question && q.question !== '[crisis]').map(q => q.question);
+    const prompt = buildQuestionPrompt(text, selectedMood, asked);
 
     try {
         const raw = await callGemini({ model: QUESTION_MODEL, prompt, thinkingLevel: 'MINIMAL', maxOutputTokens: 1024 });
@@ -3542,8 +3631,9 @@ document.getElementById('aiHelpBtn').addEventListener('click', callGeminiHelp);
 
 // ═══════════════════════════════════════════════════════════════════
 // [B그룹] AI 교정 선생님 — 접속 시 "어제 쓴 일기"를 빨간 펜 첨삭처럼 보여줌
-// · 목표 지표: 어휘 밀도 = 내용어 ÷ 전체 형태소 (원미진 외, 2017 / Kiwi 태그 분류 기준)
-//   내용어: NNG·VV·VA·MAG·MM  /  기능어: NNB·NP·MAJ·VX·VCP·XSN·J*·E*
+// · 목표 지표: 어휘 밀도 = 내용어 ÷ (내용어 + 기능어). 실제 측정 규칙은 분석 스크립트 qlog_assign.py 의 classify()가 기준
+//   (원미진 외 2017 부록 역산 규칙, kiwipiepy 0.24.0: 어미·부호 제외, 보조용언·이다·하다 접사는 내용어).
+//   teacher-v2 프롬프트는 이 규칙과 9월 규칙(보조용언·이다·어미 = 기능어) 모두에서 밀도가 오르는 수정만 고르게 함.
 // · 제안마다 "이번에 이렇게 바꿀게요 / 괜찮아요". 바꾸기를 누르면 일기 본문(text)이 실제로 바뀜(되돌리기 가능).
 //   ★ 처음 쓴 글은 originalText 에 한 번만 저장되고 다시는 덮어쓰지 않음 → 분석은 반드시 originalText ?? text 로 할 것.
 //   반영 여부는 aiApplied(true/false), 제안별 기록은 aiCorrection.responses 에 남음.
@@ -3552,7 +3642,8 @@ document.getElementById('aiHelpBtn').addEventListener('click', callGeminiHelp);
 //   본문이 첨삭받은 글(sourceHash) 또는 제안을 반영한 글(appliedTextHash)과 같으면 재사용, 직접 고치면 새로 첨삭함.
 // · 팝업: "닫기" = 이번 접속에서만 닫힘 / "오늘 하루 보지 않기" = 오늘 자정까지 안 뜸
 // ───────────────────────────────────────────────────────────────────
-const TEACHER_PROMPT_VERSION = 'teacher-v1';   // ★ 첨삭 프롬프트를 고칠 때마다 teacher-v2, v3… 로 올릴 것
+// ★ 지금 버전: teacher-v2. 10/14 시험에서 문제가 나오면 'teacher-v1'로 바꾸기만 하면 옛 프롬프트로 돌아감 (실험 시작 후에는 절대 바꾸지 말 것)
+const TEACHER_PROMPT_VERSION = 'teacher-v2';
 const TEACHER_MIN_CHARS      = 30;   // 이보다 짧은 일기는 첨삭하지 않음 (짧으면 제안 품질이 불안정)
 const TEACHER_MAX_ITEMS      = 3;    // 선생님 빨간 펜은 최대 3군데까지
 const TEACHER_TYPES          = ['구체적인 낱말로', '군더더기 줄이기', '또렷하게 말하기'];
@@ -3586,6 +3677,65 @@ function hashText(s) {
 }
 
 function buildTeacherPrompt(text) {
+    return TEACHER_PROMPT_VERSION === 'teacher-v1' ? buildTeacherPromptV1(text) : buildTeacherPromptV2(text);
+}
+
+// ★ AI 교정 선생님 프롬프트 (teacher-v2, 10/13 실험 직전 개선)
+// v1 대비 ① 흔한 말(하다·되다·있다)과 같은 꾸밈말 반복도 고를 곳에 포함 → 밀도와 함께 다양도·세련도도 오르는 쪽
+//        ② 제안이 원문 자리에 그대로 들어가도록 조사·어미를 맞추고 40자 이내로 ('바꿀게요'로 넣었을 때 문장이 깨지지 않게)
+//        ③ 칭찬은 구체적으로 쓴 부분을, 마무리는 '오늘 일기에서 해 볼 한 가지'로 → 첨삭이 다음 일기로 옮겨 가게 함
+//        ④ 대학생에게 맞는 말투 (v1의 '초등학생도 알아듣는' 표현 삭제)
+//        출력 형식(JSON 이름, type 세 가지)은 v1과 같음 → 화면·저장 코드는 그대로
+function buildTeacherPromptV2(text) {
+    return `너는 빨간 펜을 든 다정한 글쓰기 선생님이다. 대학생이 어제 쓴 일기를 첨삭한다.
+목표: 일기의 말투와 내용은 그대로 두고, 무엇을 했고 무엇을 보았는지가 더 또렷이 보이도록 고칠 곳을 최대 ${TEACHER_MAX_ITEMS}군데 골라 보여준다. 고친 구절에는 뜻을 가진 낱말이 늘고, 문법 역할만 하는 말과 같은 말의 반복은 줄어야 한다.
+
+[품사 기준 — 고를 곳을 판단할 때만 쓰고, 설명에는 쓰지 않는다]
+- 뜻을 가진 낱말(내용어): 일반명사, 고유명사, 동사, 형용사, 일반부사, 관형사(이·그·저 제외)
+- 문법 역할만 하는 말(기능어): 조사, 의존명사(것·거·수·때문·데·줄), 대명사(나·그거·이거·거기), 접속부사(그리고·그래서·근데), 가리키는 말(이·그·저), 접미사(-들·-님)
+- 보조용언(-고 있다·-어 버리다)과 '이다'는 고칠 곳으로 고르지 않는다
+
+[고를 곳 — 효과가 큰 곳부터, 이 세 종류만]
+1. 구체적인 낱말로: '그거', '거기', '그런 거', '뭔가'처럼 막연한 말, 또는 '하다·되다·있다'처럼 무엇을 했는지 안 보이는 흔한 말 → 그 자리에 맞는 정확한 명사·동사로
+2. 군더더기 줄이기: '~하는 것 같다', '~했던 거였다', '~할 수밖에 없었다'처럼 의존명사(것·거·수·때문)가 낀 표현, 같은 접속어(그리고·그래서·근데)의 반복 → 뜻은 그대로 두고 간결하게
+3. 또렷하게 말하기: '좋았다', '재밌었다', '힘들었다'처럼 뭉뚱그린 서술, 또는 '진짜·너무·엄청'처럼 같은 꾸밈말을 여러 번 쓴 곳 → 무엇이 어땠는지 드러나는 정확한 낱말로
+
+[제안 쓰는 법]
+- suggestion은 original 자리에 그대로 넣었을 때 앞뒤 문장과 자연스럽게 이어지도록 조사·어미를 맞춘다
+- 일기에 없는 내용이 필요하면 지어내지 말고 대괄호 빈칸을 남긴다. 예: '[먹은 음식]을 먹었다'. 빈칸은 제안 하나에 두 개까지
+- 일기의 말투(반말·구어체)는 그대로 둔다. 어려운 한자어나 딱딱한 문어체로 바꾸지 않는다
+- suggestion은 40자 이내로 쓰고, 원문에 없던 문장을 통째로 지어 붙이지 않는다
+
+[예시 — 그대로 베끼지 말 것]
+- 구체적인 낱말로: "그거 먹고 나왔다" → "[먹은 음식]을 먹고 나왔다"
+- 군더더기 줄이기: "피곤했던 것 같다" → "피곤했다"
+- 또렷하게 말하기: "진짜 재밌었다" → "[가장 재밌었던 장면]이 재밌었다"
+
+[절대 하지 말 것]
+- 조사나 어미를 빼서 문장을 어색하게 만들기 (예: '나 학교 갔다')
+- 맞춤법·띄어쓰기·구어체(ㅋㅋ, 넘, 완전, ~당) 지적
+- 감정이나 내용에 대한 평가, 훈계
+- 설명에 '밀도', '내용어', '기능어', '품사' 같은 용어 사용
+
+[출력 — JSON 하나만]
+{"crisis": false, "praise": "", "items": [{"original": "", "suggestion": "", "reason": "", "type": ""}], "closing": ""}
+- praise: 일기에서 대상의 이름이나 장면이 잘 보이는 부분을 짚어 칭찬하는 한 문장 (~요)
+- original: 일기 원문에서 띄어쓰기·문장부호까지 글자 하나 바꾸지 않고 그대로 복사한 구절. 2~25자. 서로 겹치지 않게
+- suggestion: original 자리에 바꿔 넣을 문장 조각
+- reason: 바꾸면 무엇이 더 잘 보이는지 쉬운 말로 한 문장 (~요)
+- type: "구체적인 낱말로" | "군더더기 줄이기" | "또렷하게 말하기" 중 하나
+- closing: 위에서 고친 곳과 이어지게, 오늘 일기에서 한 번 해 볼 만한 것 하나를 부담 없는 말투로 권하는 한 문장 (~요)
+- 고칠 곳이 없으면 items는 빈 배열
+- 일기에 자살·자해·죽고 싶다는 표현이 있으면 {"crisis": true, "praise": "", "items": [], "closing": ""} 만 출력
+
+[어제 일기]
+"""
+${text}
+"""`;
+}
+
+// teacher-v1 (10/8–10/13 파일럿에서 쓴 버전). TEACHER_PROMPT_VERSION 을 'teacher-v1'로 바꾸면 이걸 씀
+function buildTeacherPromptV1(text) {
     return `너는 초등학교 담임선생님처럼 학생의 어제 일기를 빨간 펜으로 첨삭한다.
 목표: 글에서 뜻을 가진 낱말이 차지하는 비율(어휘 밀도)을 높일 수 있는 곳을 최대 ${TEACHER_MAX_ITEMS}군데 골라 보여준다.
 
@@ -4187,6 +4337,28 @@ const REWARD_TIERS = [            // ★ 결석 일수별 보상 (모집글·구
     { maxMiss: Infinity, miss: '결석 2일 이상', name: '메가MGC커피 아.아(ICE)' },
 ];
 const WEEKDAY_KO = ['일', '월', '화', '수', '목', '금', '토'];
+// ── [첫날·마지막 날 주제] 두 날은 같은 주제·같은 분량으로 써야 전후 비교에서 주제 효과가 빠짐 ──
+//    글쓰기 화면의 '오늘의 질문' 자리에 아래 주제를 보여주고, 분량 안내를 300자 기준으로 바꿈 (두 그룹 똑같이)
+const STUDY_TOPIC     = '지난주에 있었던 가장 기억나는 하루';   // ★ 참여자 문자와 같은 문구. 실험 중 절대 바꾸지 말 것
+const TOPIC_MIN_CHARS = 300;
+function isTopicDay(key) {
+    if (!userStudyStart) return false;
+    const keys = studyDayKeys();
+    return key === keys[0] || key === keys[keys.length - 1];
+}
+function applyTopicQuestion() {
+    const qEl   = document.getElementById('questionText');
+    const label = document.querySelector('#write .write-question-label');
+    if (!qEl || !label) return;
+    const topicLine = `${STUDY_TOPIC} (${TOPIC_MIN_CHARS}자 이상)`;
+    if (isTopicDay(writeTargetDateKey())) {
+        label.textContent = '오늘의 주제 📝';
+        qEl.innerText = topicLine;
+    } else {
+        label.textContent = '오늘의 질문 ✨';
+        if (qEl.innerText === topicLine) setMoodQuestion(selectedMood || '😐');
+    }
+}
 let logsLoadedUid = null;   // 일기를 다 불러온 계정 — 불러오기 전에는 도장판을 그리지 않음 (지난 날이 잠깐 '결석'으로 보이는 것 방지)
 
 // ── [무성의한 글] 도장 기준 글자 수 + 저장 전 경고 ─────────────────────────
@@ -4385,6 +4557,12 @@ function studyStatusText(p) {
         return l.ok ? '마지막 날까지 다 썼어요. 사후 설문을 마치면 보상이 확정돼요.'
                     : `마지막 날(${l.month}/${l.day}) 일기가 비어 있어요. 오늘 안에 '어제' 버튼으로 쓰면 인정돼요.`;
     }
+    if (isTopicDay(t.key)) {                     // 첫날·마지막 날은 주제와 300자를 먼저 알려 줌
+        const which = t.i === 0 ? '첫날' : '마지막 날';
+        if (!t.log) return `오늘은 ${which}이에요. '${STUDY_TOPIC}'를 주제로 ${TOPIC_MIN_CHARS}자 이상 써 주세요.`;
+        if (t.chars < TOPIC_MIN_CHARS) return `오늘 일기가 ${t.chars}자예요. ${which}은 ${TOPIC_MIN_CHARS}자 이상이라, 상세 화면에서 조금 더 이어 써 주세요.`;
+        return `${which} 일기를 다 썼어요. ${t.i + 1}일째 도장을 찍었어요.`;
+    }
     if (t.ok) return `${t.i + 1}일째 도장을 찍었어요.`;
     if (t.log) return `오늘 일기가 ${t.chars}자예요. 상세 화면에서 ${STUDY_MIN_CHARS - t.chars}자만 더 이어 쓰면 도장이 찍혀요.`;
     return `오늘 일기를 ${STUDY_MIN_CHARS}자 이상 쓰면 ${t.i + 1}일째 도장이 찍혀요.`;
@@ -4469,10 +4647,20 @@ function renderStudyGauge() {
 function updateStudyCharHint() {
     const el = document.getElementById('studyCharHint');
     if (!el) return;
-    if (!currentUser || !studyActiveFor(writeTargetDateKey())) { el.hidden = true; return; }
+    const key = writeTargetDateKey();
+    if (!currentUser || !studyActiveFor(key)) { el.hidden = true; return; }
     const value = document.getElementById('text')?.value;
     const n = countStudyChars(value);
     const excluded = rawStudyChars(value) > n;   // ㅋㅋ·반복처럼 빼고 센 글자가 있음
+    if (isTopicDay(key)) {                       // 첫날·마지막 날: 도장(100자)이 아니라 과제 분량(300자) 기준으로 안내
+        const okTopic = n >= TOPIC_MIN_CHARS;
+        el.classList.toggle('is-ok', okTopic);
+        el.textContent = okTopic
+            ? `오늘 분량 ${TOPIC_MIN_CHARS}자를 넘었어요`
+            : `오늘은 ${TOPIC_MIN_CHARS}자 이상 써 주세요 (지금 ${n}자${excluded ? ', ㅋㅋ·반복 제외' : ''})`;
+        el.hidden = false;
+        return;
+    }
     const ok = n >= STUDY_MIN_CHARS;
     el.classList.toggle('is-ok', ok);
     el.textContent = ok
