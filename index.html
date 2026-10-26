@@ -2129,6 +2129,7 @@ body.dark-mode .teacher-close-btn { background: #444; }
     background: var(--ink); color: var(--paper); font-size: 14px; font-weight: 800;
 }
 .study-survey:focus-visible { outline: 2px solid var(--crema); outline-offset: 2px; }
+.study-status + .study-survey { margin: -4px 0 18px; }   /* 상태 문구 바로 아래 (도장판을 보자마자 눈에 띄게) */
 .study-foot { margin: 12px 2px 0; font-size: 11.5px; line-height: 1.5; color: var(--sub); }
 
 /* 글쓰기 화면: 도장 기준 안내 */
@@ -4349,7 +4350,10 @@ document.addEventListener('keydown', e => {
 // ───────────────────────────────────────────────────────────────────
 const STUDY_DAYS      = 14;
 const STUDY_MIN_CHARS = 100;      // ★ 하루 인정 최소 글자 수
-const POST_SURVEY_URL = '';       // ★ 사후 설문 링크. 넣으면 마지막 날부터 도장판에 '사후 설문 하기' 버튼이 생김
+// ★ 사후 설문 링크. create_post_survey.gs 실행 로그의 '① 앱에 넣을 링크'({email}·{group}이 든 링크)를 그대로 넣으면
+//   로그인 이메일과 참여 코드가 설문에 미리 채워짐. 버튼은 마지막 날 일기를 다 쓴 뒤에만 보임 (lastDayComplete)
+const POST_SURVEY_URL = '';
+const POST_SURVEY_DUE = '2026-10-28';   // ★ 사후 설문 마감일 (이날 23:59까지). 폼 설명·문자와 같게
 const REWARD_TIERS = [            // ★ 결석 일수별 보상 (모집글·구글 폼 문구와 반드시 같게)
     { maxMiss: 0,        miss: '결석 0일',      name: '네이버페이 포인트 1만 원권', extra: '신세계 상품권 2만 원 추첨(2명)에도 들어가요' },
     { maxMiss: 1,        miss: '결석 1일',      name: '메가MGC커피 더블 아아 세트' },
@@ -4358,7 +4362,9 @@ const REWARD_TIERS = [            // ★ 결석 일수별 보상 (모집글·구
 const WEEKDAY_KO = ['일', '월', '화', '수', '목', '금', '토'];
 // ── [첫날·마지막 날 주제] 두 날은 같은 주제·같은 분량으로 써야 전후 비교에서 주제 효과가 빠짐 ──
 //    글쓰기 화면의 '오늘의 질문' 자리에 아래 주제를 보여주고, 분량 안내를 300자 기준으로 바꿈 (두 그룹 똑같이)
-const STUDY_TOPIC     = '9월에 있었던 가장 기억나는 하루';   // ★ 참여자 문자와 같은 문구. 실험 중 절대 바꾸지 말 것
+// ★ 10/15 변경: 첫날(10/14)은 '지난주에 있었던 가장 기억나는 하루'로 썼고, 마지막 날(10/27)은 아래 문구로 씀.
+//   '지난주'가 실험 중 이미 일기로 쓴(ALL은 교정까지 받은) 날과 겹치지 않게 하려고 기간만 9월로 바꿈. 문자와 같은 문구 유지
+const STUDY_TOPIC     = '9월 중 기억나는 하루';
 const TOPIC_MIN_CHARS = 300;
 function isTopicDay(key) {
     if (!userStudyStart) return false;
@@ -4545,6 +4551,32 @@ function computeStudyProgress() {
         tierIndex: REWARD_TIERS.findIndex(t => missed <= t.maxMiss),
     };
 }
+// 사후 설문 버튼은 마지막 날 일기를 '다 쓴' 뒤에만 보여 줌 → 설문 문항이 마지막 날 글에 영향을 주지 않게
+//   다 씀 = 도장이 찍혔고(100자) 주제 분량 300자도 넘김. 300자를 못 채웠으면 마지막 날 다음 날(설문 마감일)부터 보여 줌
+function lastDayComplete(p) {
+    return p.last.ok && (p.last.chars >= TOPIC_MIN_CHARS || localDateKey() > p.last.key);
+}
+// 상태 문구: '아래 사후 설문을 10/28(수)까지 마치면…' (마감일 당일이면 '오늘 안에')
+function surveyCallText() {
+    let due = '';
+    if (POST_SURVEY_DUE === localDateKey()) due = '오늘 안에 ';
+    else if (POST_SURVEY_DUE) {
+        const d = keyToDate(POST_SURVEY_DUE);
+        due = `${d.getMonth() + 1}/${d.getDate()}(${WEEKDAY_KO[d.getDay()]})까지 `;
+    }
+    return `아래 사후 설문을 ${due}마치면 보상이 확정돼요.`;
+}
+// 링크 안의 {email}·{group}을 로그인 이메일과 참여 코드로 바꿔 미리 채움
+//   이메일: 오타로 보상 명단과 어긋나는 것 방지
+//   참여 코드: AI 기능이 있던 그룹(ALL 등) = '가', 없던 그룹(C) = '나' → 공통 문항 뒤에 그룹에 맞는 문항으로 넘어감
+function postSurveyHref() {
+    const email = (currentUser && currentUser.email) || '';
+    const f = GROUP_FEATURES[userGroup] || {};
+    const code = (f.question || f.teacher) ? '가' : '나';
+    return POST_SURVEY_URL
+        .replace('{email}', encodeURIComponent(email))
+        .replace('{group}', encodeURIComponent(code));
+}
 
 const STAMP_BEAN_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="12" rx="6.2" ry="8.6" transform="rotate(32 12 12)" fill="currentColor"/><path d="M15.6 5.6c-2.3 1.5-1.4 4.2-3.3 6.3s-4.2 2.1-4.6 4.6" fill="none" stroke="var(--ink)" stroke-width="1.5" stroke-linecap="round"/></svg>';
 
@@ -4568,18 +4600,22 @@ function studyStatusText(p) {
     }
     if (p.finished) {
         if (!l.ok) return '마지막 날 일기가 빠져 이번 보상은 받을 수 없어요. 함께해 주셔서 고마워요.';
-        if (!userPostSurveyDone) return '마지막 날까지 다 썼어요. 사후 설문을 마치면 보상이 확정돼요.';
+        if (!userPostSurveyDone) return '마지막 날까지 다 썼어요. 사후 설문을 냈다면 연구자가 확인한 뒤 체크돼요.';
         return '14일을 마쳤어요. 아래 표시된 보상을 실험이 끝난 뒤 보내 드려요.';
     }
     const t = p.todayDay;
-    if (!t) {   // 마지막 날 다음 날 (어제 버튼으로 마지막 날을 채울 수 있는 날)
-        return l.ok ? '마지막 날까지 다 썼어요. 사후 설문을 마치면 보상이 확정돼요.'
-                    : `마지막 날(${l.month}/${l.day}) 일기가 비어 있어요. 오늘 안에 '어제' 버튼으로 쓰면 인정돼요.`;
+    if (!t) {   // 마지막 날 다음 날 (어제 버튼으로 마지막 날을 채울 수 있는 날 = 설문 마감일)
+        if (!l.ok) return `마지막 날(${l.month}/${l.day}) 일기가 비어 있어요. 오늘 안에 '어제' 버튼으로 쓰면 인정돼요.`;
+        if (userPostSurveyDone) return '마지막 날 일기와 사후 설문을 모두 마쳤어요. 보상은 실험이 끝난 뒤 보내 드려요.';
+        return `마지막 날까지 다 썼어요. ${POST_SURVEY_URL ? surveyCallText() : '사후 설문을 마치면 보상이 확정돼요.'}`;
     }
     if (isTopicDay(t.key)) {                     // 첫날·마지막 날은 주제와 300자를 먼저 알려 줌
         const which = t.i === 0 ? '첫날' : '마지막 날';
+        const isLast = t === l;
         if (!t.log) return `오늘은 ${which}이에요. '${STUDY_TOPIC}'를 주제로 ${TOPIC_MIN_CHARS}자 이상 써 주세요.`;
-        if (t.chars < TOPIC_MIN_CHARS) return `오늘 일기가 ${t.chars}자예요. ${which}은 ${TOPIC_MIN_CHARS}자 이상이라, 상세 화면에서 조금 더 이어 써 주세요.`;
+        if (t.chars < TOPIC_MIN_CHARS) return `오늘 일기가 ${t.chars}자예요. ${which}은 ${TOPIC_MIN_CHARS}자 이상이라, 상세 화면에서 조금 더 이어 써 주세요.` +
+                                              (isLast && POST_SURVEY_URL ? ` ${TOPIC_MIN_CHARS}자를 넘기면 사후 설문 버튼이 나와요.` : '');
+        if (isLast && POST_SURVEY_URL && !userPostSurveyDone) return `마지막 날 일기를 다 썼어요. ${surveyCallText()}`;
         return `${which} 일기를 다 썼어요. ${t.i + 1}일째 도장을 찍었어요.`;
     }
     if (t.ok) return `${t.i + 1}일째 도장을 찍었어요.`;
@@ -4632,8 +4668,7 @@ function renderStudyGauge() {
                 </li>`;
     }).join('');
 
-    const today = localDateKey();
-    const showSurvey = POST_SURVEY_URL && today >= p.last.key && !userPostSurveyDone;
+    const showSurvey = !!POST_SURVEY_URL && lastDayComplete(p) && !userPostSurveyDone;
     const note = studyTierNote(p);
 
     box.innerHTML = `
@@ -4643,6 +4678,7 @@ function renderStudyGauge() {
                 <div class="study-count"><b>${p.done}</b>/${STUDY_DAYS}</div>
             </div>
             <p class="study-status">${escapeHtml(studyStatusText(p))}</p>
+            ${showSurvey ? `<a class="study-survey" href="${escapeHtml(postSurveyHref())}" target="_blank" rel="noopener">사후 설문 하기 (3분)</a>` : ''}
             <div class="study-stamps" role="list" aria-label="날짜별 도장">
                 ${p.days.map(d => stampHtml(d, d === p.last, d.i === isNewIdx)).join('')}
             </div>
@@ -4656,7 +4692,6 @@ function renderStudyGauge() {
                 <span class="study-check${p.last.ok ? ' is-on' : ''}">마지막 날(${p.last.month}/${p.last.day}) 일기</span>
                 <span class="study-check${userPostSurveyDone ? ' is-on' : ''}">사후 설문</span>
             </div>
-            ${showSurvey ? `<a class="study-survey" href="${escapeHtml(POST_SURVEY_URL)}" target="_blank" rel="noopener">사후 설문 하기</a>` : ''}
             <p class="study-foot">보상은 실험이 끝난 뒤 모바일 쿠폰으로 보내 드려요.</p>
         </div>`;
     box.hidden = false;
