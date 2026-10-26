@@ -4352,7 +4352,7 @@ const STUDY_DAYS      = 14;
 const STUDY_MIN_CHARS = 100;      // ★ 하루 인정 최소 글자 수
 // ★ 사후 설문 링크. create_post_survey.gs 실행 로그의 '① 앱에 넣을 링크'({email}·{group}이 든 링크)를 그대로 넣으면
 //   로그인 이메일과 참여 코드가 설문에 미리 채워짐. 버튼은 마지막 날 일기를 다 쓴 뒤에만 보임 (lastDayComplete)
-const POST_SURVEY_URL = '';
+const POST_SURVEY_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSf6WZVDutwsg6EI0QV6gmLvxXQ0gAuzSqx5HDe_MCsDwu32nQ/viewform?usp=pp_url&entry.1175293808={email}&entry.516601585={group}';
 const POST_SURVEY_DUE = '2026-10-28';   // ★ 사후 설문 마감일 (이날 23:59까지). 폼 설명·문자와 같게
 const REWARD_TIERS = [            // ★ 결석 일수별 보상 (모집글·구글 폼 문구와 반드시 같게)
     { maxMiss: 0,        miss: '결석 0일',      name: '네이버페이 포인트 1만 원권', extra: '신세계 상품권 2만 원 추첨(2명)에도 들어가요' },
