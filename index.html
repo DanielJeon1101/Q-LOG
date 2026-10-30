@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -74,22 +74,7 @@ body.dark-mode .home-header-spacer { background: var(--dm-app-bg); }
     background: #f8f8f8;
 }
 
-/* 스크롤 힌트 */
-.swipe-hint {
-    position: fixed;
-    bottom: 96px; left: 50%;
-    transform: translateX(-50%);
-    display: flex; flex-direction: column; align-items: center; gap: 4px;
-    pointer-events: none; z-index: 86;
-    animation: hintBounce 2.2s ease-in-out infinite;
-}
-.swipe-hint.hidden { display: none; }
-.swipe-hint-text  { font-size: 13px; color: rgba(140,149,161,0.85); font-weight: 500; }
-.swipe-hint-arrow { font-size: 18px; color: rgba(140,149,161,0.6); line-height: 1; }
-@keyframes hintBounce {
-    0%,100% { transform: translateX(-50%) translateY(0); opacity:.7; }
-    50%      { transform: translateX(-50%) translateY(-8px); opacity:1; }
-}
+/* 스크롤 안내(.swipe-hint)·피드백 버튼 스타일은 맨 아래 '11/2 사후 공개' 블록에 있음 */
 
 /* ── 감정 필터 바 ── */
 /* 헤더와 리스트 사이 영역: 항상 보이는 점 + 열리면 이모지 행 */
@@ -2219,6 +2204,124 @@ body.dark-mode .effort-reasons li { color: #b0b8c1; }
 body.dark-mode .effort-icon,
 body.dark-mode .effort-stamp { background: #3a2a12; color: #f5c27a; }
 body.dark-mode .effort-rewrite { background: #e8eaed; color: #191f28; }
+
+/* ═══════════════════════════════════════════════
+   11/2 사후 공개 — 홈 첫 화면 안내 · 피드백
+═══════════════════════════════════════════════ */
+/* 아래로 내려 일기 보기: 홈 맨 위에서만 보이고, 내리기 시작하면 흐려지며 사라짐 (+ 버튼 위) */
+.swipe-hint {
+    position: fixed; left: 50%; bottom: calc(112px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    z-index: 86;
+    display: flex; flex-direction: column; align-items: center; gap: 1px;
+    margin: 0; padding: 9px 18px 6px; border: 0; border-radius: 999px;
+    background: rgba(255,255,255,0.8);
+    -webkit-backdrop-filter: saturate(180%) blur(14px); backdrop-filter: saturate(180%) blur(14px);
+    box-shadow: 0 0 0 1px rgba(25,31,40,0.05), 0 8px 24px rgba(25,31,40,0.08);
+    color: #4e5968; font-family: inherit; cursor: pointer;
+    -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+    transition: opacity 0.15s linear, visibility 0s;
+}
+.swipe-hint.is-off { visibility: hidden; pointer-events: none; transition: opacity 0.15s linear, visibility 0s linear 0.15s; }
+.swipe-hint:active { transform: translateX(-50%) scale(0.97); }
+.swipe-hint:focus-visible { outline: 2px solid #4f46e5; outline-offset: 3px; }
+.swipe-hint-text {
+    font-size: 13px; font-weight: 700; letter-spacing: -0.2px; line-height: 1.3; white-space: nowrap;
+    background: linear-gradient(100deg, #8b95a1 0%, #8b95a1 38%, #191f28 50%, #8b95a1 62%, #8b95a1 100%);
+    background-size: 260% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: swipeShine 2.8s ease-in-out infinite;
+}
+.swipe-hint-chev {
+    width: 20px; height: 20px; fill: none; stroke: #8b95a1;
+    stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round;
+    animation: swipeNudge 1.4s ease-in-out infinite;
+}
+@keyframes swipeShine { 0% { background-position: 100% 0; } 100% { background-position: 0% 0; } }
+@keyframes swipeNudge {
+    0%, 100% { transform: translateY(-2px); opacity: 0.45; }
+    50%      { transform: translateY(3px);  opacity: 1; }
+}
+body.dark-mode .swipe-hint { background: rgba(42,42,42,0.8); box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 8px 24px rgba(0,0,0,0.35); }
+body.dark-mode .swipe-hint-text { background-image: linear-gradient(100deg, #8b95a1 0%, #8b95a1 38%, #f2f4f6 50%, #8b95a1 62%, #8b95a1 100%); }
+body.dark-mode .swipe-hint-chev { stroke: #9aa0a6; }
+
+/* 피드백 버튼: 홈 머리(시계) 오른쪽 위. 내려서 머리가 줄어들어도 그 자리에 있음 */
+.home-feedback-btn {
+    position: absolute; top: calc(14px + env(safe-area-inset-top, 0px)); right: 14px;
+    display: inline-flex; align-items: center; gap: 5px;
+    margin: 0; padding: 7px 12px 7px 10px; border: 0; border-radius: 999px;
+    background: rgba(79,70,229,0.09); color: #4f46e5;
+    font-family: inherit; font-size: 13px; font-weight: 700; letter-spacing: -0.2px; line-height: 1;
+    cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+    transition: background 0.15s, transform 0.15s;
+}
+.home-feedback-btn svg {
+    width: 15px; height: 15px; flex-shrink: 0;
+    fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+.home-feedback-btn:hover { background: rgba(79,70,229,0.15); }
+.home-feedback-btn:active { transform: scale(0.95); }
+.home-feedback-btn:focus-visible { outline: 2px solid #4f46e5; outline-offset: 2px; }
+.home-header.minimized .home-feedback-btn { top: 25px; }
+body.dark-mode .home-feedback-btn { background: rgba(129,140,248,0.16); color: #a5b4fc; }
+
+/* 피드백 창: 화면 위쪽에 띄움 → 휴대폰 키보드가 올라와도 '보내기'가 가려지지 않음 */
+.fb-modal {
+    position: fixed; inset: 0; z-index: 9996;
+    background: rgba(25,31,40,0.55);
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: max(48px, 9vh) 16px 16px;
+    overflow-y: auto; overscroll-behavior: contain;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.fb-modal.show { opacity: 1; pointer-events: auto; }
+.fb-dialog {
+    width: 100%; max-width: 380px;
+    background: #fff; border-radius: 20px;
+    padding: 22px 20px 16px; text-align: left;
+    box-shadow: 0 20px 50px rgba(25,31,40,0.25);
+    transform: translateY(8px) scale(0.98); transition: transform 0.2s;
+}
+.fb-modal.show .fb-dialog { transform: none; }
+.fb-title { margin: 0 0 6px; font-size: 19px; font-weight: 800; letter-spacing: -0.4px; color: #191f28; }
+.fb-sub { margin: 0 0 14px; font-size: 14px; line-height: 1.55; color: #6b7684; word-break: keep-all; }
+.fb-text {
+    display: block; width: 100%; min-height: 120px; max-height: 34vh; resize: vertical;
+    margin: 0; padding: 14px; border: 1.5px solid #e5e8eb; border-radius: 14px;
+    background: #f9fafb; color: #191f28;
+    font-family: inherit; font-size: 16px; line-height: 1.6;   /* 16px 미만이면 아이폰이 화면을 확대함 */
+    outline: none; transition: border-color 0.15s, background 0.15s;
+}
+.fb-text:focus { border-color: #4f46e5; background: #fff; }
+.fb-meta { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin: 8px 2px 0; min-height: 18px; }
+.fb-msg { font-size: 13px; font-weight: 600; line-height: 1.45; color: #8b95a1; word-break: keep-all; }
+.fb-msg.is-error { color: #e5484d; }
+.fb-msg.is-ok { color: #0ca678; }
+.fb-count { flex-shrink: 0; font-size: 12px; color: #b0b8c1; font-variant-numeric: tabular-nums; }
+.fb-actions { display: flex; gap: 8px; margin-top: 16px; }
+.fb-cancel, .fb-submit {
+    margin: 0; padding: 15px; border: 0; border-radius: 14px;
+    font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer;
+}
+.fb-cancel { flex: 0 0 34%; background: #f2f4f6; color: #4e5968; }
+.fb-submit { flex: 1; background: #4f46e5; color: #fff; transition: opacity 0.15s; }
+.fb-submit:disabled { opacity: 0.4; cursor: default; }
+.fb-cancel:focus-visible, .fb-submit:focus-visible { outline: 2px solid #4f46e5; outline-offset: 2px; }
+body.dark-mode .fb-dialog { background: #1f1f1f; box-shadow: 0 0 0 1px rgba(255,255,255,0.07), 0 20px 50px rgba(0,0,0,0.5); }
+body.dark-mode .fb-title { color: #e8eaed; }
+body.dark-mode .fb-sub { color: #9aa0a6; }
+body.dark-mode .fb-text { background: #2a2a2a; border-color: #3c4043; color: #e8eaed; }
+body.dark-mode .fb-text:focus { border-color: #818cf8; background: #262626; }
+body.dark-mode .fb-cancel { background: #2a2a2a; color: #c4c9d0; }
+body.dark-mode .fb-submit { background: #6366f1; }
+
+@media (prefers-reduced-motion: reduce) {
+    .swipe-hint-text { animation: none; background: none; color: #4e5968; }
+    body.dark-mode .swipe-hint-text { color: #c4c9d0; }
+    .swipe-hint-chev { animation: none; opacity: 0.8; }
+    .fb-modal, .fb-dialog { transition: none; }
+}
 </style>
 </head>
 
@@ -2230,6 +2333,10 @@ body.dark-mode .effort-rewrite { background: #e8eaed; color: #191f28; }
 <div id="home" class="screen active">
     <div class="home-header-spacer" id="homeHeaderSpacer"></div>
     <div class="home-header" id="homeHeader">
+        <!-- ★ 11/2 사후 공개 뒤 피드백 (안내 문자에 '상단의 피드백 버튼'으로 적힘) -->
+        <button type="button" class="home-feedback-btn" id="feedbackBtn" aria-haspopup="dialog">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h14a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-8.5L6 20.5v-3.5H5a2 2 0 0 1-2-2V6.5a2 2 0 0 1 2-2z"/></svg>피드백
+        </button>
         <div class="title">Q-Log</div>
         <div class="time" id="time"></div>
         <div id="date" class="date-display"></div>
@@ -2284,6 +2391,12 @@ body.dark-mode .effort-rewrite { background: #e8eaed; color: #191f28; }
         </div>
     </div>
     <div id="logList"></div>
+
+    <!-- ★ 홈 첫 화면 안내: 큰 시계 아래에 일기 목록·도장판이 있음 (맨 위에 있을 때만 보임) -->
+    <button type="button" class="swipe-hint" id="swipeHint">
+        <span class="swipe-hint-text" id="swipeHintText">아래로 내려 일기 보기</span>
+        <svg class="swipe-hint-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
 </div>
 
 <!-- 글쓰기 (UX 개선) -->
@@ -2723,6 +2836,8 @@ window.go = function(id, view) {
         window.scrollTo({ top: 0, behavior: 'instant' });
     }
 
+    updateSwipeHint();   // ★ 홈 맨 위면 '아래로 내려 일기 보기' 안내, 다른 화면이면 숨김
+
     if (id === 'stats')    switchStatsView(view || 'emotion');
     if (id === 'myWriting') renderMyWriting();
     if (id === 'calendar') renderCalendar();
@@ -2814,6 +2929,7 @@ window.addEventListener('scroll', () => {
     if (!ticking) {
         window.requestAnimationFrame(() => {
             updateHeader();
+            updateSwipeHint();
             ticking = false;
         });
         ticking = true;
@@ -2821,6 +2937,142 @@ window.addEventListener('scroll', () => {
 });
 
 // 스크롤 스냅 제거 — 사용자가 자유롭게 오르내릴 수 있도록 수동 스크롤만 허용
+
+// ═══════════════════════════════════════════════════════════════════
+// [아래로 내려 일기 보기 안내] — 홈 첫 화면은 큰 시계만 보여서, 아래에 일기 목록·도장판이 있는 걸 모르는 사람이 많았음(참여자 피드백)
+//   홈 맨 위에 있을 때만 보이고, 내리기 시작하면 흐려지며 사라짐. 누르면 목록으로 부드럽게 내려감
+//   '+' 버튼 안내 말풍선(첫 일기 저장 직후)과 겹치지 않게 그동안은 숨김
+// ───────────────────────────────────────────────────────────────────
+function updateSwipeHint() {
+    const hint = document.getElementById('swipeHint');
+    const home = document.getElementById('home');
+    if (!hint || !home) return;
+    const fade = Math.max(0, 1 - window.scrollY / 90);
+    const show = home.classList.contains('active') && fade > 0.02 && !document.getElementById('fabHint');
+    hint.style.opacity = show ? fade.toFixed(2) : '0';
+    hint.classList.toggle('is-off', !show);
+    hint.setAttribute('aria-hidden', show ? 'false' : 'true');
+    hint.tabIndex = show ? 0 : -1;
+    const gauge = document.getElementById('studyGauge');
+    const label = gauge && !gauge.hidden ? '아래로 내려 일기 · 도장판 보기' : '아래로 내려 일기 보기';
+    const text = document.getElementById('swipeHintText');
+    if (text && text.textContent !== label) text.textContent = label;
+}
+document.getElementById('swipeHint').addEventListener('click', () => {
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: Math.max(0, window.innerHeight - 100), behavior: reduce ? 'auto' : 'smooth' });
+});
+window.addEventListener('resize', updateSwipeHint);
+new MutationObserver(updateSwipeHint).observe(document.getElementById('studyGauge'), { attributes: true, attributeFilter: ['hidden'] });
+new MutationObserver(updateSwipeHint).observe(document.querySelector('.nav'), { childList: true });
+updateSwipeHint();
+
+// ═══════════════════════════════════════════════════════════════════
+// [피드백] 11/2 사후 공개 뒤 — 홈 오른쪽 위 '피드백' 버튼 → Firestore feedback 컬렉션에 한 건씩 저장
+//   참여자는 쓰기(create)만, 읽기는 연구자가 콘솔에서. ★ Firestore 규칙에 feedback 이 있어야 저장됨
+//   보내기 전 글은 이 기기에 계정별로 임시 저장 → 저장에 실패하거나 창을 닫아도 다시 열면 남아 있음
+// ───────────────────────────────────────────────────────────────────
+const FEEDBACK_MAX = 2000;
+let fbSending = false;
+let fbReturnFocus = null;
+
+function fbEls() {
+    return {
+        modal:  document.getElementById('feedbackModal'),
+        text:   document.getElementById('fbText'),
+        submit: document.getElementById('fbSubmitBtn'),
+        msg:    document.getElementById('fbMsg'),
+        count:  document.getElementById('fbCount'),
+    };
+}
+function fbDraftKey() {
+    return currentUser ? `qlog_feedback_draft_${currentUser.uid}` : null;
+}
+function fbSetMsg(text, kind = '') {
+    const { msg } = fbEls();
+    msg.textContent = text;
+    msg.className = 'fb-msg' + (kind ? ` is-${kind}` : '');
+}
+function fbSync() {
+    const { text, submit, count } = fbEls();
+    count.textContent = `${text.value.length}/${FEEDBACK_MAX}`;
+    submit.disabled = fbSending || !currentUser || !text.value.trim();
+}
+function openFeedback() {
+    const { modal, text } = fbEls();
+    fbReturnFocus = document.activeElement;
+    const key = fbDraftKey();
+    if (key && !text.value) {
+        try { text.value = localStorage.getItem(key) || ''; } catch {}
+    }
+    if (currentUser) fbSetMsg('');
+    else fbSetMsg('로그인한 뒤에 보낼 수 있어요.', 'error');
+    fbSync();
+    modal.classList.add('show');
+    modal.setAttribute('aria-hidden', 'false');
+    setTimeout(() => text.focus({ preventScroll: true }), 60);
+}
+function closeFeedback() {
+    const { modal } = fbEls();
+    if (!modal.classList.contains('show')) return;
+    modal.classList.remove('show');
+    modal.setAttribute('aria-hidden', 'true');
+    if (fbReturnFocus && typeof fbReturnFocus.focus === 'function') fbReturnFocus.focus({ preventScroll: true });
+    fbReturnFocus = null;
+}
+async function sendFeedback() {
+    const { text, submit } = fbEls();
+    const body = text.value.trim().slice(0, FEEDBACK_MAX);
+    if (!body || fbSending) return;
+    if (!currentUser) { fbSetMsg('로그인한 뒤에 보낼 수 있어요.', 'error'); return; }
+    const key = fbDraftKey();
+    fbSending = true;
+    submit.textContent = '보내는 중…';
+    fbSetMsg('');
+    fbSync();
+    try {
+        const save = addDoc(collection(db, 'feedback'), {
+            uid: currentUser.uid,
+            group: userGroup,                  // 실험 때 그룹 (분석용. 참여자 화면에는 안 보임)
+            text: body,
+            createdAt: serverTimestamp(),
+            clientDate: localDateKey(),
+            ua: navigator.userAgent.slice(0, 300)   // 기기·브라우저 (화면 문제 제보 확인용)
+        });
+        let timer;
+        const timeout = new Promise((_, reject) => { timer = setTimeout(() => reject({ code: 'timeout' }), 15000); });
+        try { await Promise.race([save, timeout]); } finally { clearTimeout(timer); }
+        if (key) { try { localStorage.removeItem(key); } catch {} }
+        text.value = '';
+        fbSetMsg('고마워요! 잘 받았어요.', 'ok');
+        setTimeout(closeFeedback, 1400);
+    } catch (err) {
+        console.warn('[피드백] 저장 실패 — Firestore 규칙에 feedback 이 있는지 확인하세요:', (err && err.code) || err);
+        fbSetMsg(err && err.code === 'timeout'
+            ? '응답이 늦어요. 인터넷 연결을 확인하고 다시 눌러 주세요.'
+            : '보내지 못했어요. 잠시 뒤 다시 눌러 주세요. 적은 글은 그대로 남아 있어요.', 'error');
+    } finally {
+        fbSending = false;
+        submit.textContent = '보내기';
+        fbSync();
+    }
+}
+document.getElementById('feedbackBtn').addEventListener('click', openFeedback);
+document.getElementById('fbCancelBtn').addEventListener('click', closeFeedback);
+document.getElementById('fbSubmitBtn').addEventListener('click', sendFeedback);
+document.getElementById('feedbackModal').addEventListener('click', e => {
+    if (e.target.id === 'feedbackModal') closeFeedback();
+});
+document.getElementById('fbText').addEventListener('input', () => {
+    const { text, msg } = fbEls();
+    fbSync();
+    if (currentUser && msg.classList.contains('is-error')) fbSetMsg('');
+    const key = fbDraftKey();
+    if (key) { try { localStorage.setItem(key, text.value); } catch {} }
+});
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && document.getElementById('feedbackModal').classList.contains('show')) closeFeedback();
+});
 
 // ── 이모지 필터 (토글 스위치) ────────────────────
 (function initMoodFilter() {
@@ -3296,8 +3548,17 @@ function writeTargetDateKey() {
 // AI 차단일은 "그 날짜의 일기"에 적용:
 //   질문 → 지금 쓰는 일기의 날짜 기준. 11/2에 '어제' 버튼으로 11/1 일기를 써도 AI가 꺼져 있어야 사후 측정이 오염되지 않음
 //   첨삭 → 팝업을 보는 오늘 기준
+// ★ [11/2 사후 공개] 실험이 끝나 모든 그룹(C 포함)에 AI 질문·교정 선생님을 엶 (참여자 안내: 11/9까지 이용)
+//   이 날짜 0시(기기 날짜)부터 자동으로 열림 → 파일을 미리 올려 둬도 그 전에는 C 그룹에 AI가 보이지 않음
+//   GROUP_FEATURES 는 그대로 둠: 사후 설문 참여 코드('가'/'나')와 일기·첨삭에 저장되는 group 은 실험 때 그룹 그대로
+//   하루 한도(질문 4·첨삭 2)는 C 그룹에도 똑같이 적용됨. 일기의 experiment.questionEnabled 로 공개 뒤 일기를 구분할 수 있음
+const AI_OPEN_TO_ALL_FROM = '2026-11-02';
+function aiOpenToAll() {
+    return localDateKey() >= AI_OPEN_TO_ALL_FROM;
+}
 function aiAllowed(feature) {
-    if (!(GROUP_FEATURES[userGroup] && GROUP_FEATURES[userGroup][feature])) return false;
+    const byGroup = !!(GROUP_FEATURES[userGroup] && GROUP_FEATURES[userGroup][feature]);
+    if (!byGroup && !aiOpenToAll()) return false;
     return !isAiOffDate(feature === 'question' ? writeTargetDateKey() : localDateKey());
 }
 
@@ -6886,6 +7147,23 @@ function showDayLogs(year, month, day) {
         <div class="effort-actions">
             <button type="button" class="effort-rewrite" id="effortRewriteBtn">다시 쓰기</button>
             <button type="button" class="effort-anyway" id="effortAnywayBtn">그래도 저장</button>
+        </div>
+    </div>
+</div>
+
+<!-- ★ 피드백 (11/2 사후 공개 뒤, 홈 오른쪽 위 '피드백' 버튼) -->
+<div class="fb-modal" id="feedbackModal" aria-hidden="true">
+    <div class="fb-dialog" role="dialog" aria-modal="true" aria-labelledby="fbTitle" aria-describedby="fbSub">
+        <h3 class="fb-title" id="fbTitle">피드백 남기기</h3>
+        <p class="fb-sub" id="fbSub">좋았던 점, 불편했던 점, AI 기능에 대한 생각까지 무엇이든 괜찮아요. 연구자만 읽고, 다음 연구를 다듬는 데 써요.</p>
+        <textarea class="fb-text" id="fbText" maxlength="2000" rows="5" placeholder="자유롭게 적어 주세요"></textarea>
+        <div class="fb-meta">
+            <span class="fb-msg" id="fbMsg" role="status" aria-live="polite"></span>
+            <span class="fb-count" id="fbCount">0/2000</span>
+        </div>
+        <div class="fb-actions">
+            <button type="button" class="fb-cancel" id="fbCancelBtn">닫기</button>
+            <button type="button" class="fb-submit" id="fbSubmitBtn" disabled>보내기</button>
         </div>
     </div>
 </div>
