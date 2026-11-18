@@ -3281,7 +3281,7 @@ async function updateWriteAvailability() {
         await loadLogs();
     }
     const offset   = selectedWriteDate === 'yesterday' ? 1 : 0;
-    const existing = findLogForOffset(offset);
+    const existing = isDemoAccount() ? null : findLogForOffset(offset);   // [시연] TEAM 은 같은 날 여러 번 쓰기 가능
 
     if (existing) {
         doneMsg.innerText = offset === 0
@@ -3513,6 +3513,9 @@ const GROUP_FEATURES = {
     TEAM:{ question: true,  teacher: true  },
 };
 const DEFAULT_GROUP = 'C';
+// ★ [시연] TEAM 계정에만 적용: 막힘 팝업 1.5초, 붙여넣기 뒤에도 팝업, '오늘 하루 보지 않기' 무시, 하루 1편 제한 없음
+const DEMO_STUCK_MS = 1500;
+function isDemoAccount() { return userGroup === 'TEAM'; }
 let userGroup      = DEFAULT_GROUP;
 let userAiOffDates = [];
 let userStudyStart = null;        // 'YYYY-MM-DD' — 있으면 도장판 표시
@@ -3717,7 +3720,7 @@ function resetIdleTimer() {
         if (aiRemaining('question') > 0 && aiAllowed('question')) {
             document.getElementById('aiStuckPopup').style.display = 'block';
         }
-    }, 10000); // 10초
+    }, isDemoAccount() ? DEMO_STUCK_MS : 10000); // 참여자 10초, 시연(TEAM) 1.5초
 }
 
 // 팝업 클릭 시 닫기
@@ -4120,7 +4123,7 @@ async function maybeShowTeacher() {
     teacherCheckedUid = uid;
 
     if (!aiAllowed('teacher')) return;           // A·C 그룹 또는 AI 차단일
-    if (teacherHiddenToday(uid)) return;          // "오늘 하루 보지 않기"
+    if (teacherHiddenToday(uid) && !isDemoAccount()) return;   // "오늘 하루 보지 않기" (시연 계정은 무시)
     const log = findLogForOffset(1);              // 어제 날짜 일기
     if (!log || !log.text || log.text.trim().length < TEACHER_MIN_CHARS) return;
 
@@ -5068,6 +5071,7 @@ document.getElementById('text').addEventListener('input', function(e) {
     } else if (e.inputType === 'insertFromPaste') {
         _pasteDetected = true;
         if (e.data) _nonTypedInsertChars += e.data.length;
+        if (isDemoAccount()) resetIdleTimer();   // [시연] 붙여넣기 뒤에도 막힘 팝업 타이머 시작
     } else if (e.inputType === 'insertFromDrop') {
         _dropDetected = true;
         if (e.data) _nonTypedInsertChars += e.data.length;
@@ -5121,7 +5125,7 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     // 최신 데이터 기준으로 다시 한번 확인한 뒤 저장을 진행한다.
     await loadLogs();
     const _writeOffset = selectedWriteDate === 'yesterday' ? 1 : 0;
-    if (findLogForOffset(_writeOffset)) {
+    if (!isDemoAccount() && findLogForOffset(_writeOffset)) {   // [시연] TEAM 은 같은 날 여러 번 저장 가능
         updateWriteAvailability();
         alert(_writeOffset === 0
             ? '오늘의 일기를 이미 작성했어요.'
